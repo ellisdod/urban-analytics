@@ -1,21 +1,22 @@
 const express = require('express')
 const cors = require('cors')
 const bodyParser = require('body-parser')
-const Sequelize = require('sequelize')
-const epilogue = require('epilogue')
 const OktaJwtVerifier = require('@okta/jwt-verifier')
+const building_controller = require('../controllers/building.controller')
+const formidableMiddleware = require('express-formidable')
+const mongoose = require('mongoose');
+require('dotenv').config();
 
 const oktaJwtVerifier = new OktaJwtVerifier({
-  clientId: '{yourClientId}',
-  issuer: 'https://{yourOktaDomain}/oauth2/default'
+  client_id: '0oafa51gkZcH6RVN4356',
+  issuer: 'https://dev-160658.okta.com/oauth2/default'
 })
 
 let app = express()
 app.use(cors())
 app.use(bodyParser.json())
 
-// verify JWT token middleware
-app.use((req, res, next) => {
+function requireAuth(req, res, next) {
   // require every request to have an authorization header
   if (!req.headers.authorization) {
     return next(new Error('Authorization header is required'))
@@ -31,38 +32,24 @@ app.use((req, res, next) => {
       next()
     })
     .catch(next) // jwt did not verify!
+}
+
+// verify JWT token middleware
+app.use(requireAuth);
+app.get('/test', building_controller.test);
+app.post('/create', formidableMiddleware(), building_controller.building_create);
+app.get('/building/:id', building_controller.building_details);
+app.get('/neighbourhood/:name', building_controller.building_neighbourhood);
+app.put('/building/:id', building_controller.building_update);
+
+
+app.listen(8081, () => {
+  console.log('listening to port localhost:8081')
 })
 
-// For ease of this tutorial, we are going to use SQLite to limit dependencies
-let database = new Sequelize({
-  dialect: 'sqlite',
-  storage: './test.sqlite'
-})
 
-// Define our Post model
-// id, createdAt, and updatedAt are added by sequelize automatically
-let Post = database.define('posts', {
-  title: Sequelize.STRING,
-  body: Sequelize.TEXT
-})
-
-// Initialize epilogue
-epilogue.initialize({
-  app: app,
-  sequelize: database
-})
-
-// Create the dynamic REST resource for our Post model
-let userResource = epilogue.resource({
-  model: Post,
-  endpoints: ['/posts', '/posts/:id']
-})
-
-// Resets the database and launches the express app on :8081
-database
-  .sync({ force: true })
-  .then(() => {
-    app.listen(8081, () => {
-      console.log('listening to port localhost:8081')
-    })
-  })
+// Set up mongoose connection
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
+mongoose.Promise = global.Promise;
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
