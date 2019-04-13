@@ -1,12 +1,13 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Hello from '@/components/Hello'
+import MapView from '@/components/MapView'
 import PostsManager from '@/components/PostsManager'
 import Auth from '@okta/okta-vue'
 
 Vue.use(Auth, {
-  issuer: 'https://{yourOktaDomain}/oauth2/default',
-  client_id: '{yourClientId}',
+  client_id: '***REMOVED***',
+  issuer: 'https://dev-160658.okta.com/oauth2/default',
   redirect_uri: 'http://localhost:8080/implicit/callback',
   scope: 'openid profile email'
 })
@@ -18,8 +19,7 @@ let router = new Router({
   routes: [
     {
       path: '/',
-      name: 'Hello',
-      component: Hello
+      component: MapView
     },
     {
       path: '/implicit/callback',

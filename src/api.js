@@ -17,12 +17,10 @@ export default {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
-    }).then(req => {
-      return req.data
     })
   },
-  getPosts () {
-    return this.execute('get', '/posts')
+  getSurveyData (neighbourhood) {
+    return this.execute('get', `/neighbourhood/${neighbourhood}`)
   },
   getPost (id) {
     return this.execute('get', `/posts/${id}`)
