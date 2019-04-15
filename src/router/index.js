@@ -5,10 +5,11 @@ import MapView from '@/components/MapView'
 import PostsManager from '@/components/PostsManager'
 import Auth from '@okta/okta-vue'
 
+
 Vue.use(Auth, {
   client_id: '0oafa51gkZcH6RVN4356',
   issuer: 'https://dev-160658.okta.com/oauth2/default',
-  redirect_uri: 'http://localhost:8080/implicit/callback',
+  redirect_uri: window.location.origin + '/implicit/callback',
   scope: 'openid profile email'
 })
 
