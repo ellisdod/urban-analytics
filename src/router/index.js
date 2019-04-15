@@ -22,6 +22,10 @@ let router = new Router({
       component: MapView
     },
     {
+      path: '/map',
+      component: MapView
+    },
+    {
       path: '/implicit/callback',
       component: Auth.handleCallback()
     },
