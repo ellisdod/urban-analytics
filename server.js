@@ -64,9 +64,6 @@ app.put('/building/:id', requireAuth, building_controller.building_update);
 
 app.use(express.static(__dirname));
 
-app.set('port', (process.env.PORT || 8080));
-
-app.listen(app.get('port'), () => {
+app.listen(process.env.PORT || 8080, () => {
   console.log({ ENV: process.env.NODE_ENV });
-  console.log('Derp is running at localhost ' + app.get('port') );
 });
