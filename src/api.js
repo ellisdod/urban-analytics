@@ -1,8 +1,10 @@
 import Vue from 'vue'
 import axios from 'axios'
 
+const port = process.env.PORT || 8080;
+
 const client = axios.create({
-  baseURL: 'http://localhost:8081/',
+  baseURL: 'http://localhost:'+port+'/',
   json: true
 })
 
