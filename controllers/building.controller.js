@@ -80,5 +80,12 @@ exports.building_create = function (req, res, next) {
       if (err) return next(err);
       res.send('Building udpated.');
     });
+  };
+
+ exports.surveys = function (req, res, next) {
+   GeoJSON.distinct('feature.properties.neighbourhood', function (err, x) {
+     if (err) return next(err);
+     res.send(x);
+   });
 
   };

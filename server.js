@@ -1,5 +1,4 @@
 const express = require('express')
-const cors = require('cors')
 const bodyParser = require('body-parser')
 const OktaJwtVerifier = require('@okta/jwt-verifier')
 const building_controller = require('./controllers/building.controller')
@@ -14,6 +13,7 @@ const oktaJwtVerifier = new OktaJwtVerifier({
   issuer: 'https://dev-160658.okta.com/oauth2/default'
 })
 
+
 // Set up mongoose connection
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
 mongoose.Promise = global.Promise;
@@ -27,11 +27,12 @@ function requireAuth(req, res, next) {
   }
   let parts = req.headers.authorization.trim().split(' ')
   let accessToken = parts.pop()
+  console.log({accessToken : accessToken}); //for testing only
   oktaJwtVerifier.verifyAccessToken(accessToken)
     .then(jwt => {
       req.user = {
         uid: jwt.claims.uid,
-        email: jwt.claims.sub
+        email: jwt.claims.email
       }
       next()
     })
@@ -41,29 +42,53 @@ function requireAuth(req, res, next) {
 // verify JWT token middleware
 //app.use(requireAuth);
 let app = express()
-//app.use(cors())
+
+if (process.env.NODE_ENV != 'production') {
+  /*
+
+  const webpack = require('webpack')
+  const webpackDevMiddleware = require('webpack-dev-middleware')
+  const webpackHotMiddleware = require('webpack-hot-middleware')
+  const config = require('./webpack.dev.config.js')
+
+  // Set up webpack compiler
+  const compiler = webpack(config)
+  app.use(webpackDevMiddleware(compiler, {
+    publicPath: config.output.publicPath
+  }));
+  app.use(webpackHotMiddleware(compiler));
+  */
+  const cors = require('cors')
+  app.use(cors())
+}
+
 app.use(bodyParser.json())
 
-const staticFileMiddleware = express.static(__dirname + "/dist");
-app.use(staticFileMiddleware);
-app.use(history({
-  disableDotRule: true,
-  verbose: true
-}));
-app.use(staticFileMiddleware);
+if (process.env.NODE_ENV == 'production') {
+  const staticFileMiddleware = express.static(__dirname + "/dist");
+  app.use(staticFileMiddleware);
+  app.use(history({
+    disableDotRule: true,
+    verbose: true
+  }));
+  app.use(staticFileMiddleware);
 
-app.get('/', function (req, res) {
-  res.render(path.join(__dirname + '/dist/index.html'))
-})
+  app.get('/', function (req, res) {
+    res.render(path.join(__dirname + '/dist/index.html'))
+  })
+}
+
 
 app.get('/test', requireAuth, building_controller.test);
 app.post('/create', requireAuth, formidableMiddleware(), building_controller.building_create);
 app.get('/building/:id', requireAuth, building_controller.building_details);
 app.get('/neighbourhood/:name', requireAuth, building_controller.building_neighbourhood);
 app.put('/building/:id', requireAuth, building_controller.building_update);
+app.get('/survey/buildings', requireAuth, building_controller.surveys);
 
 app.use(express.static(__dirname));
 
-app.listen(process.env.PORT || 8080, () => {
+app.listen(process.env.PORT || 8081, () => {
   console.log({ ENV: process.env.NODE_ENV });
+  console.log('running on port ' + (process.env.PORT || 8081));
 });

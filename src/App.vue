@@ -74,7 +74,7 @@ class="my-3"
 <v-list-tile
 v-else
 :key="i"
-@click=""
+:to="item.route"
 >
 <v-list-tile-action>
   <v-icon>{{ item.icon }}</v-icon>
@@ -92,80 +92,45 @@ v-else
 </v-navigation-drawer>
 
 <v-toolbar dark color="#1c222d" app absolute clipped-left clipped-right>
-  <v-toolbar-side-icon @click="drawer = !drawer"></v-toolbar-side-icon>
-  <span class="ml-3 mr-5">
-    <div class="subheading">East Jerusalem </div>
-    <div class="subheading font-weight-light">Neighbourhood Map</div></span>
+
+    <v-layout   align-center  justify-end fill-height>
+      <v-toolbar-side-icon @click="drawer = !drawer"></v-toolbar-side-icon>
+    <div class="ml-3 mr-5">
+      <div class="subheading">East Jerusalem </div>
+      <div class="subheading font-weight-light">Neighbourhood Map</div>
+    </div>
+
     <v-spacer></v-spacer>
-    <v-btn color="white" flat v-if="activeUser" to="/upload">Upload</v-btn>
-    <v-btn @click.prevent="logout" v-if="activeUser" >Log out</v-btn>
-    <v-btn @click.prevent="login" v-if="!activeUser">Log in</v-btn>
 
-    <div class="mx-2" v-if="loggedIn">Logged in as <b>{{name}}</b></div>
-    <v-icon @click="drawerIndicators = !drawerIndicators">bar_chart</v-icon>
+    <v-btn @click.prevent="login" v-if="!activeUser" small>Log in</v-btn>
 
+      <div v-else class="pt-1 mr-1">{{ activeUser.email }}</div>
+
+    <v-menu min-width="300" offset-y v-if="activeUser">
+      <template v-slot:activator="{ on }">
+        <v-btn fab dark flat small outline v-on="on"><v-icon>person</v-icon></v-btn>
+      </template>
+
+      <v-card>
+        <v-list>
+          <v-list-tile avatar>
+            <v-list-tile-content>
+              <v-list-tile-title>{{ activeUser.name }}</v-list-tile-title>
+              <v-list-tile-sub-title>IPCC</v-list-tile-sub-title>
+            </v-list-tile-content>
+          </v-list-tile>
+        </v-list>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" flat @click="logout">Logout</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-menu>
+      </v-layout>
   </v-toolbar>
-
-  <v-navigation-drawer
-  v-model="drawerIndicators"
-  fixed
-  clipped
-  class="grey lighten-4"
-  app
-  hide-overlay
-  right
-  >
-  <v-list
-  dense
-  class="grey lighten-4"
-  >
-
-  <template v-for="(item, i) in indicators">
-    <v-list-group
-    v-if="item.children"
-    :key="item.text"
-    v-model="item.model"
-    :prepend-icon="item.model ? item.icon : item['icon-alt']"
-    append-icon=""
-    >
-    <template v-slot:activator>
-      <v-list-tile>
-        <v-list-tile-content>
-          <v-list-tile-title>
-            {{ item.heading }}
-          </v-list-tile-title>
-        </v-list-tile-content>
-      </v-list-tile>
-    </template>
-
-    <v-list-tile
-    v-for="(child, i) in item.children"
-    :key="i"
-    @click=""
-    >
-    <v-list-tile-content>
-      <v-list-tile-title>
-        {{ child.name }}
-      </v-list-tile-title>
-    </v-list-tile-content>
-    <v-list-tile-action>
-      {{ child.value }}
-    </v-list-tile-action>
-
-  </v-list-tile>
-</v-list-group>
-<v-divider
-v-else-if="item.divider"
-:key="i"
-dark
-class="my-3"
-></v-divider>
-
-
-</template>
-</v-list>
-
-</v-navigation-drawer>
 
 <v-content>
   <router-view style="height:100%;"></router-view>
@@ -192,26 +157,6 @@ export default {
     layersPanel:true,
     currentView: 'map-view',
     layers : [],
-    items: [
-      {
-        heading: 'Layers',
-        icon: 'keyboard_arrow_up',
-        'icon-alt': 'keyboard_arrow_down',
-        text: 'More',
-        model: false,
-        children: [
-          { icon: 'add', text: 'Background' },
-          { icon: 'add', text: 'Boundaries' },
-          { icon: 'add', text: 'Buildings' },
-          { icon: 'add', text: 'Roads' }
-        ]
-      },
-      { divider : true},
-      { icon: 'settings', text: 'Settings' },
-      { icon: 'chat_bubble', text: 'About' },
-      { icon: 'help', text: 'Help' },
-      { icon: 'cloud_download', text: 'Export Data' }
-    ],
     indicators: [
       {
         heading: 'Demographics',
@@ -254,56 +199,92 @@ export default {
       }
     ]
   }),
-  props: {
-    source: String
-  },
-  async created () {
-   await this.refreshActiveUser()
- },
- watch: {
-   // everytime a route is changed refresh the activeUser
-   '$route': 'refreshActiveUser'
- },
- methods: {
-   login () {
-     this.$auth.loginRedirect()
-   },
-   async refreshActiveUser () {
-     this.activeUser = await this.$auth.getUser()
-   },
-   async logout () {
-     await this.$auth.logout()
-     await this.refreshActiveUser()
-     this.$router.push('/')
-   }
- }
+  computed : {
+    items () {
+      const layers = [
+        {
+          heading: 'Layers',
+          icon: 'keyboard_arrow_up',
+          'icon-alt': 'keyboard_arrow_down',
+          text: 'More',
+          model: false,
+          children: [
+            { icon: 'add', text: 'Background' },
+            { icon: 'add', text: 'Boundaries' },
+            { icon: 'add', text: 'Buildings' },
+            { icon: 'add', text: 'Roads' }
+          ]
+        }];
+        const actions = [
+          { divider : true},
+          { icon: 'settings', text: 'Settings' },
+          { icon: 'chat_bubble', text: 'About' },
+          { icon: 'help', text: 'Help' },
+          { icon: 'cloud_download', text: 'Export Data' }
+        ];
+        const loggedInActions = [
+          { divider : true},
+          { icon: 'cloud_upload', text: 'Upload data', route: 'upload' },
+          { icon: 'grid_on', text: 'View surveys', route: 'survey' }
+        ]
+        return this.activeUser ? layers.concat(loggedInActions).concat(actions) : layers.concat(actions);
+      }
+    },
+    props: {
+      source: String
+    },
+    async created () {
+      await this.refreshActiveUser()
+    },
+    watch: {
+      // everytime a route is changed refresh the activeUser
+      '$route': 'refreshActiveUser'
+    },
+    methods: {
+      login () {
+        this.$auth.loginRedirect()
+      },
+      async refreshActiveUser () {
+        this.activeUser = await this.$auth.getUser()
+      },
+      async logout () {
+        await this.$auth.logout()
+        await this.refreshActiveUser()
+        this.$router.push('/')
+      },
+      printUser () {
+        console.log('USER')
+        console.log(this.activeUser)
+        console.log(this.$auth)
+      }
+    }
 
-}
-</script>
+  }
+  </script>
 
-<style>
-#keep .v-navigation-drawer__border {
-  display: none
-}
+  <style>
+  #keep .v-navigation-drawer__border {
+    display: none
+  }
 
-.fill {
-  width:100%;
-  height:100%;
-}
+  .fill {
+    width:100%;
+    height:100%;
+  }
 
-#layers-palette {
-  position:absolute;
-  top:10px;
-  left:10px;
-  z-index:1;
-  border-radius:3px;
-}
-#layers-palette .theme--light.v-list {
-  background:none;
-}
+  #layers-palette {
+    position:absolute;
+    top:10px;
+    left:10px;
+    z-index:1;
+    border-radius:3px;
+  }
+  #layers-palette .theme--light.v-list {
+    background:none;
+  }
 
-#layers-palette .v-list__group--active:before, .theme--light.v-list .v-list__group--active:after {
-  background:none;
-}
+  #layers-palette .v-list__group--active:before, .theme--light.v-list .v-list__group--active:after {
+    background:none;
+  }
 
-</style>
+  </style>

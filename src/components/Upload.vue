@@ -21,6 +21,7 @@
           v-model="dataType"
         ></v-select>
         <v-text-field v-if="isSaving" label="Location" v-model="neighbourhood"></v-text-field>
+        <v-btn to="map" class="button">Back</v-btn>
         <v-btn v-if="isSaving" type="submit" class="button is-danger">Upload</v-btn>
       </div>
     </form>
@@ -33,6 +34,7 @@
 
 
 import axios from 'axios'
+import API from '@/api.js'
 
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED = 3;
 
@@ -76,11 +78,9 @@ export default {
       formData.append('file', this.file);
       formData.append('file', this.file);
       console.log({ fileData: this.file});
-      axios.post( '/create', formData, {
-        headers: {
+      API.create(formData, {
           'Content-Type': 'multipart/form-data'
         }
-      }
     ).then(function(){
       console.log('SUCCESS!!');
     })
