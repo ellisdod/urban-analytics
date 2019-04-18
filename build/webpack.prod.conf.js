@@ -22,28 +22,6 @@ const env = process.env.NODE_ENV === 'testing'
   : config.build.env
 
 const webpackConfig = merge(baseWebpackConfig, {
-  module: {
-    rules: [
-      {
-        test: /\.(sa|sc|c)ss$/,
-        use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-            options: {
-              hmr: process.env.NODE_ENV === 'development',
-            },
-          },
-          'css-loader',
-          'postcss-loader',
-          'sass-loader',
-        ],
-      },
-      {
-        test: /\.vue$/,
-        loader: 'vue-loader'
-      }
-    ],
-  },
   devtool: config.build.productionSourceMap ? '#source-map' : false,
   output: {
     path: config.build.assetsRoot,
@@ -108,12 +86,12 @@ const webpackConfig = merge(baseWebpackConfig, {
       stripPrefix: 'dist/'
     }),
 
-    new MiniCssExtractPlugin({
+    //new MiniCssExtractPlugin({
       // Options similar to the same options in webpackOptions.output
       // both options are optional
-      filename: '[name].css',
-      chunkFilename: '[id].css',
-    }),
+    //  filename: '[name].css',
+    //  chunkFilename: '[id].css',
+  //  }),
   ]
 })
 
