@@ -6,7 +6,7 @@ const formidableMiddleware = require('express-formidable')
 const mongoose = require('mongoose');
 const path = require('path');
 var history = require('connect-history-api-fallback');
-require('dotenv').config();
+//require('dotenv').config();
 
 const oktaJwtVerifier = new OktaJwtVerifier({
   client_id: process.env.VUE_APP_OKTA_CLIENT_ID || '0oafa51gkZcH6RVN4356',
