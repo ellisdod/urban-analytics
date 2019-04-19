@@ -9,7 +9,7 @@ var history = require('connect-history-api-fallback');
 require('dotenv').config();
 
 const oktaJwtVerifier = new OktaJwtVerifier({
-  client_id: '0oafa51gkZcH6RVN4356',
+  client_id: process.env.VUE_APP_OKTA_CLIENT_ID,
   issuer: 'https://dev-160658.okta.com/oauth2/default'
 })
 
@@ -89,6 +89,6 @@ app.get('/survey/buildings', requireAuth, building_controller.surveys);
 app.use(express.static(__dirname));
 
 app.listen(process.env.PORT || 8081, () => {
-  console.log({ ENV: process.env.NODE_ENV });
+  console.log({ ENV: process.env.NODE_ENV, ID: process.env.VUE_APP_OKTA_CLIENT_ID, PORT: process.env.PORT });
   console.log('running on port ' + (process.env.PORT || 8081));
 });
