@@ -9,7 +9,7 @@ var history = require('connect-history-api-fallback');
 require('dotenv').config();
 
 const oktaJwtVerifier = new OktaJwtVerifier({
-  clientId: process.env.VUE_APP_OKTA_CLIENT_ID || '0oafa51gkZcH6RVN4356',
+  client_id: process.env.VUE_APP_OKTA_CLIENT_ID || '0oafa51gkZcH6RVN4356',
   issuer: 'https://dev-160658.okta.com/oauth2/default'
 })
 
