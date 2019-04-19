@@ -6,16 +6,21 @@ const formidableMiddleware = require('express-formidable')
 const mongoose = require('mongoose');
 const path = require('path');
 var history = require('connect-history-api-fallback');
-//require('dotenv').config();
+require('dotenv').config();
+var oktaJwtVerifier;
 
-const oktaJwtVerifier = new OktaJwtVerifier({
-  client_id: process.env.VUE_APP_OKTA_CLIENT_ID || '0oafa51gkZcH6RVN4356',
-  issuer: 'https://dev-160658.okta.com/oauth2/default'
-})
+try {
+  oktaJwtVerifier = new OktaJwtVerifier({
+    client_id: process.env.VUE_APP_OKTA_CLIENT_ID || '0oafa51gkZcH6RVN4356',
+    issuer: 'https://dev-160658.okta.com/oauth2/default'
+  })
+} catch(err) {
+  console.log(err);
+}
 
 
 // Set up mongoose connection
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://general:NaCEXu8ONzf2D6fB@cluster0-hn3xl.mongodb.net/test?retryWrites=true', { useNewUrlParser: true });
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -86,7 +91,7 @@ app.get('/neighbourhood/:name', requireAuth, building_controller.building_neighb
 app.put('/building/:id', requireAuth, building_controller.building_update);
 app.get('/survey/buildings', requireAuth, building_controller.surveys);
 
-app.use(express.static(__dirname));
+//app.use(express.static(__dirname));
 
 app.listen(process.env.PORT || 8081, () => {
   console.log({ ENV: process.env.NODE_ENV, ID: process.env.VUE_APP_OKTA_CLIENT_ID, PORT: process.env.PORT });
