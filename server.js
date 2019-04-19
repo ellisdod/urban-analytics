@@ -64,7 +64,7 @@ if (process.env.NODE_ENV != 'production') {
 
 app.use(bodyParser.json())
 
-if (process.env.NODE_ENV == 'production') {
+//if (process.env.NODE_ENV == 'production') {
   const staticFileMiddleware = express.static(__dirname + "/dist");
   app.use(staticFileMiddleware);
   app.use(history({
@@ -76,7 +76,7 @@ if (process.env.NODE_ENV == 'production') {
   app.get('/', function (req, res) {
     res.render(path.join(__dirname + '/dist/index.html'))
   })
-}
+//}
 
 
 app.get('/test', requireAuth, building_controller.test);
