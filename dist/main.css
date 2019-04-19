@@ -1,0 +1,47 @@
+
+#main-map {
+  z-index:0;
+}
+.v-toolbar__content, .v-toolbar__extension {
+  align-items:start !important;
+}
+.highlighted {
+  background-color:#e8e8e8;
+}
+
+
+#keep .v-navigation-drawer__border {
+  display: none
+}
+.fill {
+  width:100%;
+  height:100%;
+}
+#layers-palette {
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:1;
+  border-radius:3px;
+}
+#layers-palette .theme--light.v-list {
+  background:none;
+}
+#layers-palette .v-list__group--active:before, .theme--light.v-list .v-list__group--active:after {
+  background:none;
+}
+
+
+
+.hero {
+  height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.hero .lead {
+  font-weight: 200;
+  font-size: 1.5rem;
+}
+

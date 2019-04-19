@@ -6,6 +6,7 @@ import router from './router'
 import Vuetify from 'vuetify'
 import L from 'leaflet'
 import 'vuetify/dist/vuetify.min.css'
+import "vue-material-design-icons/styles.css"
 
 
 Vue.use(Vuetify)
