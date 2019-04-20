@@ -37,7 +37,9 @@
 id="main-map"
 >
 
-<l-protobuf url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
+<l-protobuf v-if="baseMap=='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
+<l-tile-layer v-if="baseMap=='basic'" url="http://{s}.tile.osm.org/{z}/{x}/{y}.png" attribution="&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors"/>
+
 <l-geo-json
 v-if="survey"
 v-for="(item, i) in surveyData"
@@ -60,6 +62,21 @@ color="#000"
   </v-btn>
 
   <v-list dense style="background:none;" slot="extension" v-if="optionsDialog">
+    <div class="px-4">
+
+    <div>Base Map</div>
+
+    <template v-for="(map,i) in baseMaps">
+      <v-switch
+        :key="i"
+        :label="map.text"
+        v-model="map.selected"
+        @click.native="updateBaseMap(map.type, map.selected)"
+      ></v-switch>
+    </template>
+    </div>
+
+
     <template v-for="(item, i) in items">
       <v-list-group
       v-if="item.children"
@@ -207,7 +224,13 @@ export default {
       optionsDialog:false,
       surveys: null,
       selectedSurvey:null,
+      baseMaps: [
+        {text:'Basic',type:'basic',selected:false},
+        {text:'Detailed',type:'detailed',selected:true}
+      ],
+      baseMap : 'detailed'
     };
+
   },
   computed: {
     items () {
@@ -234,6 +257,11 @@ export default {
       }
     },
     methods: {
+      updateBaseMap(map,on) {
+        console.log(map,on);
+        this.baseMap = on ? map : '';
+        this.baseMaps.forEach(x=> x.selected = x.type == map ? on :false )
+      },
       zoomUpdate (zoom) {
         this.currentZoom = zoom;
       },
@@ -330,4 +358,9 @@ export default {
   .highlighted {
     background-color:#e8e8e8;
   }
+
+  .v-label {
+    font-size: 13px;
+  }
+
   </style>

@@ -4,7 +4,7 @@ import axios from 'axios'
 //const port = process.env.PORT || 8080;
 
 const client = axios.create({
-  baseURL: 'window.location.origin', //window.location.origin //http://localhost:8081/
+  baseURL: window.location.origin == 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin, //window.location.origin //http://localhost:8081/
   json: true
 })
 
