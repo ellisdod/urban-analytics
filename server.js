@@ -63,13 +63,19 @@ if (process.env.NODE_ENV != 'production') {
   }));
   app.use(webpackHotMiddleware(compiler));
   */
-  const cors = require('cors')
-  app.use(cors())
+  const cors = require('cors');
+  app.use(cors());
+  app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 }
 
 app.use(bodyParser.json())
 
-//if (process.env.NODE_ENV == 'production') {
+if (process.env.NODE_ENV == 'production') {
   const staticFileMiddleware = express.static(__dirname + "/dist");
   app.use(staticFileMiddleware);
   app.use(history({
@@ -81,7 +87,7 @@ app.use(bodyParser.json())
   app.get('/', function (req, res) {
     res.render(path.join(__dirname + '/dist/index.html'))
   })
-//}
+}
 
 
 app.get('/test', requireAuth, building_controller.test);

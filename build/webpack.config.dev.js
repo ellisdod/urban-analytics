@@ -11,6 +11,11 @@ module.exports = merge(baseConfig, {
   mode: 'development',
 
   devServer: {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+    },
     clientLogLevel: 'warning',
     hot: true,
     contentBase: 'dist',
@@ -20,7 +25,13 @@ module.exports = merge(baseConfig, {
     open: true,
     overlay: { warnings: false, errors: true },
     publicPath: '/',
-    quiet: true
+    quiet: true,
+    historyApiFallback: {
+      rewrites: [
+        { from: /^\/$/, to: '/' },
+        { from: /./, to: '/' }
+      ]
+    }
   },
 
   module: {
