@@ -7,16 +7,12 @@ const mongoose = require('mongoose');
 const path = require('path');
 var history = require('connect-history-api-fallback');
 require('dotenv').config();
-var oktaJwtVerifier;
 
-try {
-  oktaJwtVerifier = new OktaJwtVerifier({
-    client_id: process.env.VUE_APP_OKTA_CLIENT_ID || '0oafa51gkZcH6RVN4356',
+
+const oktaJwtVerifier = new OktaJwtVerifier({
+    clientId: process.env.VUE_APP_OKTA_CLIENT_ID || '0oafa51gkZcH6RVN4356',
     issuer: 'https://dev-160658.okta.com/oauth2/default'
   })
-} catch(err) {
-  console.log(err);
-}
 
 
 // Set up mongoose connection
@@ -32,7 +28,7 @@ function requireAuth(req, res, next) {
   }
   let parts = req.headers.authorization.trim().split(' ')
   let accessToken = parts.pop()
-  console.log({accessToken : accessToken}); //for testing only
+  //console.log({accessToken : accessToken}); //for testing only
   oktaJwtVerifier.verifyAccessToken(accessToken)
     .then(jwt => {
       req.user = {

@@ -9,7 +9,9 @@ const PORT = 8080
 
 module.exports = merge(baseConfig, {
   mode: 'development',
-
+  output :{
+    devtoolModuleFilenameTemplate:'index.html'
+  },
   devServer: {
     headers: {
       "Access-Control-Allow-Origin": "*",
