@@ -28,16 +28,7 @@ export default {
   getSurveyNames () {
     return this.execute('get', `/survey/buildings`)
   },
-  getPost (id) {
-    return this.execute('get', `/posts/${id}`)
-  },
-  create (data, headers) {
-    return this.execute('post', '/create', data, headers)
-  },
-  updatePost (id, data) {
-    return this.execute('put', `/posts/${id}`, data)
-  },
-  deletePost (id) {
-    return this.execute('delete', `/posts/${id}`)
+  updateBuilding (id, building) {
+    return this.execute('put', `/building/${id}`,building)
   }
 }
