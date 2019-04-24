@@ -30,5 +30,8 @@ export default {
   },
   updateBuilding (id, building) {
     return this.execute('put', `/building/${id}`,building)
+  },
+  uploadData (data, headers) {
+    return this.execute('post', `/create`,data, headers)
   }
 }

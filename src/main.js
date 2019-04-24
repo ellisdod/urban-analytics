@@ -7,9 +7,10 @@ import Vuetify from 'vuetify'
 import L from 'leaflet'
 import 'vuetify/dist/vuetify.min.css'
 import "vue-material-design-icons/styles.css"
-
+import VeeValidate from 'vee-validate';
 
 Vue.use(Vuetify)
+Vue.use(VeeValidate);
 
 Vue.config.productionTip = true
 
