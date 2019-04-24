@@ -1,23 +1,28 @@
 <template>
-<div>
+  <div>
     <v-layout
     row
     align-center
     justify-center
     >
     <v-dialog v-model="editDialog" persistent max-width="500">
-
       <v-card>
         <v-card-title>
-          <svg width="80vh" height="200" v-html="editFeaturePath">
-          </svg>
+          <svg width="80vh" height="200" v-html="editFeaturePath"/>
         </v-card-title>
 
         <v-card-text>
-          <v-text-field label="Building Stories" v-model="editFeature.building_stories"/>
-          <v-text-field label="Building Use" v-model="editFeature.building_use"/>
-          <v-text-field label="Building Materials" v-model="editFeature.building_materials"/>
-          <v-text-field label="Building Construction Year" v-model="editFeature.building_year"/>
+          <template v-for="item in surveyQuestions">
+            <v-text-field v-if="item.type=='text'" :name="item.name" :data-vv-name="item.name" :label="item.label" :v-validate="'required|numeric'" v-model="editFeature[item.name]" :error-messages="errors.collect(item.name)"/>
+            <v-textarea v-else-if="item.type=='textarea'" :name="item.name" :data-vv-name="item.name" :label="item.label" :v-validate="item.validation" v-model="editFeature[item.name]" :error-messages="errors.collect(item.name)"/>
+            <v-radio-group v-else-if="item.type=='radio'" :name="item.name" :data-vv-name="item.name" :label="item.label" v-model="editFeature[item.name]" :error-messages="errors.collect(item.name)">
+              <v-radio
+              v-for="n in item.options"
+              :label="n.label"
+              :value="n.value"
+              ></v-radio>
+            </v-radio-group>
+          </template>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -79,78 +84,76 @@
       </template>
     </div>
 
-
-
-      <v-list-group
-      v-for="(item, i) in items"
-      v-if="item.children"
-      :key="item.text"
-      v-model="item.model"
-      :prepend-icon="item.model ? item.icon : item['icon-alt']"
-      append-icon=""
-      >
-      <template v-slot:activator>
-        <v-list-tile>
-          <v-list-tile-content>
-            <v-list-tile-title>
-              {{ item.heading }}
-            </v-list-tile-title>
-          </v-list-tile-content>
-        </v-list-tile>
-      </template>
-
-      <template v-for="(child, i) in item.children">
-        <v-switch
-        :key="i"
-        v-model="child.selected"
-        :label="child.text"
-        @click="getSurveyData(child.text)"
-        ></v-switch>
-      </template>
-
-    </v-list-group>
-
-
-
-    <v-layout
-    v-else-if="item.heading"
-    :key="i"
-    row
-    align-center
+    <v-list-group
+    v-for="(item, i) in items"
+    v-if="item.children"
+    :key="item.text"
+    v-model="item.model"
+    :prepend-icon="item.model ? item.icon : item['icon-alt']"
+    append-icon=""
     >
-    <v-flex xs6>
-      <v-subheader v-if="item.heading">
-        {{ item.heading }}
-      </v-subheader>
-    </v-flex>
+    <template v-slot:activator>
+      <v-list-tile>
+        <v-list-tile-content>
+          <v-list-tile-title>
+            {{ item.heading }}
+          </v-list-tile-title>
+        </v-list-tile-content>
+      </v-list-tile>
+    </template>
 
-  </v-layout>
-  <v-divider
-  v-else-if="item.divider"
+    <template v-for="(child, i) in item.children">
+      <v-switch
+      :key="i"
+      v-model="child.selected"
+      :label="child.text"
+      @click="getSurveyData(child.text)"
+      ></v-switch>
+    </template>
+
+  </v-list-group>
+
+
+
+  <v-layout
+  v-else-if="item.heading"
   :key="i"
-  dark
-  class="my-3"
-  ></v-divider>
+  row
+  align-center
+  >
+  <v-flex xs6>
+    <v-subheader v-if="item.heading">
+      {{ item.heading }}
+    </v-subheader>
+  </v-flex>
+
+</v-layout>
+<v-divider
+v-else-if="item.divider"
+:key="i"
+dark
+class="my-3"
+></v-divider>
 
 <v-divider></v-divider>
 
-  <v-subheader>Survey Data</v-subheader>
-  <v-list-tile class="mb-3">
-    <v-select
-    v-if="surveyNames"
-    v-model="selectedSurvey"
-    :items="surveyNames"
-    menu-props="auto"
-    label="Select a survey"
-    hide-details
-    prepend-icon="map"
-    single-line
-    @input="getSurveyData($event)"
-    ></v-select>
-    <v-btn v-else @click="getSurveyNames">Load surveys</v-btn>
-  </v-list-tile>
+<v-subheader>Survey Data</v-subheader>
+<v-list-tile class="mb-3">
+  <v-select
+  v-if="surveyNames"
+  v-model="selectedSurvey"
+  :items="surveyNames"
+  menu-props="auto"
+  label="Select a survey"
+  hide-details
+  prepend-icon="map"
+  single-line
+  @input="getSurveyData($event)"
+  ></v-select>
+  <v-btn v-else @click="getSurveyNames">Load surveys</v-btn>
+</v-list-tile>
 
-  <template v-if="survey">
+<template v-if="survey">
   <v-divider></v-divider>
   <v-subheader>Survey key</v-subheader>
   <v-list-tile
@@ -162,6 +165,15 @@
   <v-list-tile-content>
     {{item.text}}
   </v-list-tile-content>
+</v-list-tile>
+<v-list-tile>
+  <v-select
+  v-model="language"
+  :items="languages"
+  menu-props="auto"
+  label="Select language"
+  single-line
+  ></v-select>
 </v-list-tile>
 </template>
 </v-list>
@@ -181,7 +193,7 @@ import API from '@/api.js'
 //var vectorTileStyling = require('../../public/mapStyle.js');
 //const vectorTileStyling = require('../../public/mapStyle.js');
 import axios from 'axios';
-
+import surveyQuestionsJson from './../assets/building_survey.json';
 
 export default {
   name: 'MapView',
@@ -195,8 +207,13 @@ export default {
     LPolygon : LPolygon,
     LGeoJson : LGeoJson
   },
+  $_veeValidate: {
+    validator: 'new'
+  },
   data () {
     return {
+      language: 'ar',
+      languages: ['ar','en'],
       url: 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
       zoom: 14,
       center: L.latLng(31.778837,35.243452),
@@ -221,18 +238,8 @@ export default {
       surveyData : [],
       surveyNames: false,
       surveyOpacity : 0.5,
-      editFeature : {
-        building_stories : null,
-        building_use: null,
-        building_materials : null,
-        building_year : null,
-      },
-      editFeatureDefaults : {
-        building_stories : null,
-        building_use: null,
-        building_materials : null,
-        building_year : null,
-      },
+      editFeature : {},
+      editFeatureDefaults : {},
       editDialog : false,
       editFeaturePath : "",
       editFeatureViewBox : "",
@@ -287,16 +294,19 @@ export default {
     protobufOpts() {
       const opacity = this.survey ? this.surveyOpacity : 1;
       return {
-      vectorTileLayerStyles: vectorTileStyling,
-      maxNativeZoom: 14,
-      opacity: opacity
+        vectorTileLayerStyles: vectorTileStyling,
+        maxNativeZoom: 14,
+        opacity: opacity
       };
     },
     tileOpts() {
       const opacity = this.survey ? this.surveyOpacity : 1;
       return {
-      opacity: opacity
+        opacity: opacity
       };
+    },
+    surveyQuestions () {
+      return this.translate(surveyQuestionsJson, 'label', this.language);
     }
   },
   methods: {
@@ -373,22 +383,35 @@ export default {
     },
     closeEditor(){
       this.editDialog = false;
+      console.log(this.editFeatureDefaults);
       Object.assign(this.editFeature, this.editFeatureDefaults);
       this.styleSurveyData();
+      this.$validator.reset()
       //console.log(this.surveyDataStyled);
     },
     saveEditor(){
-      let item = this.surveyData[this.editIndex];
-      const editInfo = {
-        lastEdited : {
-          time: new Date(),
-          user: this.$auth.getUser().email
+      this.$validator.validateAll().then((result) => {
+        if(!result){
+          alert('error');
+          return;
         }
-      }
-      Object.assign(item.feature.properties.survey, editInfo, this.editFeature);
-      //console.log('/building/'+item._id, item.feature.properties);
-      API.updateBuilding(item._id,item);
-      this.closeEditor();
+        alert('success');
+      }).catch(() => {
+      });
+
+        let item = this.surveyData[this.editIndex];
+        const editInfo = {
+          lastEdited : {
+            time: new Date(),
+            user: this.$auth.getUser().email
+          }
+        }
+
+        Object.assign(item.feature.properties.survey, editInfo, this.editFeature);
+        //console.log('/building/'+item._id, item.feature.properties);
+        API.updateBuilding(item._id,item);
+        this.closeEditor();
+
     },
     styleSurveyData () {
       const questions = Object.keys(this.editFeature).length;
@@ -417,13 +440,34 @@ export default {
           const layerPanel = document.getElementsByClassName('v-toolbar__extension')[0].style;
           console.log(layerPanel);
           layerPanel.overflow = 'auto';
-         }, 500);
+        }, 500);
       }
+    },
+    translate(obj,key,language) {
+
+      function selectLanguageKey (obj,key,language) {
+        return obj.reduce((acc,val) => {
+          if(typeof val === 'object') {
+            val[key] = val[key+'_'+language];
+            Object.keys(val).forEach(x=>{
+              if (Array.isArray(val[x])) selectLanguageKey(val[x], key,language)
+            });
+            acc.push(val);
+            return acc;
+          }
+        },[]);
+      }
+      return selectLanguageKey(obj,key,language);
     }
   },
   mounted(){
     if (window.screen.width < 800) this.updateBaseMap('basic',true);
     this.getSurveyNames();
+    this.editFeature = surveyQuestionsJson.reduce((acc,x)=>{
+      acc[x.name] = '';
+      return acc;
+    },{});
+    this.editFeatureDefaults = Object.assign({},this.editFeature);
   }
 };
 </script>

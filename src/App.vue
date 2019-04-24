@@ -95,10 +95,7 @@ v-else
 
     <v-layout   align-center  justify-end fill-height>
       <v-toolbar-side-icon @click="drawer = !drawer"></v-toolbar-side-icon>
-    <div class="ml-3 mr-5">
-      <div class="subheading">East Jerusalem </div>
-      <div class="subheading font-weight-light">Neighbourhood Map</div>
-    </div>
+      <img height="90%" src="./assets/jerusalem_map_logo.svg">
 
     <v-spacer></v-spacer>
 
@@ -142,7 +139,6 @@ v-else
 import MapView from './components/MapView.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
-
 
 export default {
   name:'App',

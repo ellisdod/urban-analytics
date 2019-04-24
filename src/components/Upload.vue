@@ -78,7 +78,7 @@ export default {
       formData.append('file', this.file);
       formData.append('file', this.file);
       console.log({ fileData: this.file});
-      API.create(formData, {
+      API.uploadData(formData, {
           'Content-Type': 'multipart/form-data'
         }
     ).then(function(){
