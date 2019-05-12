@@ -1,13 +1,13 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Indicators from './../components/Indicators.vue'
-import MapView from './../components/MapView.vue'
+import MapSurvey from './../components/MapSurvey.vue'
 import Upload from './../components/Upload.vue'
 import PostsManager from './../components/PostsManager.vue'
 import Auth from '@okta/okta-vue'
 
 const origin = window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin
-console.log('routing from',origin);
+console.log('routing from',{redirect_uri: window.location.origin + '/implicit/callback'});
 Vue.use(Auth, {
   client_id: '0oafa51gkZcH6RVN4356',
   issuer: 'https://dev-160658.okta.com/oauth2/default',
@@ -22,7 +22,7 @@ let router = new Router({
   routes: [
     {
       path: '/',
-      component: MapView
+      component: Indicators
     },
     {
       path: '/upload',
@@ -30,7 +30,7 @@ let router = new Router({
     },
     {
       path: '/map',
-      component: MapView
+      component: MapSurvey
     },
     {
       path: '/indicators',
