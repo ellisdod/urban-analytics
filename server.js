@@ -101,8 +101,8 @@ app.get('/building/:id', requireAuth, building_controller.building_details);
 app.get('/neighbourhood/:name', requireAuth, building_controller.building_neighbourhood);
 app.put('/building/:id', requireAuth, building_controller.building_update);
 app.get('/survey/buildings', requireAuth, building_controller.surveys);
-app.get('/indicators', indicators_controller.getAll);
-app.get('/areas', neighbourhood_controller.getAll);
+app.get('/indicators', requireAuth,indicators_controller.getAll);
+app.get('/areas', requireAuth,neighbourhood_controller.getAll);
 
 //app.use(express.static(__dirname));
 
