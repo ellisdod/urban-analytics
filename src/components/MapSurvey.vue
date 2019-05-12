@@ -1,5 +1,38 @@
 <template>
   <div>
+    <v-layout
+    row
+    align-center
+    justify-center
+    >
+    <v-dialog v-model="editDialog" persistent max-width="500">
+      <v-card>
+        <v-card-title>
+          <svg width="80vh" height="200" v-html="editFeaturePath"/>
+        </v-card-title>
+
+        <v-card-text>
+          <template v-for="item in surveyQuestions">
+            <v-text-field v-if="item.type=='text'" :name="item.name" :data-vv-name="item.name" :label="item.label" :v-validate="'required|numeric'" v-model="editFeature[item.name]" :error-messages="errors.collect(item.name)"/>
+            <v-textarea v-else-if="item.type=='textarea'" :name="item.name" :data-vv-name="item.name" :label="item.label" :v-validate="item.validation" v-model="editFeature[item.name]" :error-messages="errors.collect(item.name)"/>
+            <v-radio-group v-else-if="item.type=='radio'" :name="item.name" :data-vv-name="item.name" :label="item.label" v-model="editFeature[item.name]" :error-messages="errors.collect(item.name)">
+              <v-radio
+              v-for="n in item.options"
+              :label="n.label"
+              :value="n.value"
+              ></v-radio>
+            </v-radio-group>
+          </template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click="closeEditor">Cancel</v-btn>
+          <v-btn color="primary" @click="saveEditor">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-layout>
+
 
   <l-map
   :zoom="$store.state.map.zoom"
@@ -13,7 +46,7 @@
   <l-protobuf v-if="baseMap=='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
   <l-tile-layer v-if="baseMap=='basic'" url="http://{s}.tile.osm.org/{z}/{x}/{y}.png" attribution="&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors" :options="protobufOpts"/>
 
-  <l-geo-json
+    <l-geo-json
     v-if="survey"
     v-for="(item, i) in surveyData"
     :key="item._id"
@@ -26,6 +59,7 @@
   v-if="layers.areas"
   v-for="(item, i) in $store.state.geo.areas"
   :key="item._id"
+  :options="areasGeoJsonOptions"
   :geojson="item.feature"
   v-bind:options-style="getAreaStyle(item.feature.properties.id)"
   >
@@ -109,6 +143,45 @@
 
   <v-divider></v-divider>
 
+  <v-subheader>Survey Data</v-subheader>
+  <v-list-tile class="mb-3">
+    <v-select
+    v-if="surveyNames"
+    v-model="selectedSurvey"
+    :items="surveyNames"
+    menu-props="auto"
+    label="Select a survey"
+    hide-details
+    prepend-icon="map"
+    single-line
+    @input="getSurveyData($event)"
+    ></v-select>
+    <v-btn v-else @click="getSurveyNames">Load surveys</v-btn>
+  </v-list-tile>
+
+  <template v-if="survey">
+    <v-divider></v-divider>
+    <v-subheader>Survey key</v-subheader>
+    <v-list-tile
+    v-for="(item, i) in surveyKeyArray"
+    >
+    <v-list-tile-action>
+      <v-icon :color="item.color">label</v-icon>
+    </v-list-tile-action>
+    <v-list-tile-content>
+      {{item.text}}
+    </v-list-tile-content>
+  </v-list-tile>
+  <v-list-tile>
+    <v-select
+    v-model="language"
+    :items="languages"
+    menu-props="auto"
+    label="Select language"
+    single-line
+    ></v-select>
+  </v-list-tile>
+</template>
 </v-list>
 
 </v-menu>
@@ -166,6 +239,16 @@ export default {
           layer.on({
             click : function(e) {
               self.openEditor(e)
+            }
+          });
+        }
+      },
+      areasGeoJsonOptions:{
+        onEachFeature: (feature, layer) => {
+          var self = this;
+          layer.on({
+            click : function(e) {
+              self.selectArea(e)
             }
           });
         }
@@ -258,7 +341,7 @@ export default {
     },
     scale () {
       const sorted = this.$store.getters.dataByYear.map( x =>
-        x[this.$store.state.map.indicator.figure]
+        x[this.$store.state.map.indicator]
       ).sort((a,b)=> a-b);
       return {
         min : sorted[0],
@@ -268,20 +351,23 @@ export default {
   },
   methods: {
     getAreaStyle(id){
-      if (this.$store.state.neighbourhood === id) {
-        return {
-          weight: 2,
-          color: 'black',
-          opacity: 0.6,
-          fillColor: '#fff',
-          fillOpacity: 0,
-        }
-      } else {
-        return {
-          opacity: 0,
-          fillOpacity: 0
-        }
+      const f = chroma.scale(['yellow', 'red']);
+      const area = this.$store.getters.dataByYear.filter(x=>x.area_code === id)[0]
+      if (!area) return {
+        opacity: 0,
+        fillOpacity: 0
       }
+      const val = area[this.$store.state.map.indicator]
+      const hex = f( (val - this.scale.min)/this.scale.max )
+      console.log(id, this.scale,val,hex, (val - this.scale.min)/this.scale.max )
+      return {
+        weight: 1,
+        color: '#fff',
+        opacity: 0.9,
+        fillColor: hex,
+        fillOpacity: 0.6,
+      }
+
     },
     updateBaseMap(map,on) {
       console.log(map,on);
@@ -330,6 +416,95 @@ export default {
         this.center = this.editMapCenter =this.getCoordsPoint(x.data[0].feature)
       })
     },
+    selectArea(e) {
+      //console.log('selected',e.target.feature.properties.id);
+      this.$store.commit('UPDATE',{key:'neighbourhood',value:e.target.feature.properties.id});
+      this.$store.commit('UPDATE',{key:['map','zoom'],value:15});
+      //console.log('changed',this.$store.state.neighbourhood);
+      this.$store.commit('UPDATE',{
+        key:['map','center'],
+        value: {
+          lon:e.target.feature.properties.Centroids_x,
+          lat:e.target.feature.properties.Centroids_y
+        }
+      })
+      //console.log(this.center)
+    },
+    openEditor(e) {
+      //console.log(e.target.feature.properties);
+      //console.log(Object.keys(e.target.feature.properties.survey).length,Object.keys(this.editFeature).length);
+      this.surveyData.forEach((x,y) => {if (x._id == e.target.feature.properties.Id) this.editIndex = y});
+      Object.assign(this.editFeature, this.surveyData[this.editIndex].feature.properties.survey);
+      this.editDialog = true;
+      let svgPath = e.target._path.outerHTML;
+      const transformScale = 1/this.currentZoom*1/this.currentZoom*1/this.currentZoom*1/this.currentZoom*200000;
+      svgPath = svgPath.replace('>','transform="translate() scale('+transformScale+')">');
+      let pathStartCoords = svgPath.match(/d="M[\d\s-]*/)[0].slice(4).split(' ').map(x=>parseInt(x));
+      //this.editFeatureViewBox = [0,0,pathStartCoords[0]*1.5,pathStartCoords[1]*1.5].join(' ');
+      pathStartCoords[0] = -(pathStartCoords[0]*transformScale)+200;
+      pathStartCoords[1] = -(pathStartCoords[1]*transformScale)+50;
+      svgPath = svgPath.replace('translate()','translate('+pathStartCoords[0]+' '+pathStartCoords[1]+')')
+      svgPath = svgPath.replace(/stroke-width="\d"/, 'stroke-width="0.2"');
+      this.editFeaturePath = svgPath;
+      //console.log(svgPath);
+      //console.log(pathStartCoords);
+      //console.log(e.target.feature);
+      this.editMapFeature = e.target.feature;
+      this.editMapCenter = this.getCoordsPoint(e.target.feature)
+      //console.log(this.getCoordsPoint(e.target.feature))
+    },
+    closeEditor(){
+      this.editDialog = false;
+      console.log(this.editFeatureDefaults);
+      Object.assign(this.editFeature, this.editFeatureDefaults);
+      this.styleSurveyData();
+      this.$validator.reset()
+      //console.log(this.surveyDataStyled);
+    },
+    saveEditor(){
+      this.$validator.validateAll().then((result) => {
+        if(!result){
+          alert('error');
+          return;
+        }
+        alert('success');
+      }).catch(() => {
+      });
+
+      let item = this.surveyData[this.editIndex];
+      const editInfo = {
+        lastEdited : {
+          time: new Date(),
+          user: this.$auth.getUser().email
+        }
+      }
+
+      Object.assign(item.feature.properties.survey, editInfo, this.editFeature);
+      //console.log('/building/'+item._id, item.feature.properties);
+      API.updateBuilding(item._id,item);
+      this.closeEditor();
+
+    },
+    styleSurveyData () {
+      const questions = Object.keys(this.editFeature).length;
+      this.surveyData.forEach(x=>{
+        const vals = Object.values(x.feature.properties.survey).filter(x => x!= undefined && x!= null);
+        let fillColor = this.surveyKey.notStarted.color;
+        if (vals.length > questions) {
+          fillColor = this.surveyKey.complete.color;
+        } else if (x.feature.properties.survey.lastEdited) {
+          fillColor = this.surveyKey.inProgress.color;
+        }
+
+        x.feature.properties.style = {
+          weight: 2,
+          color: fillColor,
+          opacity: 0.9,
+          fillColor: fillColor,
+          fillOpacity: 0.5,
+        };
+      });
+    },
     toggleOptionsDialog() {
       this.optionsDialog = ! this.optionsDialog;
       if (this.optionsDialog) {
@@ -366,6 +541,27 @@ export default {
     },{});
     this.editFeatureDefaults = Object.assign({},this.editFeature);
 
+    this.$store.watch(
+      (state, getters) => state.neighbourhood,
+      (newValue, oldValue) => {
+        // Do whatever makes sense now
+        if (newValue === 9999) {
+          this.$store.commit('UPDATE',{key:['map','zoom'],value:12})
+          this.$store.commit('UPDATE',{key:['map','center'],value:this.$store.state.map.defaultCenter})
+        }
+      }
+    )
+
+    this.$store.watch(
+      (state, getters) => state.map.indicator,
+      (newValue, oldValue) => {
+        // Do whatever makes sense now
+        if (newValue === 9999) {
+          this.$store.commit('UPDATE',{key:['map','zoom'],value:12})
+          this.$store.commit('UPDATE',{key:['map','center'],value:this.$store.state.map.defaultCenter})
+        }
+      }
+    )
   }
 
 };

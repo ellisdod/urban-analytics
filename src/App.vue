@@ -88,46 +88,48 @@ v-else
 </template>
 </v-list>
 
+<v-btn @click.prevent="login" v-if="!activeUser" small>Log in</v-btn>
+
+<div v-else class="pt-1 mr-1">{{ activeUser.email }}</div>
+
+<v-menu min-width="300" offset-y v-if="activeUser">
+  <template v-slot:activator="{ on }">
+    <v-btn fab dark flat small outline v-on="on"><v-icon>person</v-icon></v-btn>
+  </template>
+
+  <v-card>
+    <v-list>
+      <v-list-tile avatar>
+        <v-list-tile-content>
+          <v-list-tile-title>{{ activeUser.name }}</v-list-tile-title>
+          <v-list-tile-sub-title>IPCC</v-list-tile-sub-title>
+        </v-list-tile-content>
+      </v-list-tile>
+    </v-list>
+
+    <v-divider></v-divider>
+
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn color="primary" flat @click="logout">Logout</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-menu>
 
 </v-navigation-drawer>
 
-<v-toolbar dark color="#1c222d" app absolute clipped-left clipped-right>
-
-    <v-layout   align-center  justify-end fill-height>
-      <v-toolbar-side-icon @click="drawer = !drawer"></v-toolbar-side-icon>
-      <img height="90%" src="./assets/jerusalem_map_logo.svg">
-
-    <v-spacer></v-spacer>
-
-    <v-btn @click.prevent="login" v-if="!activeUser" small>Log in</v-btn>
-
-      <div v-else class="pt-1 mr-1">{{ activeUser.email }}</div>
-
-    <v-menu min-width="300" offset-y v-if="activeUser">
-      <template v-slot:activator="{ on }">
-        <v-btn fab dark flat small outline v-on="on"><v-icon>person</v-icon></v-btn>
-      </template>
-
-      <v-card>
-        <v-list>
-          <v-list-tile avatar>
-            <v-list-tile-content>
-              <v-list-tile-title>{{ activeUser.name }}</v-list-tile-title>
-              <v-list-tile-sub-title>IPCC</v-list-tile-sub-title>
-            </v-list-tile-content>
-          </v-list-tile>
-        </v-list>
-
-        <v-divider></v-divider>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="logout">Logout</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-menu>
-      </v-layout>
-  </v-toolbar>
+<div id="navigation-btn">
+       <v-btn
+          v-model="fab"
+          color=""
+          light
+          flat
+          fab
+          @click="drawer = !drawer"
+        >
+          <v-icon>menu</v-icon>
+        </v-btn>
+</div>
 
 <v-content>
   <router-view style="height:100%;"></router-view>
@@ -137,6 +139,7 @@ v-else
 
 <script>
 import MapView from './components/MapView.vue'
+import MapNaviagtor from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
 
@@ -216,7 +219,8 @@ export default {
           { icon: 'settings', text: 'Settings' },
           { icon: 'chat_bubble', text: 'About' },
           { icon: 'help', text: 'Help' },
-          { icon: 'cloud_download', text: 'Export Data' }
+          { icon: 'cloud_download', text: 'Export Data' },
+          { icon: 'bar_chart', text: 'Urban Indicators', route: 'indicators' },
         ];
         const loggedInActions = [
           { divider : true},
@@ -281,6 +285,11 @@ export default {
 
   #layers-palette .v-list__group--active:before, .theme--light.v-list .v-list__group--active:after {
     background:none;
+  }
+
+  #navigation-btn {
+    position:fixed;
+    z-index:100;
   }
 
   </style>

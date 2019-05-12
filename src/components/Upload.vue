@@ -7,8 +7,6 @@
       <h1>Upload data</h1>
       <div class="dropbox">
 
-
-
         <input type="file" ref="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange()" class="input-file">
         <p v-if="isInitial">
           Drag your file(s) here to begin<br> or click to browse
@@ -19,6 +17,13 @@
           :items="dataTypes"
           label="Layer"
           v-model="dataType"
+        ></v-select>
+        <v-select
+          v-if="isSaving"
+          name="format"
+          :items="indicatorFormats"
+          label="Format"
+          v-model="indicatorFormat"
         ></v-select>
         <v-text-field v-if="isSaving" label="Location" v-model="neighbourhood"></v-text-field>
         <v-btn to="map" class="button">Back</v-btn>
@@ -48,7 +53,9 @@ export default {
       file : "",
       neighbourhood: "",
       dataType : 'Buildings',
-      dataTypes : ['Buildings','Neighbourhood Boundary']
+      dataTypes : ['Buildings','Neighbourhoods','Indicators'],
+      indicatorFormats : ['geojson','json','csv'],
+      indicatorFormat : null
     }
   },
   computed: {
@@ -70,15 +77,16 @@ export default {
       this.currentStatus = 1;
       this.file = this.$refs.file.files[0];
       this.neighbourhood = this.file.name.split('.')[0];
+      this.indicatorFormat = this.file.name.split('.')[1];
     },
     processForm () {
       let formData = new FormData();
       formData.append('neighbourhood', this.neighbourhood);
       formData.append('layer', this.dataType);
       formData.append('file', this.file);
-      formData.append('file', this.file);
+      formData.append('format', this.indicatorFormat);
       console.log({ fileData: this.file});
-      API.uploadData(formData, {
+      API.uploadData(formData, this.dataType , {
           'Content-Type': 'multipart/form-data'
         }
     ).then(function(){

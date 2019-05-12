@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Hello from './../components/Hello.vue'
+import Indicators from './../components/Indicators.vue'
 import MapView from './../components/MapView.vue'
 import Upload from './../components/Upload.vue'
 import PostsManager from './../components/PostsManager.vue'
@@ -31,6 +31,10 @@ let router = new Router({
     {
       path: '/map',
       component: MapView
+    },
+    {
+      path: '/indicators',
+      component: Indicators
     },
     {
       path: '/implicit/callback',
