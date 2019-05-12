@@ -6,8 +6,8 @@ import Upload from './../components/Upload.vue'
 import PostsManager from './../components/PostsManager.vue'
 import Auth from '@okta/okta-vue'
 
-const origin = window.location.origin == 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin
-console.log(origin);
+const origin = window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin
+console.log('routing from',origin);
 Vue.use(Auth, {
   client_id: '0oafa51gkZcH6RVN4356',
   issuer: 'https://dev-160658.okta.com/oauth2/default',
