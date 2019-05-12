@@ -4,7 +4,7 @@ import axios from 'axios'
 //const port = process.env.PORT || 8080;
 
 const client = axios.create({
-  baseURL: window.location.origin == 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin, //window.location.origin //http://localhost:8081/
+  baseURL: window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin, //window.location.origin //http://localhost:8081/
   json: true
 })
 
@@ -12,14 +12,14 @@ export default {
   async execute (method, resource, data, headers) {
     headers = headers || {};
     // inject the accessToken for each request
-    let accessToken = await Vue.prototype.$auth.getAccessToken()
+    //let accessToken = await Vue.prototype.$auth.getAccessToken()
     return client({
       method,
       url: resource,
       data,
-      headers: Object.assign({
-        Authorization: `Bearer ${accessToken}`
-      }, headers)
+      //headers: Object.assign({
+      //  Authorization: `Bearer ${accessToken}`
+      //}, headers)
     })
   },
   getSurveyData (neighbourhood) {
