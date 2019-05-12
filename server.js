@@ -63,6 +63,8 @@ if (process.env.NODE_ENV != 'production') {
   }));
   app.use(webpackHotMiddleware(compiler));
   */
+
+  /*
   const cors = require('cors');
   app.use(cors());
   app.use(function(req, res, next) {
@@ -71,11 +73,13 @@ if (process.env.NODE_ENV != 'production') {
     next();
 });
 
+*/
+
 }
 
 app.use(bodyParser.json())
 
-if (process.env.NODE_ENV == 'production') {
+if (process.env.NODE_ENV === 'production') {
   const staticFileMiddleware = express.static(__dirname + "/dist");
   app.use(staticFileMiddleware);
   app.use(history({
