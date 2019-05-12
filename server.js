@@ -48,7 +48,7 @@ function requireAuth(req, res, next) {
 //app.use(requireAuth);
 let app = express()
 
-if (process.env.NODE_ENV != 'production') {
+if (process.env.NODE_ENV !== 'production') {
   /*
 
   const webpack = require('webpack')
@@ -64,7 +64,7 @@ if (process.env.NODE_ENV != 'production') {
   app.use(webpackHotMiddleware(compiler));
   */
 
-  /*
+
   const cors = require('cors');
   app.use(cors());
   app.use(function(req, res, next) {
@@ -73,7 +73,6 @@ if (process.env.NODE_ENV != 'production') {
     next();
 });
 
-*/
 
 }
 
@@ -106,8 +105,9 @@ app.get('/indicators', indicators_controller.getAll);
 app.get('/areas', neighbourhood_controller.getAll);
 
 //app.use(express.static(__dirname));
-
+/*
 app.listen(process.env.PORT || 8081, () => {
   console.log({ ENV: process.env.NODE_ENV, ID: process.env.VUE_APP_OKTA_CLIENT_ID, PORT: process.env.PORT });
   console.log('running on port ' + (process.env.PORT || 8081));
 });
+*/
