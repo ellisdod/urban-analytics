@@ -172,3 +172,27 @@ td.key-figures {
 }
 
 
+
+#main-map {
+  z-index:0;
+  background-color:#eee;
+}
+#map-menu {
+  width:300px;
+  z-index:1;
+  position:absolute;
+  top:12px;
+  right:12px;
+  text-align:right;
+}
+.v-toolbar__content, .v-toolbar__extension {
+  align-items:start !important;
+}
+.highlighted {
+  background-color:#e8e8e8;
+}
+.v-label {
+  font-size: 13px;
+}
+
+
