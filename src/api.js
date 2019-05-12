@@ -10,6 +10,7 @@ const client = axios.create({
 
 export default {
   async execute (method, resource, data, headers) {
+    console.log('making request from:', window.location.origin)
     headers = headers || {};
     // inject the accessToken for each request
     //let accessToken = await Vue.prototype.$auth.getAccessToken()
