@@ -3,7 +3,6 @@ const GeoJSON = require('mongoose-geojson-schema');
 
 var TestSchema = new mongoose.Schema({
   title: String,
-  test: {},
   point: mongoose.Schema.Types.Point,
   multipoint: mongoose.Schema.Types.MultiPoint,
   linestring: mongoose.Schema.Types.LineString,
@@ -14,10 +13,10 @@ var TestSchema = new mongoose.Schema({
   geometrycollection: mongoose.Schema.Types.GeometryCollection,
   feature: mongoose.Schema.Types.Feature,
   featurecollection: mongoose.Schema.Types.FeatureCollection
-}, { typeKey: '$type', collection: 'echoes' });
+}, { typeKey: '$type'});
 
-module.exports = mongoose.model('GeoJSON',TestSchema);
-
+exports.buildings = mongoose.model('Building',TestSchema, 'buildings');
+exports.neighbourhoods = mongoose.model('Neighbourhood',TestSchema, 'neighbourhoods');
 /*
 const polygonSchema = new mongoose.Schema({
   type: {

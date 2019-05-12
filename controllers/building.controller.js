@@ -1,6 +1,6 @@
 //https://codeburst.io/writing-a-crud-app-with-node-js-and-mongodb-e0827cbbdafb
 
-const GeoJSON = require('../models/building.model');
+const GeoJSON = require('../models/geojson.model');
 const formidable = require('formidable');
 const fs = require('fs');
 const mongoose = require('mongoose');
@@ -47,7 +47,7 @@ exports.building_create = function (req, res, next) {
         */
         (async function(){
 
-        const insertMany = await GeoJSON.insertMany(features.Feature);
+        const insertMany = await GeoJSON.building.insertMany(features.Feature);
 
         //console.log(JSON.stringify(insertMany,'','\t'));
 
@@ -59,7 +59,7 @@ exports.building_create = function (req, res, next) {
   };
 
   exports.building_details = function (req, res) {
-    GeoJSON.findById(req.params.id, function (err, Building) {
+    GeoJSON.building.findById(req.params.id, function (err, Building) {
       if (err) return next(err);
       res.send(Building);
     })
@@ -67,7 +67,7 @@ exports.building_create = function (req, res, next) {
 
   exports.building_neighbourhood = function (req, res) {
     console.log(req.params.name);
-    GeoJSON.find({'feature.properties.neighbourhood':req.params.name}, function (err, x) {
+    GeoJSON.building.find({'feature.properties.neighbourhood':req.params.name}, function (err, x) {
       if (err) return next(err);
       res.send(x);
     })
@@ -76,14 +76,14 @@ exports.building_create = function (req, res, next) {
   exports.building_update = function (req, res, next) {
     console.log(req);
     console.log(req.body);
-    GeoJSON.findOneAndUpdate({ _id :req.params.id }, {$set: req.body}, function (err, Building) {
+    GeoJSON.building.findOneAndUpdate({ _id :req.params.id }, {$set: req.body}, function (err, Building) {
       if (err) return next(err);
       res.send('Building udpated.');
     });
   };
 
  exports.surveys = function (req, res, next) {
-   GeoJSON.distinct('feature.properties.neighbourhood', function (err, x) {
+   GeoJSON.building.distinct('feature.properties.neighbourhood', function (err, x) {
      if (err) return next(err);
      res.send(x);
    });
