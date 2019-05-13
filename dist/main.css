@@ -114,8 +114,14 @@ td.key-figures {
   font-size:20px;
   vertical-align: top;
 }
+.indicator-hover {
+  border-left: 3px solid #fff0;
+  padding-left:10px;
+  margin-left:-10px;
+}
 .indicator-hover:hover {
-  background-color:#f3f3f3;
+  border-left: 3px solid #000;
+  background-color: #fff;
   cursor:pointer;
 }
 
@@ -147,23 +153,24 @@ td.key-figures {
 #map-panel-main,  #map-panel-navigator{
   position:fixed;
 }
-#indicators-header,#indicators-content {
-  padding: 40px;
-  padding-left:60px;
+#indicators-header,.indicators-content {
   width:100%;
   background-color:inherit;
   margin:0;
 }
 #indicators-header {
-  padding-top:24px;
   border-bottom: 1px solid #e3e3e3;
   padding-bottom:0;
 }
-#indicators-content {
+.indicators-content {
+  padding-top:0;
+  background-color:rgb(250, 250, 250);
+  flex:2;
+}
+.indicators-content-wrapper {
   overflow-x:hidden;
   overflow-y:auto;
-  height:80%;
-  padding-top:0;
+  height:70vh;
 }
 #indicators-panel {
   position:fixed;

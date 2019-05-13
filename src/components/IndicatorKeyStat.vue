@@ -2,7 +2,8 @@
   <div v-if="noChart" class="py-2">
     <div class="title">{{name}}</div>
     <div>
-      <span class="display-2">{{$store.getters.dataByHoodYear[figure]}}</span>
+      <span v-if="year" class="display-2">{{getDataByYear[figure]}}</span>
+      <span v-else class="display-2">{{$store.getters.dataByHoodYear[figure]}}</span>
       <span class="display-1 ml-1">{{unit}}</span>
     </div>
     <div class="caption">{{description}}</div>
@@ -11,7 +12,8 @@
     <div>
       <div class="title">{{name}}</div>
       <div style="overflow-x: visible; display: inline-block; white-space: nowrap;">
-        <span class="display-1">{{$store.getters.dataByHoodYear[figure]}}</span>
+        <span v-if="year" class="display-1">{{getDataByYear[figure]}}</span>
+        <span v-else class="display-1">{{$store.getters.dataByHoodYear[figure]}}</span>
         <span v-if="unit" class="headline ml-1">{{unit}}</span>
         <v-tooltip bottom>
           <template v-slot:activator="{ on }">
@@ -72,7 +74,7 @@ export default {
   components: {
     BarVertical
   },
-  props: ['name','figure','description','unit','noChart','small'],
+  props: ['name','figure','description','unit','noChart','small','year'],
   methods : {
     prepBarChartData(key,neighbourhood) {
       console.log(this.$store.getters.dataByYear)
@@ -94,6 +96,11 @@ export default {
     updateIndicator(figure) {
       console.log(figure);
       this.$store.commit("UPDATE",{key:['navigator','indicator'],value:figure})
+    }
+  },
+  computed : {
+    getDataByYear () {
+      return $store.getters.dataByNeighbourhood.filter(x=>x.year===this.$props.year)[0]
     }
   }
 }
@@ -123,8 +130,14 @@ export default {
   font-size:20px;
   vertical-align: top;
 }
+.indicator-hover {
+  border-left: 3px solid #fff0;
+  padding-left:10px;
+  margin-left:-10px;
+}
 .indicator-hover:hover {
-  background-color:#f3f3f3;
+  border-left: 3px solid #000;
+  background-color: #fff;
   cursor:pointer;
 }
 </style>

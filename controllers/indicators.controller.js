@@ -52,7 +52,7 @@ exports.create = function (req, res, next) {
   exports.getAll = function (req, res) {
     indicators.find({}, function (err, x) {
       if (err) return next(err);
-      console.log(x);
+      //console.log(x);
       res.send(x);
     })
   };

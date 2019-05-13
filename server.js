@@ -4,6 +4,7 @@ const OktaJwtVerifier = require('@okta/jwt-verifier')
 const building_controller = require('./controllers/building.controller')
 const neighbourhood_controller = require('./controllers/neighbourhoods.controller')
 const indicators_controller = require('./controllers/indicators.controller')
+const facilities_controller = require('./controllers/facilities.controller')
 const formidableMiddleware = require('express-formidable')
 const mongoose = require('mongoose');
 const path = require('path');
@@ -96,12 +97,14 @@ app.get('/test', requireAuth, building_controller.test);
 app.post('/create/Buildings', requireAuth, formidableMiddleware(), building_controller.building_create);
 app.post('/create/Neighbourhoods', requireAuth, formidableMiddleware(), neighbourhood_controller.create);
 app.post('/create/Indicators', requireAuth, formidableMiddleware(), indicators_controller.create);
+app.post('/create/Facilities', requireAuth, formidableMiddleware(), facilities_controller.create);
 app.get('/building/:id', requireAuth, building_controller.building_details);
 app.get('/neighbourhood/:name', requireAuth, building_controller.building_neighbourhood);
 app.put('/building/:id', requireAuth, building_controller.building_update);
 app.get('/survey/buildings', requireAuth, building_controller.surveys);
 app.get('/indicators',indicators_controller.getAll);
 app.get('/areas',neighbourhood_controller.getAll);
+app.get('/facilities',facilities_controller.getAll);
 
 //app.use(express.static(__dirname));
 

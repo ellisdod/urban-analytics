@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 
 
 exports.create = function (req, res, next) {
-   //console.log(req.fields);
+   console.log(req.fields);
   //console.log(req.files.file);
 
     fs.readFile(req.files.file.path,
@@ -25,7 +25,7 @@ exports.create = function (req, res, next) {
 
         (async function(){
 
-        const insertMany = await geojson.neighbourhoods.insertMany(features.Feature);
+        const insertMany = await geojson.facilities.insertMany(features.Feature);
 
         res.status(200).send('Ok');
         })();
@@ -36,14 +36,14 @@ exports.create = function (req, res, next) {
 
   exports.getAll = function (req, res) {
     console.log(req.params.name);
-    geojson.neighbourhoods.find({}, function (err, x) {
+    geojson.facilities.find({}, function (err, x) {
       if (err) return next(err);
       res.send(x);
     })
   };
 
  exports.getNeighbourhood = function (req, res, next) {
-   geojson.neighbourhoods.distinct('feature.properties.name', function (err, x) {
+   geojson.facilities.distinct('feature.properties.name', function (err, x) {
      if (err) return next(err);
      res.send(x);
    });

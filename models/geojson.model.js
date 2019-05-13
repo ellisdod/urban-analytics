@@ -17,6 +17,7 @@ var TestSchema = new mongoose.Schema({
 
 exports.buildings = mongoose.model('Building',TestSchema, 'buildings');
 exports.neighbourhoods = mongoose.model('Neighbourhood',TestSchema, 'neighbourhoods');
+exports.facilities = mongoose.model('Facility',TestSchema, 'facilities');
 /*
 const polygonSchema = new mongoose.Schema({
   type: {
