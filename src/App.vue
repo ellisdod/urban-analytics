@@ -120,7 +120,6 @@ v-else
 
 <div id="navigation-btn">
        <v-btn
-          v-model="fab"
           color=""
           light
           flat

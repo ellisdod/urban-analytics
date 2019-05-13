@@ -8,7 +8,7 @@
       <v-flex xs12>
         <v-menu max-height="300px" offset-y>
           <template v-slot:activator="{ on }">
-            <v-btn class="btn-title display-1 px-0 mx-0" flat v-on="on">
+            <v-btn v-if="$store.getters.dataByNeighbourhood" class="btn-title display-1 px-0 mx-0" flat v-on="on">
               {{ $store.getters.dataByNeighbourhood[0].name }}
             </v-btn>
           </template>

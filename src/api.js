@@ -21,7 +21,8 @@ export default {
       url: resource,
       data,
       headers: Object.assign({
-        Authorization: `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
       }, headers)
     })
   },

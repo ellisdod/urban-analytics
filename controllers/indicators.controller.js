@@ -9,8 +9,8 @@ const Papa = require('papaparse');
 
 exports.create = function (req, res, next) {
   //console.log(req.fields);
-  console.log('fuking do soemthing');
-  console.log(req.fields.format === 'csv');
+  //console.log('fuking do soemthing');
+  //console.log(req.fields.format === 'csv');
   //console.log(req.files.file);
 
   fs.readFile(req.files.file.path,'utf8',
