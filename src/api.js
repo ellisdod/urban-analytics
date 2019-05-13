@@ -6,8 +6,8 @@ import axios from 'axios'
 const origin = window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin
 
 const client = axios.create({
-  baseURL: origin, //window.location.origin //http://localhost:8081/
-  json: true
+  baseURL: window.location.origin, //window.location.origin //http://localhost:8081/
+  //json: true
 })
 
 export default {
