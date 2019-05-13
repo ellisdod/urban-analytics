@@ -4,6 +4,7 @@
     <v-container id="indicators-header">
       <span class="title text-uppercase grey--text">East Jerusalem</span>
       <span class="title text-uppercase">&nbsp;| URBAN INDICATORS</span>
+      <v-btn @click="testServer()">test</v-btn>
     <v-layout row wrap pb-4 pt-2>
       <v-flex xs12>
         <v-menu max-height="300px" offset-y>
@@ -101,6 +102,7 @@ import {indicators} from '../plugins/indicators.js'
 import {translate} from '../plugins/translate.js'
 import MapView from 'components/MapView.vue'
 import MapNavigator from 'components/MapNavigator.vue'
+import axios from 'axios'
 
 export default {
   components: {
@@ -131,6 +133,14 @@ export default {
     log(data) {
       console.log('log',data);
       return data;
+    },
+    testServer(){
+      // Make a request for a user with a given ID
+      axios.get('/indicators')
+       .then(function (response) {
+        // handle success
+        console.log(response);
+       })
     }
   },
   mounted () {
