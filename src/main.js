@@ -57,6 +57,10 @@ const store = new Vuex.Store({
         state.geo.areas = x.data;
       })
       api.getIndicators().then(x=> {
+        if(!x.data) {
+          console.log('cannot retrieve in')
+          return null;
+        }
         const indicators = x.data.map(i=>{
           i.dependency_youth  = ((i.age_0_4 + i.age_5_14 + i.age_15_24) / i.pop_year_end *100).toFixed(1)
           i.growth_total  = (i.pop_growth_total / i.pop_year_end *100).toFixed(1)
@@ -131,11 +135,11 @@ const store = new Vuex.Store({
 
     },
     dataByHoodYear : (state, getters) => {
-      if (!state.neighbourhood) return {}
+      if (!state.indicators) return {}
       return state.indicators.filter(x=>x.area_code === state.neighbourhood && x.year === state.year)[0] || getters.dataByCityYear
     },
     dataByCityYear : state => {
-      if (!state.neighbourhood) return {}
+      if (!state.cityIndicators) return {}
       return state.cityIndicators.filter(x=>x.year===state.year)[0]
     }
   }

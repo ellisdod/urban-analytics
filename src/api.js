@@ -7,7 +7,7 @@ const origin = window.location.origin === 'http://localhost:8080' ? 'http://loca
 
 const client = axios.create({
   baseURL: window.location.origin, //window.location.origin //http://localhost:8081/
-  //json: true
+  json: true
 })
 
 export default {
