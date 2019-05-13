@@ -14,6 +14,7 @@ export default {
   async execute (method, resource, data, headers) {
     console.log('making request from:', origin)
     headers = headers || {};
+    data = data || {};
     // inject the accessToken for each request
     let accessToken = await Vue.prototype.$auth.getAccessToken()
     return client({
