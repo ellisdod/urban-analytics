@@ -67,7 +67,7 @@
 </l-map>
 
 <div id="map-menu">
-  <v-menu min-width="300px" flat>
+  <v-menu v-bind:close-on-content-click="false" min-width="300px" flat>
     <v-spacer></v-spacer>
     <template v-slot:activator="{ on }">
       <v-btn icon v-on="on">

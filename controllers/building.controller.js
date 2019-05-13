@@ -47,7 +47,7 @@ exports.building_create = function (req, res, next) {
         */
         (async function(){
 
-        const insertMany = await GeoJSON.building.insertMany(features.Feature);
+        const insertMany = await GeoJSON.buildings.insertMany(features.Feature);
 
         //console.log(JSON.stringify(insertMany,'','\t'));
 
@@ -59,7 +59,7 @@ exports.building_create = function (req, res, next) {
   };
 
   exports.building_details = function (req, res) {
-    GeoJSON.building.findById(req.params.id, function (err, Building) {
+    GeoJSON.buildings.findById(req.params.id, function (err, Building) {
       if (err) return next(err);
       res.send(Building);
     })
@@ -67,7 +67,7 @@ exports.building_create = function (req, res, next) {
 
   exports.building_neighbourhood = function (req, res) {
     console.log(req.params.name);
-    GeoJSON.building.find({'feature.properties.neighbourhood':req.params.name}, function (err, x) {
+    GeoJSON.buildings.find({'feature.properties.neighbourhood':req.params.name}, function (err, x) {
       if (err) return next(err);
       res.send(x);
     })
@@ -76,14 +76,14 @@ exports.building_create = function (req, res, next) {
   exports.building_update = function (req, res, next) {
     console.log(req);
     console.log(req.body);
-    GeoJSON.building.findOneAndUpdate({ _id :req.params.id }, {$set: req.body}, function (err, Building) {
+    GeoJSON.buildings.findOneAndUpdate({ _id :req.params.id }, {$set: req.body}, function (err, Building) {
       if (err) return next(err);
       res.send('Building udpated.');
     });
   };
 
  exports.surveys = function (req, res, next) {
-   GeoJSON.building.distinct('feature.properties.neighbourhood', function (err, x) {
+   GeoJSON.buildings.distinct('feature.properties.neighbourhood', function (err, x) {
      if (err) return next(err);
      res.send(x);
    });
