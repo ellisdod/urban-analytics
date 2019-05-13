@@ -28,7 +28,7 @@ const store = new Vuex.Store({
   state : {
     indicators: null,
     cityIndicators: null,
-    neighbourhood:2511,
+    neighbourhood:2112,
     year:2016,
     language:'en',
     languages: ['ar','en'],
@@ -48,7 +48,8 @@ const store = new Vuex.Store({
       }
     },
     geo : {
-      areas : []
+      areas : [],
+      facilities : []
     }
   },
   mutations : {
@@ -78,9 +79,40 @@ const store = new Vuex.Store({
         })
         state.indicators = indicators.filter(x=> x.area_code !== 9999);
         state.cityIndicators = indicators.filter(x=> x.area_code === 9999);
-        console.log(state.indicators);
-        console.log('cityIndicators',state.cityIndicators);
+        //console.log(state.indicators);
+        //console.log('cityIndicators',state.cityIndicators);
+        api.getFacilities().then(x=>{
+          state.geo.facilities = x.data;
+          console.log('facilities',x.data)
+          let edu = x.data.filter(x=>x.feature.properties.Use === 'Educational')
+          edu = edu.reduce((acc,x)=>{
+            if (!x.feature.properties.mygeodat_5) return acc
+            const loc = x.feature.properties.mygeodat_5.toString()
+            //console.log(loc)
+            const prop = x.feature.properties
+            acc[loc] = acc[loc] || {};
+            //console.log(acc[loc])
+            const keys = ['Sort1','Sort2','Gender','no_student','no_females','no_classes','Type']
+            acc[loc].types = {};
+            keys.forEach(function(i){
+              if (typeof prop[i] === 'string') {
+                acc[loc].types[prop[i]] = !acc[loc].types[prop[i]] ? 1 : acc[loc].types[prop[i]] + 1
+              } else {
+                acc[loc][i] = !acc[loc][i] ? prop[i] : acc[loc][i] + prop[i]
+              }
+            })
+            return acc;
+          },{})
+          state.indicators.forEach( (x,y) => {
+            if (x.year===2016 && x.area_code) {
+              state.indicators[y] = Object.assign({},x,edu[x.area_code.toString()])
+              console.log('edu',edu[x.area_code.toString()])
+            }
+          })
+          console.log('ind',state.indicators.filter(x=>x.year===2016))
+        })
       });
+
     },
     UPDATE (state, obj) {
       //console.log(obj.value)

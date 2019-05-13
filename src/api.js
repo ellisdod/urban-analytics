@@ -1,12 +1,13 @@
 import Vue from 'vue'
 import axios from 'axios'
+require('axios-debug-log')
 
 //const port = process.env.PORT || 8080;
 
 const origin = window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin
 
 const client = axios.create({
-  baseURL: window.location.origin, //window.location.origin //http://localhost:8081/
+  baseURL: origin, //window.location.origin //http://localhost:8081/
   json: true
 })
 
@@ -23,7 +24,7 @@ export default {
       data,
       headers: Object.assign({
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        //'Content-Type': 'application/json'
       }, headers)
     })
   },
@@ -44,5 +45,8 @@ export default {
   },
   getAreas () {
     return this.execute('get', `/areas`)
+  },
+  getFacilities () {
+    return this.execute('get', `/facilities`)
   },
 }

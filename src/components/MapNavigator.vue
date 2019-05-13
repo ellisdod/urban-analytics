@@ -22,7 +22,7 @@
 
   <table id="navigator-key">
     <tr>
-      <td colspan="2" height="40px;" class="title">
+      <td colspan="2" height="40px;" class="title grey--text text--darken-2">
         {{$store.state.navigator.indicator.name}}
       </td>
     </tr>

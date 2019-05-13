@@ -53,7 +53,7 @@ export default {
       file : "",
       neighbourhood: "",
       dataType : 'Buildings',
-      dataTypes : ['Buildings','Neighbourhoods','Indicators'],
+      dataTypes : ['Buildings','Neighbourhoods','Indicators','Facilities'],
       indicatorFormats : ['geojson','json','csv'],
       indicatorFormat : null
     }

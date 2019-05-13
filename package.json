@@ -20,6 +20,7 @@
     "@okta/jwt-verifier": "0.0.14",
     "@okta/okta-vue": "1.1.0",
     "axios": "0.18.0",
+    "axios-debug-log": "0.4.0",
     "body-parser": "1.18.3",
     "chart.js": "2.8.0",
     "chroma-js": "2.0.3",
