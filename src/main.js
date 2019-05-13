@@ -135,6 +135,7 @@ const store = new Vuex.Store({
       return state.indicators.filter(x=>x.area_code === state.neighbourhood && x.year === state.year)[0] || getters.dataByCityYear
     },
     dataByCityYear : state => {
+      if (!state.neighbourhood) return {}
       return state.cityIndicators.filter(x=>x.year===state.year)[0]
     }
   }

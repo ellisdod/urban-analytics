@@ -147,7 +147,7 @@ export default {
     this.$store.commit('GET_INDICATORS');
     //this.indicators = indicators(this.$store);
     //console.log(this.indicators)
-    console.log('databyneigh', this.$store.getters.dataByNeighbourhood())
+    console.log('databyneigh', this.$store.getters.dataByNeighbourhood)
 
   }
 }
