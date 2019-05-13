@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 
 var history = require('connect-history-api-fallback');
-//require('dotenv').config();
+require('dotenv').config();
 
 
 const oktaJwtVerifier = new OktaJwtVerifier({
@@ -71,8 +71,7 @@ if (process.env.NODE_ENV !== 'production') {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
-});
-
+  });
 
 }
 
