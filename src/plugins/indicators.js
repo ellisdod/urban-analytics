@@ -4,6 +4,7 @@ export function indicators(store) {
     {
       name_en : "Demographics",
       name_ar : "",
+      value : 'demographics',
       items : [
         {
           keystat:true,
@@ -95,6 +96,7 @@ export function indicators(store) {
     {
       name_en : "Housing",
       name_ar : "",
+      value : 'housing',
       items:[
         {
           keystat:true,
@@ -167,55 +169,77 @@ export function indicators(store) {
     {
       name_en : "Education",
       name_ar : "",
+      value : 'education',
       items:[
         {
           keystat:true,
+          year:2015,
           figure : "no_student",
           name_en : "Students",
           name_ar : "",
-          description_en : "",
+          description_en : "2015",
           description_ar : "",
           unit:""
         },
         {
           keystat:true,
+          year:2015,
           figure : "schools",
           name_en : "Schools",
           name_ar : "",
-          description_en : "",
+          description_en : "2015",
           description_ar : "",
           unit:""
         },
         {
           keystat:true,
+          year:2015,
           figure : "no_classes",
           name_en : "Classes",
           name_ar : "",
-          description_en : "",
+          description_en : "2015",
           description_ar : "",
           unit:""
+        },
+        {
+          datatable:true,
+          name_en:"Schools",
+          name_ar:"",
+          data: store.getters.educationalByHood,
+          headers : [
+                     {text:"Type",value:'Sort2'},
+                     {text:"Management",value:'Type'},
+                     {text:"Gender",value:'Gender'},
+                     {text:"Students",value:'no_student'},
+                     {text:"Classes",value:'no_classes'}
+                    ],
+          description_en:"",
+          description_ar:""
         }
       ]
     },
     {
       name_en : "Public Facilities",
       name_ar : "",
+      value : 'public_facilities',
       items:[
         {
           keystat:true,
+          year:2015,
           figure : "sports_facilities",
           name_en : "Sports Facilities",
           name_ar : "",
-          description_en : "",
+          description_en : "2015",
           description_ar : "",
           unit:""
         },
         {
           keystat:true,
+          year:2015,
           figure : "hospitals",
           name_en : "Hospitals",
           name_ar : "",
-          description_en : "",
+          description_en : "2015",
           description_ar : "",
           unit:""
         }
@@ -224,6 +248,7 @@ export function indicators(store) {
     {
       name_en : "Planning",
       name_ar : "",
+      value : 'planning',
       items:[
         {
           keystat:true,
@@ -231,7 +256,7 @@ export function indicators(store) {
           figure : "total_area",
           name_en : "Total Area",
           name_ar : "",
-          description_en : "",
+          description_en : "2013",
           description_ar : "",
           unit:"dunum"
         },
@@ -241,7 +266,7 @@ export function indicators(store) {
           figure : "residential_dunum",
           name_en : "Planned Residential",
           name_ar : "",
-          description_en : "",
+          description_en : "2013",
           description_ar : "",
           unit:"dunum"
         },
@@ -251,7 +276,7 @@ export function indicators(store) {
           figure : "residenial_commercial",
           name_en : "Planned Residential/Commercial",
           name_ar : "",
-          description_en : "",
+          description_en : "2013",
           description_ar : "",
           unit:"dunum"
         },
@@ -261,7 +286,7 @@ export function indicators(store) {
           figure : "open_spaces",
           name_en : "Planned Open Space",
           name_ar : "",
-          description_en : "",
+          description_en : "2013",
           description_ar : "",
           unit:"dunum"
         },
@@ -271,7 +296,7 @@ export function indicators(store) {
           figure : "pub_buildings",
           name_en : "Planned Public Facility",
           name_ar : "",
-          description_en : "",
+          description_en : "2013",
           description_ar : "",
           unit:"dunum"
         }

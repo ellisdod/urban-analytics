@@ -1,33 +1,41 @@
 <template>
   <div>
 
-  <l-map
-  :zoom="$store.state.map.zoom"
-  :center="$store.state.map.center"
-  :options="mapOptions"
-  @update:center="centerUpdate"
-  @update:zoom="zoomUpdate"
-  id="main-map"
-  >
+    <l-map
+    :zoom="$store.state.map.zoom"
+    :center="$store.state.map.center"
+    :options="mapOptions"
+    @update:center="centerUpdate"
+    @update:zoom="zoomUpdate"
+    id="main-map"
+    >
 
-  <l-protobuf v-if="baseMap=='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
-  <l-tile-layer v-if="baseMap=='basic'" url="http://{s}.tile.osm.org/{z}/{x}/{y}.png" attribution="&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors" :options="protobufOpts"/>
+    <l-protobuf v-if="baseMap=='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
+    <l-tile-layer v-if="baseMap=='basic'" url="http://{s}.tile.osm.org/{z}/{x}/{y}.png" attribution="&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors" :options="protobufOpts"/>
 
-  <l-geo-json
-    v-if="survey"
-    v-for="(item, i) in surveyData"
+      <l-geo-json
+      v-if="survey"
+      v-for="(item, i) in surveyData"
+      :key="item._id"
+      :options="geoJsonOptions"
+      :options-style="item.feature.properties.style"
+      :geojson="item.feature"
+      >
+    </l-geo-json>
+    <l-geo-json
+    v-if="layers.areas"
+    v-for="(item, i) in $store.state.geo.areas"
     :key="item._id"
-    :options="geoJsonOptions"
-    :options-style="item.feature.properties.style"
     :geojson="item.feature"
+    v-bind:options-style="getAreaStyle(item.feature.properties.id)"
     >
   </l-geo-json>
   <l-geo-json
-  v-if="layers.areas"
-  v-for="(item, i) in $store.state.geo.areas"
+  v-if="$store.state.tab ==='education'"
+  v-for="(item, i) in $store.getters.educationalGeoByHood"
   :key="item._id"
   :geojson="item.feature"
-  v-bind:options-style="getAreaStyle(item.feature.properties.id)"
+  :options="geoJsonPointOptions(item.feature, {lat:item.feature.geometry.coordinates[0],lng: item.feature.geometry.coordinates[1]})"
   >
 </l-geo-json>
 </l-map>
@@ -130,6 +138,7 @@ import chroma from 'chroma-js'
 //const vectorTileStyling = require('../../public/mapStyle.js');
 import axios from 'axios';
 import surveyQuestionsJson from './../assets/building_survey.json';
+import L from 'leaflet'
 
 export default {
   name: 'MapView',
@@ -173,14 +182,12 @@ export default {
       layers :{
         areas : true
       },
-      areaStyle : {
-        2111 : {
-          weight: 2,
-          color: '#fff',
-          opacity: 0.9,
-          fillColor: '#fff',
-          fillOpacity: 0.5,
-        }
+      pointStyle : {
+        radius: 4,
+        fillColor: "blue",
+        weight: 0,
+        opacity: 1,
+        fillOpacity: 0.5
       },
       survey : false,
       surveyData : [],
@@ -267,6 +274,27 @@ export default {
     }
   },
   methods: {
+    geoJsonPointOptions (feature, latlng) {
+      const self = this;
+      return {
+        pointToLayer: function (feature, latlng) {
+          return L.circleMarker(latlng, self.pointStyle);
+        }
+      }
+    },
+    getPointStyle(id){
+      //const f = chroma.scale(['yellow', 'red']);
+      //const area = this.$store.getters.dataByYear.filter(x=>x.area_code === id)[0]
+      //const val = area[this.$store.state.navigator.indicator.figure]
+      //const hex = f( (val - this.scale.min)/this.scale.constant )
+      //console.log(id, this.scale,val,hex, (val - this.scale.min)/this.scale.max )
+      return {
+        color: 'blue',
+        opacity: 1,
+        weight:5
+      }
+
+    },
     getAreaStyle(id){
       if (this.$store.state.neighbourhood === id) {
         return {
@@ -349,6 +377,7 @@ export default {
             Object.keys(val).forEach(x=>{
               if (Array.isArray(val[x])) selectLanguageKey(val[x], key,language)
             });
+            acc = acc || []
             acc.push(val);
             return acc;
           }
@@ -359,7 +388,7 @@ export default {
   },
   mounted(){
     if (window.screen.width < 800) this.updateBaseMap('basic',true);
-    this.getSurveyNames();
+    //this.getSurveyNames();
     this.editFeature = surveyQuestionsJson.reduce((acc,x)=>{
       acc[x.name] = '';
       return acc;

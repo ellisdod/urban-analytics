@@ -138,7 +138,7 @@ v-else
 
 <script>
 import MapView from './components/MapView.vue'
-import MapNaviagtor from './components/MapNavigator.vue'
+import MapNavigator from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
 

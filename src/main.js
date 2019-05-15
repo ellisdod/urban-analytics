@@ -26,17 +26,18 @@ Vue.config.productionTip = true
 
 const store = new Vuex.Store({
   state : {
-    indicators: null,
-    cityIndicators: null,
+    indicators: [],
+    cityIndicators: [],
     neighbourhood:2112,
     year:2016,
     language:'en',
     languages: ['ar','en'],
     theme : theme,
+    tab:'demographics',
     map : {
       zoom:14,
-      center: L.latLng(31.778837,35.243452),
-      defaultCenter: L.latLng(31.778837,35.243452),
+      center: {lat: 31.827982118391024,lng: 35.22958321000619},
+      defaultCenter: {lat: 31.827982118391024,lng: 35.22958321000619}
     },
     navigator : {
       zoom:11,
@@ -49,7 +50,8 @@ const store = new Vuex.Store({
     },
     geo : {
       areas : [],
-      facilities : []
+      facilities : [],
+      educational: []
     }
   },
   mutations : {
@@ -82,34 +84,54 @@ const store = new Vuex.Store({
         //console.log(state.indicators);
         //console.log('cityIndicators',state.cityIndicators);
         api.getFacilities().then(x=>{
-          state.geo.facilities = x.data;
-          console.log('facilities',x.data)
+          state.geo.facilities = x.data
+          state.facilities = x.data.map(x => x.feature.properties )
+          console.log('facilities',state.facilities)
           let edu = x.data.filter(x=>x.feature.properties.Use === 'Educational')
+          state.geo.educational = edu;
+
           edu = edu.reduce((acc,x)=>{
             if (!x.feature.properties.mygeodat_5) return acc
-            const loc = x.feature.properties.mygeodat_5.toString()
+
             //console.log(loc)
             const prop = x.feature.properties
-            acc[loc] = acc[loc] || {};
+
             //console.log(acc[loc])
             const keys = ['Sort1','Sort2','Gender','no_student','no_females','no_classes','Type']
-            acc[loc].types = {};
-            keys.forEach(function(i){
-              if (typeof prop[i] === 'string') {
-                acc[loc].types[prop[i]] = !acc[loc].types[prop[i]] ? 1 : acc[loc].types[prop[i]] + 1
-              } else {
-                acc[loc][i] = !acc[loc][i] ? prop[i] : acc[loc][i] + prop[i]
-              }
+            const hoodCode = x.feature.properties.mygeodat_5.toString()
+            const areaCodes = ['9999',hoodCode]
+
+            areaCodes.forEach(function(code) {
+              acc[code] = acc[code] || {};
+              acc[code].types = acc[code].types || {}
+              keys.forEach(function(i){
+                if (typeof prop[i] === 'string') {
+                  acc[code].types[prop[i]] = !acc[code].types[prop[i]] ? 1 : acc[code].types[prop[i]] + 1
+                } else {
+                  acc[code][i] = !acc[code][i] ? prop[i] || 0 : acc[code][i] + prop[i]
+                }
+              })
             })
+
             return acc;
           },{})
+          console.log('edu',edu)
+
           state.indicators.forEach( (x,y) => {
-            if (x.year===2016 && x.area_code) {
+            if (x.year===2015 && x.area_code) {
               state.indicators[y] = Object.assign({},x,edu[x.area_code.toString()])
-              console.log('edu',edu[x.area_code.toString()])
+              //console.log('edu',edu[x.area_code.toString()])
             }
           })
-          console.log('ind',state.indicators.filter(x=>x.year===2016))
+          state.cityIndicators.forEach( (x,y) => {
+            if (x.year===2015) {
+              state.cityIndicators[y] = Object.assign({},x,edu['9999'])
+              console.log('eduCity',Object.assign({},x,edu['9999']))
+            }
+          })
+          console.log('cityindicators',state.cityIndicators)
+          //console.log('ind',state.indicators.filter(x=>x.year===2016))
+
         })
       });
 
@@ -138,21 +160,23 @@ const store = new Vuex.Store({
   },
   getters : {
     areaSelect: (state, getters) => {
-      if (!state.indicators) return null
+      if (!state.indicators) return []
       //console.log('areaSelect',getters.dataByYear.concat(getters.dataByCityYear))
       return  getters.dataByYear.concat(getters.dataByCityYear)
     },
     neighbourhoods : (state, getters) => {
-      if (!state.indicators) return null
+      if (!state.indicators) return []
       return state.indicators.reduce((acc,x)=>{
+        acc= acc ||[]
         if (acc.indexOf(x.name) === -1 ) acc.push(x.name)
         return acc;
       },[])
     },
     years : state => {
-      if (!state.indicators) return null
+      if (!state.indicators) return []
       return state.indicators.reduce((acc,x)=>{
-        if (acc.indexOf(x.year) === -1 ) acc.push(x.year)
+        acc= acc ||[]
+        if (acc.indexOf(x.year) === -1 && x.year ) acc.push(x.year)
         return acc;
       },[])
     },
@@ -167,12 +191,27 @@ const store = new Vuex.Store({
 
     },
     dataByHoodYear : (state, getters) => {
-      if (!state.indicators) return {}
-      return state.indicators.filter(x=>x.area_code === state.neighbourhood && x.year === state.year)[0] || getters.dataByCityYear
+      return state.indicators.filter(x=>x.area_code === state.neighbourhood && x.year === state.year)[0] || getters.dataByCityYear || {}
     },
     dataByCityYear : state => {
-      if (!state.cityIndicators) return {}
-      return state.cityIndicators.filter(x=>x.year===state.year)[0]
+      return state.cityIndicators.filter(x=>x.year===state.year)[0] || {}
+    },
+    educationalByHood : state => {
+      console.log('edubyhood - init',state.geo.educational);
+      const edu = state.geo.educational.reduce((acc,x)=>{
+        if(x.feature.properties.mygeodat_5 === state.neighbourhood) {
+          acc.push(x.feature.properties)
+        }
+        return acc;
+      },[])
+      console.log('edubyhood',edu);
+      return edu
+    },
+    educationalGeoByHood : state => {
+      if (!state.geo.educational) return []
+      const d = state.geo.educational.filter(x=>x.feature.properties.mygeodat_5 === state.neighbourhood)
+      console.log('educational geo', d)
+      return d;
     }
   }
 })

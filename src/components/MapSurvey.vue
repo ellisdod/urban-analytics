@@ -64,6 +64,7 @@
   v-bind:options-style="getAreaStyle(item.feature.properties.id)"
   >
 </l-geo-json>
+
 </l-map>
 
 <div id="map-menu">
