@@ -10,6 +10,7 @@ export function translate(obj,keys,language) {
         Object.keys(val).forEach(x=>{
           if (Array.isArray(val[x])) selectLanguageKey(val[x], keys,language)
         });
+        acc = acc || []
         acc.push(val);
         return acc;
       }

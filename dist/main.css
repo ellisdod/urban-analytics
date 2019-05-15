@@ -24,8 +24,8 @@
 
 
 #navigation-map {
-  z-index:0;
-  background-color:#eee;
+  z-index:1;
+  background:none;
 }
 .v-toolbar__content, .v-toolbar__extension {
   align-items:start !important;
@@ -44,7 +44,7 @@
   top:20px;
   left:60px;
   position: absolute;
-  z-index:900;
+  z-index:0;
   width:50%;
   height:60%;
 }
@@ -93,7 +93,7 @@ td.key-figures {
 
 
 
-.city-indicator, .city-indicator-small{
+.city-indicator, .city-indicator-small {
   margin-left:10px;
   text-decoration: underline var(--v-primary-base);
   font-weight:bold;
@@ -106,11 +106,11 @@ td.key-figures {
 .city-indicator:hover {
   cursor:pointer;
 }
-.city-indicator-small{
+.city-indicator-small {
  font-size:18px;
  vertical-align: top;
 }
-.city-indicator{
+.city-indicator {
   font-size:20px;
   vertical-align: top;
 }

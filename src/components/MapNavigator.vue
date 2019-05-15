@@ -1,5 +1,24 @@
 <template>
-  <div>
+  <div style="background-color:#eee;">
+    <table id="navigator-key">
+      <tr>
+        <td colspan="2" height="40px;" class="title grey--text text--darken-2">
+          {{$store.state.navigator.indicator.name}}
+        </td>
+      </tr>
+      <tr>
+        <td class="key-gradient">
+        </td>
+        <td class="key-figures">
+          <div class="key-max">
+            {{scale.max.toFixed(0) }}
+          </div>
+          <div class="key-min">
+            {{scale.min.toFixed(0) }}
+          </div>
+        </td>
+      </tr>
+    </table>
 
     <l-map
     :zoom="$store.state.navigator.zoom"
@@ -19,26 +38,6 @@
   </l-geo-json>
 </l-map>
 
-
-  <table id="navigator-key">
-    <tr>
-      <td colspan="2" height="40px;" class="title grey--text text--darken-2">
-        {{$store.state.navigator.indicator.name}}
-      </td>
-    </tr>
-    <tr>
-      <td class="key-gradient">
-      </td>
-      <td class="key-figures">
-        <div class="key-max">
-          {{scale.max.toFixed(0) }}
-        </div>
-        <div class="key-min">
-          {{scale.min.toFixed(0) }}
-        </div>
-      </td>
-    </tr>
-  </table>
 
 </v-menu>
 </div>
@@ -98,9 +97,9 @@ export default {
         parseInt(x[this.$store.state.navigator.indicator.figure])
       ).sort((a,b)=> a-b);
       return {
-        min : sorted[0],
-        constant : sorted[sorted.length-1] - sorted[0],
-        max : sorted[sorted.length-1]
+        min : sorted[0] || 0,
+        constant : sorted[sorted.length-1] - sorted[0] ||0,
+        max : sorted[sorted.length-1] ||0
       }
     }
   },
@@ -115,9 +114,11 @@ export default {
       const val = area[this.$store.state.navigator.indicator.figure]
       const hex = f( (val - this.scale.min)/this.scale.constant )
       //console.log(id, this.scale,val,hex, (val - this.scale.min)/this.scale.max )
+      const lineColor = this.$store.state.neighbourhood === id ? 'cyan':'#eee'
+      const lineWeight = this.$store.state.neighbourhood === id ? 2:1
       return {
-        weight: 1,
-        color: '#eee',
+        weight: lineWeight,
+        color: lineColor,
         opacity: 1,
         fillColor: hex,
         fillOpacity: 1,
@@ -157,10 +158,19 @@ export default {
       (state, getters) => state.navigator.indicator.figure,
       (newValue, oldValue) => {
         this.$store.commit('UPDATE',{key:['navigator','zoom'],value:11})
-        this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.naviagtor.defaultCenter})
+        this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
       }
     )
+    this.$store.watch(
+      (getters) => getters.educationalByHood,
+      (newValue, oldValue) => {
+        // Do whatever makes sense now
+        console.log('edubyhood',newValue);
+      }
+    )
+    console.log('edubyhood',this.$store.getters.educationalByHood)
   }
+
   //window.onload = function(){
 
 };
@@ -170,8 +180,8 @@ export default {
 <style>
 @import "../../node_modules/leaflet/dist/leaflet.css";
 #navigation-map {
-  z-index:0;
-  background-color:#eee;
+  z-index:1;
+  background:none;
 }
 .v-toolbar__content, .v-toolbar__extension {
   align-items:start !important;
@@ -189,12 +199,11 @@ export default {
   border-bottom:none;
 }
 
-
 #navigator-key {
   top:20px;
   left:60px;
   position: absolute;
-  z-index:900;
+  z-index:0;
   width:50%;
   height:60%;
 }

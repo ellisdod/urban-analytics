@@ -10,8 +10,8 @@
           <v-flex xs12>
             <v-menu max-height="300px" offset-y>
               <template v-slot:activator="{ on }">
-                <v-btn v-if="$store.getters.dataByNeighbourhood" class="btn-title display-1 px-0 mx-0" flat v-on="on">
-                  {{ $store.getters.dataByNeighbourhood[0].name }}
+                <v-btn v-if="$store.getters.dataByHoodYear" class="btn-title display-1 px-0 mx-0" flat v-on="on">
+                  {{ $store.getters.dataByHoodYear.name }}
                 </v-btn>
               </template>
               <v-list>
@@ -20,7 +20,7 @@
                 :key="index"
                 @click="$store.commit('UPDATE_AREA', item.area_code)"
                 >
-                <v-list-tile-title>{{ item.name }}</v-list-tile-title>
+                <!--<v-list-tile-title>{{ item.name }}</v-list-tile-title>-->
               </v-list-tile>
             </v-list>
           </v-menu>
@@ -47,14 +47,13 @@
     >
     <v-tab
         v-for="i in items"
-        :key="n"
         ripple
+        @click="$store.commit('UPDATE',{key:'tab',value:i.value})"
     >
       {{i.name_en}}
     </v-tab>
     <v-tab-item
         v-for="i in items"
-        :key="x"
         class="indicators-content-wrapper"
       >
 
@@ -62,9 +61,17 @@
    <!--<v-container id="indicators-content">-->
    <v-container class="indicators-content" px-5>
     <div v-for="item in i.items">
+     <template v-if="$store.state.tab === i.value">
 
-      <indicator-heading v-if="item.heading" :text="item.name"/>
-
+      <div v-if="item.datatable" class="py-3">
+        <v-divider/>
+        <div class="title py-3">{{item.name}}</div>
+      <v-data-table :items="item.data" :headers="item.headers" :rows-per-page-items="[-1]">
+        <template v-slot:items="props">
+        <td v-for="header in item.headers">{{ props.item[header.value] }}</td>
+       </template>
+      </v-data-table>
+    </div>
 
       <indicator-key-stat v-else-if="item.keystat"
       :name="item.name"
@@ -83,10 +90,10 @@
         style="margin-left:-20px;height:320px;"
         v-bind:x-labels="true"
         v-bind:y-labels="true"
-        v-bind:chart-data="log({
+        v-bind:chart-data="{
           datasets:item.left[0].datasets,
           labels:item.left[0].labels
-          })">
+          }">
         </bar-vertical>
 
       </v-flex>
@@ -103,7 +110,7 @@
       </indicator-key-stat>
     </v-flex>
   </v-layout>
-
+</template>
 </div>
 </v-container>
 <!-- items-end -->
@@ -148,38 +155,14 @@ export default {
     }
   },
   methods: {
-    prepDstrChartData(datasets,labels,color){
-      const basedata = {
-        label: ''
-      }
-      const data=  {
-        labels: labels,
-        datasets : datasets
-      }
-      console.log('chartdata', data)
-      return data;
-    },
-    log(data) {
-      console.log('log',data);
-      return data;
-    },
-    testServer(){
-      // Make a request for a user with a given ID
-      axios.get('/indicators')
-      .then(function (response) {
-        // handle success
-        console.log(response);
-      })
-    }
   },
   mounted () {
     this.$store.commit('GET_INDICATORS');
     //this.indicators = indicators(this.$store);
     //console.log(this.indicators)
     //console.log('databyneigh', this.$store.getters.dataByNeighbourhood)
-
     //console.log('databyneigh', this.$store.getters.dataByYear)
-
+    console.log(this.$store.getters.educationalByHood)
   }
 }
 </script>
