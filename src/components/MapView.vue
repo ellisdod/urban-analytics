@@ -2,45 +2,65 @@
   <div>
 
     <l-map
+    ref="myMap"
     :zoom="$store.state.map.zoom"
     :center="$store.state.map.center"
     :options="mapOptions"
     @update:center="centerUpdate"
     @update:zoom="zoomUpdate"
-    id="main-map"
+    class="main-map"
+    :id="'map_'+featuresCollection"
     >
 
     <l-protobuf v-if="baseMap=='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
-    <l-tile-layer v-if="baseMap=='basic'" url="http://{s}.tile.osm.org/{z}/{x}/{y}.png" attribution="&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors" :options="protobufOpts"/>
-
-      <l-geo-json
-      v-if="survey"
-      v-for="(item, i) in surveyData"
-      :key="item._id"
-      :options="geoJsonOptions"
-      :options-style="item.feature.properties.style"
-      :geojson="item.feature"
-      >
-    </l-geo-json>
+    <l-tile-layer v-if="baseMap=='basic'" url="https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png" :options="protobufOpts"/>
     <l-geo-json
-    v-if="layers.areas"
-    v-for="(item, i) in $store.state.geo.areas"
+    v-if="areas"
+    v-for="(item, i) in $store.state._col_areas.filter(x=>x.feature)"
     :key="item._id"
     :geojson="item.feature"
-    v-bind:options-style="getAreaStyle(item.feature.properties.id)"
+    v-bind:options-style="areaStyle"
     >
   </l-geo-json>
-  <l-geo-json
-  v-if="$store.state.tab ==='education'"
-  v-for="(item, i) in $store.getters.educationalGeoByHood"
+
+    <l-geo-json
+    v-if="featuresWithIds[0]"
+    v-for="(item, i) in featuresWithIds"
+    :key="i"
+    :geojson="item.feature"
+    :options="geoJsonPointOptions(dataType,item)"
+    >
+  </l-geo-json>
+
+
+  <!--      <l-geo-json
+  v-else-if="survey"
+  v-for="(item, i) in surveyData"
   :key="item._id"
+  :options="geoJsonOptions"
+  :options-style="item.feature.properties.style"
   :geojson="item.feature"
-  :options="geoJsonPointOptions(item.feature, {lat:item.feature.geometry.coordinates[0],lng: item.feature.geometry.coordinates[1]})"
   >
 </l-geo-json>
+<l-geo-json
+v-else-if="layers.areas"
+v-for="(item, i) in $store.state.geo.areas"
+:key="item._id"
+:geojson="item.feature"
+v-bind:options-style="getAreaStyle(item.feature.properties.id)"
+>
+</l-geo-json>
+<l-geo-json
+v-else-if="$store.state.geo.features[0]"
+v-for="(item, i) in $store.state.geo.features"
+:key="item._id"
+:geojson="item.feature"
+:options="geoJsonPointOptions(dataType,item)"
+>
+</l-geo-json>-->
 </l-map>
 
-<div id="map-menu">
+<div class="map-menu">
   <v-menu min-width="300px" flat>
     <v-spacer></v-spacer>
     <template v-slot:activator="{ on }">
@@ -93,8 +113,6 @@
 
     </v-list-group>
 
-
-
     <v-layout
     v-else-if="item.heading"
     :key="i"
@@ -122,6 +140,8 @@
 </v-menu>
 </div>
 
+<!--<v-btn @click="log()">Log</v-btn>-->
+
 </div>
 </template>
 
@@ -142,6 +162,7 @@ import L from 'leaflet'
 
 export default {
   name: 'MapView',
+  props: ['features','featuresCollection','zoomLevel','dataType','areas'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -159,8 +180,11 @@ export default {
     return {
       language: 'ar',
       languages: ['ar','en'],
-      url: 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
-      zoom: 14,
+      basemaps : {
+        url: 'https://{s}.basemaps.cartocdn.com/{z}/{x}/{y}.png',
+        url2: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
+        url3: 'http://a.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png ',
+      },
       center: L.latLng(31.778837,35.243452),
       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
       currentZoom: 14,
@@ -169,14 +193,67 @@ export default {
       mapOptions: {
         zoomSnap: 0.5,
       },
+      areaStyle: {
+          weight: 1,
+          color: '#ccc',
+          opacity: 1,
+          fillOpacity: 0,
+      },
       geoJsonOptions:{
         onEachFeature: (feature, layer) => {
           var self = this;
+          const p = feature.properties
+          const n = self.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === p.id)[0]
+          layer.bindPopup('<p>'+n.name+'</p><p>'+self.$store.state.navigator.indicator.name +': '+n[self.$store.state.navigator.indicator.figure]+'</p>');
+
           layer.on({
             click : function(e) {
-              self.openEditor(e)
-            }
+              console.log(e.target)
+            },
+            mouseover : function(e) {
+
+            },
           });
+        }
+      },
+      areasGeoJsonOptions:{
+        onEachFeature: (feature, layer) => {
+          var self = this
+          //layer.bindPopup('<p><b>'+n.name+'</b></p><p>'+self.$store.state.navigator.indicator.name +': '+n[self.$store.state.navigator.indicator.figure]+'</p>');
+          layer.on({
+            click : function(e) {
+              const p = e.target.feature.properties
+              console.log(e.target)
+              self.$store.commit('UPDATE',{key:'neighbourhood',value:p.id});
+              self.$store.commit('UPDATE',{key:['map','zoom'],value:15});
+              self.$store.commit("UPDATE",{key:'selectedFeature',value:e.target.feature.properties._id})
+
+              //console.log('changed',this.$store.state.neighbourhood);
+              //console.log(e.target._map.getCenter());
+              self.$store.commit('UPDATE',{
+                key:['map','center'],
+                value: {
+                  lon:p.Centroids_x,
+                  lat:p.Centroids_y
+                }
+              })
+            },/*
+            mouseover : function(e) {
+
+              const n = self.$store.getters.dataByYear.filter(x=>x.area_code === e.target.feature.properties.id)[0]
+              self.details = {
+                neighbourhood : n.name,
+                value : n[self.$store.state.navigator.indicator.figure],
+                key : ''
+
+            },
+            mouseout : function(e) {
+
+              self.details = self.detailsDefault
+
+            }*/
+          })
+
         }
       },
       layers :{
@@ -205,10 +282,10 @@ export default {
       optionsDialog:false,
       selectedSurvey:null,
       baseMaps: [
-        {text:'Basic',type:'basic',selected:false},
-        {text:'Detailed',type:'detailed',selected:true}
+        {text:'Basic',type:'basic',selected:true},
+        {text:'Detailed',type:'detailed',selected:false}
       ],
-      baseMap : 'detailed',
+      baseMap : 'basic',
       surveyKey : {
         complete: {color:'#00C7FF',text:'Complete'},
         inProgress: {color:'#FFBD00',text:'In Progress'},
@@ -250,7 +327,7 @@ export default {
       const opacity = this.survey ? this.surveyOpacity : 1;
       return {
         vectorTileLayerStyles: vectorTileStyling2,
-        maxNativeZoom: 14,
+        maxNativeZoom: 18,
         opacity: opacity
       };
     },
@@ -264,21 +341,59 @@ export default {
       return this.translate(surveyQuestionsJson, 'label', this.language);
     },
     scale () {
-      const sorted = this.$store.getters.dataByYear.map( x =>
+      const sorted = this.$store.getters.indicatorsForSelectedYear.map( x =>
         x[this.$store.state.map.indicator.figure]
       ).sort((a,b)=> a-b);
       return {
         min : sorted[0],
         max :sorted[sorted.length-1] - sorted[0]
       }
+    },
+    zoom () {
+      return parseInt(this.zoomLevel) || this.$store.state.map.zoom ||14
+    },
+    featuresWithIds () {
+      if (this.features.length > 0) {
+        console.log('features',this.features.length)
+        return this.features.map(x=>{
+          x.feature.properties._id = x._id
+          return x;
+        })
+      }
+    },
+    featuresAsGeojson() {
+      if (!this.features) return [];
+      return this.features.map(x=>x.feature)
     }
   },
   methods: {
-    geoJsonPointOptions (feature, latlng) {
+    geoJsonPointOptions (datatype,item) {
+      if (datatype !== 'Point') return this.areasGeoJsonOptions
       const self = this;
+      const latlng = {
+        lat:item.feature.geometry.coordinates[0],
+        lng: item.feature.geometry.coordinates[1]
+      }
       return {
         pointToLayer: function (feature, latlng) {
-          return L.circleMarker(latlng, self.pointStyle);
+          return L.circleMarker(latlng,self.pointStyle)
+        },
+
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties
+          layer.bindPopup('<p>'+p.type+'</p><p>'+p.students+'</p>');
+          layer.on({
+            click : function(e) {
+              self.$store.commit("UPDATE",{key:'selectedFeature',value:e.target.feature.properties._id})
+              //console.log(e.target.feature)
+            },
+            mouseover : function(e) {
+              e.target.openPopup()
+            },
+            mouseout : function(e) {
+              e.target.closePopup()
+            }
+          });
         }
       }
     },
@@ -336,7 +451,7 @@ export default {
       return L.latLng(crds[1],crds[0]);
     },
     getSurveyNames(){
-      API.getSurveyNames()
+      API.distinct('buildings','feature.properties.neighbourhood')
       .then( x=> {
         this.surveyNames = x.data
       })
@@ -384,6 +499,10 @@ export default {
         },[]);
       }
       return selectLanguageKey(obj,key,language);
+    },
+    log() {
+      this.$refs.myMap.mapObject.invalidateSize();
+      //this.$forceUpdate()
     }
   },
   mounted(){
@@ -395,6 +514,13 @@ export default {
     },{});
     this.editFeatureDefaults = Object.assign({},this.editFeature);
 
+    const self = this
+    setTimeout(function(){
+      console.log('mounting map')
+      //console.log('updated')
+      self.$refs.myMap.mapObject.invalidateSize();
+    }, 1000);
+
   }
 
 };
@@ -402,12 +528,13 @@ export default {
 
 <style>
 @import "../../node_modules/leaflet/dist/leaflet.css";
-#main-map {
+.main-map {
   z-index:0;
   background-color:#eee;
+  height:400px;
 }
 
-#map-menu {
+.map-menu {
   width:300px;
   z-index:1;
   position:absolute;
@@ -416,15 +543,17 @@ export default {
   text-align:right;
 }
 
-.v-toolbar__content, .v-toolbar__extension {
-  align-items:start !important;
-}
 .highlighted {
   background-color:#e8e8e8;
 }
 
 .v-label {
   font-size: 13px;
+}
+.leaflet-touch .leaflet-bar, .leaflet-touch .leaflet-bar a {
+  border:none;
+  border-bottom:none;
+  color:#999;
 }
 
 </style>

@@ -1,5 +1,6 @@
 export function translate(obj,keys,language) {
   keys = typeof keys === 'string' ? [keys] : keys;
+  obj = Array.isArray(obj) ? obj : [obj];
 
   function selectLanguageKey (obj,keys,language) {
     return obj.reduce((acc,val) => {

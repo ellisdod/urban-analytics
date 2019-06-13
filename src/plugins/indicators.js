@@ -1,5 +1,6 @@
 export function indicators(store) {
   console.log('storedata',store.getters.dataByHoodYear.age_distribution);
+  
   return [
     {
       name_en : "Demographics",
@@ -170,6 +171,9 @@ export function indicators(store) {
       name_en : "Education",
       name_ar : "",
       value : 'education',
+      geodata : {
+        "Use" : "Education"
+      },
       items:[
         {
           keystat:true,
@@ -207,12 +211,12 @@ export function indicators(store) {
           name_ar:"",
           data: store.getters.educationalByHood,
           headers : [
-                     {text:"Type",value:'Sort2'},
-                     {text:"Management",value:'Type'},
-                     {text:"Gender",value:'Gender'},
-                     {text:"Students",value:'no_student'},
-                     {text:"Classes",value:'no_classes'}
-                    ],
+            {text:"Type",value:'Sort2'},
+            {text:"Management",value:'Type'},
+            {text:"Gender",value:'Gender'},
+            {text:"Students",value:'no_student'},
+            {text:"Classes",value:'no_classes'}
+          ],
           description_en:"",
           description_ar:""
         }

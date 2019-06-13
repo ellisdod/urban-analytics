@@ -1,10 +1,11 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Indicators from './../components/Indicators.vue'
+import Indicators from './../components/IndicatorsNew.vue'
 import MapSurvey from './../components/MapSurvey.vue'
 import Upload from './../components/Upload.vue'
-import PostsManager from './../components/PostsManager.vue'
+import ManageData from './../components/ManageDataMaster.vue'
 import Auth from '@okta/okta-vue'
+import Help from './../components/Help.vue'
 
 const origin = window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin
 console.log('routing from',{redirect_uri: window.location.origin + '/implicit/callback'});
@@ -29,6 +30,13 @@ let router = new Router({
       component: Upload
     },
     {
+      path: '/manage',
+      component: ManageData,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
       path: '/map',
       component: MapSurvey
     },
@@ -41,12 +49,8 @@ let router = new Router({
       component: Auth.handleCallback()
     },
     {
-      path: '/posts-manager',
-      name: 'PostsManager',
-      component: PostsManager,
-      meta: {
-        requiresAuth: true
-      }
+      path: '/help',
+      component: Help
     }
   ]
 })

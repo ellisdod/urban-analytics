@@ -1,13 +1,9 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const OktaJwtVerifier = require('@okta/jwt-verifier')
-const building_controller = require('./controllers/building.controller')
-const neighbourhood_controller = require('./controllers/neighbourhoods.controller')
-const indicators_controller = require('./controllers/indicators.controller')
-const facilities_controller = require('./controllers/facilities.controller')
-const formidableMiddleware = require('express-formidable')
 const mongoose = require('mongoose');
 const path = require('path');
+const formidableMiddleware = require('express-formidable')
 
 var history = require('connect-history-api-fallback');
 require('dotenv').config();
@@ -92,23 +88,90 @@ if (process.env.NODE_ENV === 'production') {
   })
 }
 
+const dbControl = require('./controllers/base.controller')
+const func = require('./src/api.functions.js')
+const dbConfig = require('./src/db.config')
 
-app.get('/test', requireAuth, building_controller.test);
-app.post('/create/Buildings', requireAuth, formidableMiddleware(), building_controller.building_create);
-app.post('/create/Neighbourhoods', requireAuth, formidableMiddleware(), neighbourhood_controller.create);
-app.post('/create/Indicators', requireAuth, formidableMiddleware(), indicators_controller.create);
-app.post('/create/Facilities', requireAuth, formidableMiddleware(), facilities_controller.create);
-app.get('/building/:id', requireAuth, building_controller.building_details);
-app.get('/neighbourhood/:name', requireAuth, building_controller.building_neighbourhood);
-app.put('/building/:id', requireAuth, building_controller.building_update);
-app.get('/survey/buildings', requireAuth, building_controller.surveys);
-app.get('/indicators',indicators_controller.getAll);
-app.get('/areas',neighbourhood_controller.getAll);
-app.get('/facilities',facilities_controller.getAll);
+const middlewareKey = {
+  formidable : formidableMiddleware()
+}
 
-//app.use(express.static(__dirname));
+//console.log(dbConfig)
+Object.keys(dbConfig).forEach(col => {
+  for (let i = 0; i < func.length; i++) {
+    //console.log(col.name,func.name,func.method, func.params)
+    if (func[i].restrict && func[i].restrict.indexOf(col)===-1 )
+      continue;
+
+    const params = dbConfig[col].params || ''
+    const url = `/${col}${params}/${func[i].name}${func[i].params}`
+    console.log(func[i].method,url)
+    if (func[i].middleware) {
+        app[func[i].method](url, middlewareKey[func[i].middleware], dbControl[col][func[i].name])
+    } else {
+        app[func[i].method](url, dbControl[col][func[i].name])
+    }
+  }
+})
+
+//console.log('features controller', dbControl.areas)
+//console.log('features controller', dbControl.features.find)
+
+
+
 
 app.listen(process.env.PORT || 8081, () => {
   console.log({ ENV: process.env.NODE_ENV, ID: process.env.VUE_APP_OKTA_CLIENT_ID, PORT: process.env.PORT });
   console.log('running on port ' + (process.env.PORT || 8081));
 });
+
+
+/*
+collections.forEach(x=>{
+  UrlHandler(x.name,x.controller,x.middleware)
+})
+
+
+app.post('/create/Buildings', requireAuth, formidableMiddleware(), building_controller.building_create);
+
+
+app.get('/building/:id', requireAuth, building_controller.building_details);
+app.get('/neighbourhood/:name', requireAuth, building_controller.building_neighbourhood);
+app.put('/building/:id', requireAuth, building_controller.building_update);
+app.get('/survey/buildings', requireAuth, building_controller.surveys);
+
+//indicators
+app.post('/indicators/create', requireAuth, formidableMiddleware(), indicators_controller.create);
+app.get('/indicators',indicators_controller.getAll);
+
+//areas
+app.post('/areas/create', requireAuth, formidableMiddleware(), areas_controller.create);
+app.get('/areas',verifyLayer(), spatialjoin_controller.getAll);
+
+//features
+app.post('/features/create', verifyLayer(), requireAuth, formidableMiddleware(), features_controller.create);
+app.post('/features/:layer', verifyLayer(), features_controller.update);
+app.get('/features/:params', verifyLayer(), features_controller.getSubset)
+
+//layers
+app.post('/layers/delete/:id',layers_controller.delete);
+app.post('/layers/update/:id',layers_controller.update);
+app.get('/layers',layers_controller.getAll)
+
+function UrlHandler(path, controller, middleware) {
+  app.get(`/${path}/getAll`, middleware, controller.getAll)
+  app.get(`/${path}/find/:query`, middleware, controller.find)
+  app.get(`/${path}/unique/:key`, middleware, controller.unique)
+  app.post(`/${path}/create`, requireAuth, formidableMiddleware(), middleware, controller.create)
+  app.post(`/${path}/update`, middleware, controller.update)
+  app.post(`/${path}/delete/:id`, requireAuth, controller.delete)
+  app.post(`/${path}/update/:id`, requireAuth, controller.update)
+}
+UrlHandler('layers',layers_controller)
+UrlHandler('features',features_controller,verifyLayer())
+UrlHandler('areas',areas_controller)
+UrlHandler('indicators',indicators_controller)
+
+*/
+
+//app.use(express.static(__dirname));
