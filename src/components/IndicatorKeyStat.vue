@@ -1,71 +1,79 @@
 <template>
-  <div v-if="noChart" class="py-2">
-    <div class="title">{{name}}</div>
-    <div>
-      <span class="display-2">{{$store.getters.dataByHoodYear[figure] || getDataByHoodYear[figure]}}</span>
-      <span class="display-1 ml-1">{{unit}}</span>
-    </div>
-    <div class="caption">{{description}}</div>
-  </div>
-  <v-layout v-else-if="small" row wrap class="py-4 indicator-hover" @click="updateIndicator({figure:figure,name:name},$store.getters.dataByYear || getDataByYear)">
-    <div>
-      <div class="title">{{name}}</div>
-      <div style="overflow-x: visible; display: inline-block; white-space: nowrap;">
-        <span class="display-1">{{$store.getters.dataByHoodYear[figure] || getDataByHoodYear[figure]}}</span>
-        <span v-if="unit" class="headline ml-1">{{unit}}</span>
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on }">
-            <div class="city-indicator-small" v-on="on">{{$store.getters.dataByCityYear[figure] || getDataByCityYear[figure]}}</div>
-          </template>
-          <span>East Jerusalem</span>
-        </v-tooltip>
 
-      </div>
-      <div class="caption">{{description}}</div>
-    </div>
-    <v-flex px-0>
-      <bar-vertical
-      style="height:80px;margin-top:-30px;"
-      v-bind:chart-data="prepBarChartData(figure,$store.state.neighbourhood)"
-      class="bar-chart-minimal-small"
-      v-bind:click-handler="true"
-      v-bind:x-labels="false"
-      v-bind:y-labels="false">
-    </bar-vertical>
-  </v-flex>
-</v-layout>
-<v-layout v-else row wrap class="py-3 indicator-hover" @click="updateIndicator({figure:figure,name:name})">
-  <v-flex xs12 sm4>
-    <div class="title">{{name}}</div>
-    <div style="overflow-x: visible; display: inline-block; white-space: nowrap;">
-      <span class="display-3 py-0">{{$store.getters.dataByHoodYear[figure] || getDataByHoodYear[figure]}}</span>
-      <span v-if="unit" class="display-1 ml-1">{{unit}}</span>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
-          <div class="city-indicator" v-on="on">{{$store.getters.dataByCityYear[figure] || getDataByCityYear[figure]}}</div>
-        </template>
-        <span>East Jerusalem</span>
-      </v-tooltip>
+  <div v-if="type === 'List' && selectedIndicator">
+    <v-list>
+      <v-list-item v-for="(val,key) in selectedIndicator[figure[0]]">
+        <v-list-tile-action>
+          {{key}}
+        </v-list-tile-action>
+        <v-list-tile-content>
+          {{val}}
+        </v-list-tile-content>
+      </v-list-item>
+    </v-list>
+  </div>
+
+  <!-- WITH CHART -->
+  <div v-else-if="selectedIndicator" class="pa-2 indicator-hover" style="background-color:white;position:relative;" @click="updateIndicator({figure:figure[0],name:name})">
+
+    <div class="subheading font-weight-light" style="width:40%;">{{name}}</div>
+
+
+    <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
+      <span class="display-1 py-0">{{selectedIndicator[figure[0]]}}</span>
+      <span v-if="unit" class="subheading ml-1">{{unit}}</span>
+      <div class="font-weight-light">{{year}}</div>
     </div>
     <div class="caption">{{description}}</div>
-  </v-flex>
-  <v-flex xs12 sm8>
-    <bar-vertical
-    v-bind:chart-data="prepBarChartData(figure,$store.state.neighbourhood)"
+
+    <div v-if="dataYears.length>1" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
+      <v-slider
+      color="grey lighten-2"
+      track-color="transparent"
+      always-dirty
+      inverse-label
+      :tick-labels="dataYears"
+      v-model="selectedYear"
+      ticks="always"
+      v-bind:tick-size="2"
+      :min="dataYears[0]"
+      :max="dataYears[dataYears.length-1]"
+      >
+    </v-slider>
+   </div>
+
+    <div v-bind:style="chartWidthClass">
+
+    <bar-vertical v-if="type==='Figure'"
+    style="margin-top:0px;"
+    v-bind:chart-data="prepBarChartData"
     class="bar-chart-minimal"
     v-bind:click-handler="true"
     v-bind:x-labels="false"
     v-bind:y-labels="false">
+    </bar-vertical>
+
+  <bar-vertical v-else-if="type==='Chart' && selectedIndicator"
+  style="height:300px; margin-bottom:-30px;"
+  v-bind:x-labels="true"
+  v-bind:y-labels="true"
+  v-bind:chart-data="generateChartDataSets">
   </bar-vertical>
-</v-flex>
-<v-flex v-if="showText"pa-3 pt-4>
-  Lorem ipsum dolor sit amet, id principes honestatis sadipscing eum, malorum ceteros percipitur ea qui. Omnesque postulant eu quo, ei mei wisi vituperata repudiandae. No est meliore consulatu, ut duo harum animal electram. Recteque mediocritatem ad per, vis ei noster consequuntur, ut agam prompta assueverit ius. Falli phaedrum dissentiunt nam eu. In atqui praesent deseruisse pro, cu insolens torquatos pro. Consul delectus eam id, ius scripta senserit no, vis ad agam repudiare.
+</div>
+
+<div class="text-xs-right" style="margin-right:-18px;clear:both;display:block;margin-bottom: -10px;">
+  <v-btn icon @click="toggleExpand()"><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
+</div>
+<div v-if="expand" class="pa-2">
+  Lorem ipsum dolor sit amet, id principes honestatis sadipscing eum, malorum ceteros percipitur ea qui. Omnesque postulant eu quo, ei mei wisi vituperata repudiandae. No est meliore consulatu,e.
   <br><br>
   <div class="grey--text text--darken-2">
-  Source: JIIS {{ year || $store.state.year }} <span style="float:right"><v-icon>save_alt</v-icon> Download data</span>
+    Source: JIIS {{ year || $store.state.year }} <span style="float:right"><v-icon>save_alt</v-icon> Download data</span>
   </div>
-</v-flex>
-</v-layout>
+  <v-btn @click="log">LOG</v-btn>
+</div>
+
+</div>
 </template>
 
 <script>
@@ -79,43 +87,50 @@ export default {
   },
   data () {
     return {
-      showText : false
+      expand : false,
+      rotation : 0,
+      selectedYear : '',
     }
   },
-  props: ['name','figure','description','unit','noChart','small','year'],
+  props: ['name','figure','description','unit','type','small','noChart'],
   methods : {
-    prepBarChartData(key,neighbourhood) {
-      //console.log(this.$store.getters.dataByYear)
-      if (!this.thisYear) {
-        console.log('cannot find year')
-        return;
-      }
-      const color = this.$vuetify.theme.tertiary;
-      let citydata = this.$store.getters.dataByYear
-      citydata = (citydata[0] && !citydata[0][key]) ? this.getDataByYear : citydata
-      const sorted = citydata.sort((a,b)=>a[key]-b[key])
-      const label = this.$props.name
-      return {
-        labels: sorted.map(x=> x.name),
-        area_code: neighbourhood,
-        datasets :[{
-          label: label,
-          backgroundColor: sorted.map(x=> {
-            return x.area_code === neighbourhood ? color : colors.grey.lighten3;
-          }),
-          data: sorted.map(x=> {return x[key]})
-        }]
-      }
+    log() {
+      console.log('data',this)
+      console.log('store',this.$store.state)
+      //console.log(this.$store.getters.selectedFeature)
+    },
+    toggleExpand() {
+      this.expand = !this.expand
+      this.rotation = this.rotation === 0 ? 180 : 0
     },
     updateIndicator(figure,item) {
-      this.showText = !this.showText;
-      console.log(item);
+      if (!figure || !this.year) return null
       this.$store.commit("UPDATE",{key:['navigator','indicator'],value:figure})
+      this.$store.commit("UPDATE",{key:'year',value:this.year})
+    },
+    getNested (p, o) {
+      p = typeof p === 'string' ? p.split('.') : p
+      if (!p) return o
+      const n =  p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+      //console.log('nested',n)
+      return n
+    },
+    validateYear(val) {
+      let year = val
+      for (var x=0;x<this.dataYears.length;x++){
+        if (this.dataYears.indexOf(year)===-1) {
+          year ++
+        } else {
+          this.year = year
+          break;
+        }
+
+      }
     }
   },
   computed : {
-    thisYear () {
-      return this.$props.year || this.$store.state.year
+    rotateStyle () {
+      return {transform: 'rotate('+this.rotation+'deg)'}
     },
     getDataByHoodYear () {
       //return {}
@@ -128,8 +143,100 @@ export default {
     getDataByYear () {
       //return {}
       return this.$store.state.indicators.filter(x=>x.year===this.thisYear) || []
-    }
+    },
+    areaDataMatched () {
+      const areas = this.$store.getters.indicatorsForSelectedArea
+      if (!areas) return null
+      const matched = areas.reduce((acc,x)=>{
+        if (this.figure.some(f=>x[f])) acc.push(x)
+        return acc
+      },[])
+      console.log('areaDataMatched',matched)
+      return matched
+    },
+    areaDataLatest () {
+      console.log('something')
+      if (!this.areaDataMatched) return null
+      return this.areaDataMatched[this.areaDataMatched.length-1]
+    },
+    latestYear () {
+      if (this.areaDataLatest) {
+        console.log('arealatest', this.areaDataLatest)
+        return this.selectedYear
+      }
+    },
+    year () {
+      return this.selectedYear || this.latestYear
+    },
+    selectedIndicator () {
+      if (!this.dataYears || !this.selectedYear) return {}
+      return this.areaDataMatched[this.dataYears.indexOf(this.selectedYear)]
+    },
+    dataYears () {
+      if (!this.areaDataMatched) return null
+      return this.areaDataMatched.map(x=>x.year)
+    },
+    generateChartDataSets() {
+      if (this.type !== 'Chart' || !this.selectedIndicator) {
+        console.log('chart data test', this.selectedIndicator)
+        return null
+      }
+      //console.log('chartdata', this.figure.map(x=>this.selectedIndicator[x]))
+      return {
+        datasets :[
+          {
+            //label:store.state.neighbourhood,
+            data: this.figure.map(x=>this.selectedIndicator[x]),
+            borderColor: '#000',
+            type:"line",
+            fill:false,
+          }
+        ],
+        labels:this.figure
+      }
+    },
+    chartWidthClass(){
+      let baseStyle = {position:'relative',float:'right'}
+      const changeStyle = this.type === 'Chart' ? {width:'100%'} : {width:'70%', marginTop:'-60px'}
+      return Object.assign(baseStyle,changeStyle)
+    },
+    prepBarChartData() {
+      //console.log(this.$store.getters.dataByYear)
+      if (!this.type === ' Figure') return {}
+      const key = this.figure
+      const neighbourhood = this.$store.state.neighbourhood
+      const color = this.$vuetify.theme.tertiary;
+      let citydata = this.$store.getters.allIndicatorsByYear
+      console.log('citydata',citydata)
+      if (!citydata || !this.year) return {};
+      citydata = citydata[this.year]
+      console.log('citydata.year',citydata,this.year)
+      //citydata.forEach((x,y)=> citydata[y][key] = parseInt(x[key]))
+      citydata = citydata.map(x=>{
+        x[key] = x[key] || 0
+        return x
+      })
+      const sorted = citydata.sort((a,b)=> (!b[key])-(!a[key]) || +(a[key]>b[key])||-(a[key]<b[key]))
+      const label = this.name
+      console.log('sorted',sorted)
+      return {
+        labels: sorted.map(x=> x.name),
+        area_code: neighbourhood,
+        datasets :[{
+          label: label,
+          backgroundColor: sorted.map(x=> {
+            return x.area_code === neighbourhood ? color : colors.grey.lighten2;
+          }),
+          data: sorted.map(x=> {return x[key]})
+        }]
+      }
+    },
+  },
+  mounted (){
+    if (this.areaDataLatest) this.selectedYear = this.areaDataLatest.year
+  //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])
   }
+
 }
 </script>
 
@@ -148,8 +255,8 @@ export default {
   cursor:pointer;
 }
 .city-indicator-small {
- font-size:18px;
- vertical-align: top;
+  font-size:18px;
+  vertical-align: top;
 }
 .city-indicator {
   font-size:20px;
@@ -165,4 +272,18 @@ export default {
   background-color: #fff;
   cursor:pointer;
 }
+.v-slider__ticks span {
+  font-size:0.70em;
+}
+.v-slider__thumb {
+  width: 10px;
+  height: 10px;
+  left: -6px;
+}
+.v-slider__thumb:hover {
+  width: 24px;
+  height: 24px;
+  left: -12px;
+}
+
 </style>

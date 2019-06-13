@@ -12,6 +12,8 @@ import Vuex from 'vuex'
 import api from './api.js'
 import colors from 'vuetify/es5/util/colors'
 import {theme} from './plugins/theme.js'
+import {featureAnalysis} from './plugins/featureAnalysis.js'
+var flatten = require('flatten-obj')()
 
 Vue.use(Vuetify, {
   options: {
@@ -24,16 +26,44 @@ Vue.use(Vuex)
 
 Vue.config.productionTip = true
 
+function getNested (p, o) {
+  p = typeof p === 'string' ? p.split('.') : p
+  if (!p) return o
+  const n =  p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+  //console.log('nested',n)
+  return n
+}
+
 const store = new Vuex.Store({
   state : {
+    _col_layers : [],
+    _col_layers_selected:'',
+    _col_layerAttributes : [],
+    _col_areas : [],
+    _col_areas_selected : '',
+    _col_areaLayers : [],
+    _col_areaLayers_selected:'',
+    _col_features : [],
+    _col_features_selected : '',
+    _col_indicators : [],
+    _col_indicators_selected : '',
+    _col_indicatorSections : [],
+    _col_indicatorSections_selected : '',
+    _col_indicatorBlocks : [],
+    _col_indicatorBlocks_selected : '',
+    neighbourhoodsTest:null,
+    updateCount:0,
     indicators: [],
+    collections:{},
     cityIndicators: [],
-    neighbourhood:2112,
+    neighbourhood: 2112,
+    selectedFeature :'',
+    areaLayer : '5cf510e19bfa58b6c509903b',
     year:2016,
     language:'en',
     languages: ['ar','en'],
     theme : theme,
-    tab:'demographics',
+    tab:'',
     map : {
       zoom:14,
       center: {lat: 31.827982118391024,lng: 35.22958321000619},
@@ -41,7 +71,7 @@ const store = new Vuex.Store({
     },
     navigator : {
       zoom:11,
-      center: {lat: 31.809357074964257, lng: 35.18584083885216},
+      center: { lat: 31.800558330295235, lng: 35.201552314749975 },
       defaultCenter: {lat: 31.809357074964257, lng: 35.18584083885216},
       indicator: {
         figure : 'pop_year_end',
@@ -51,15 +81,58 @@ const store = new Vuex.Store({
     geo : {
       areas : [],
       facilities : [],
-      educational: []
+      educational: [],
+      features: [],
+      selected: null,
+    },
+    layers : []
+  },
+  actions : {
+    UPDATE_COLLECTION ({state, commit}, col) {
+      //console.log('collections',collections)
+      return new Promise((res,rej)=>{
+          const params = {
+            name : col.name || col,
+            query : col.query || {},
+            layer : col.layer
+          }
+          if (col.name === 'features' && !params.layer) {
+            params.layer = state._col_layers_selected
+            if (!layers) rej()
+          }
+          console.log('collection',col)
+          api.find(params.name,params.query,'',{lean: true},params.layer).then(i=>{
+            commit('UPDATE',{
+              key:'_col_' + params.name,
+              value:i.data
+            })
+            console.log('updated collection: '+'_col_' + params.name,i.data.length, i.data[0])
+            res(i.data)
+          }).catch(error => {
+            console.log('caught error',error)
+            rej(error)
+          })
+
+      });
+    },
+    UPDATE_INDICATORS ({state,commit}) {
+      api.find('indicators',{areaLayer:state.areaLayer})
+      .then(i=> commit('UPDATE',{
+        key:'indicators',
+        value : i.data
+      }))
+      .catch(error => {
+        console.log('failed to update indicators',error)
+      })
     }
   },
   mutations : {
     GET_INDICATORS (state) {
-      api.getAreas().then(x=>{
+      api.find('areas',{}).then(x=> {
         state.geo.areas = x.data;
-      })
-      api.getIndicators().then(x=> {
+      });
+
+      api.find('indicators',{}).then(x=> {
         if(!x.data) {
           console.log('cannot retrieve in')
           return null;
@@ -83,39 +156,15 @@ const store = new Vuex.Store({
         state.cityIndicators = indicators.filter(x=> x.area_code === 9999);
         //console.log(state.indicators);
         //console.log('cityIndicators',state.cityIndicators);
-        api.getFacilities().then(x=>{
+        const fa = featureAnalysis();
+        api.find('features',{}).then(x=>{
           state.geo.facilities = x.data
           state.facilities = x.data.map(x => x.feature.properties )
           console.log('facilities',state.facilities)
           let edu = x.data.filter(x=>x.feature.properties.Use === 'Educational')
           state.geo.educational = edu;
 
-          edu = edu.reduce((acc,x)=>{
-            if (!x.feature.properties.mygeodat_5) return acc
-
-            //console.log(loc)
-            const prop = x.feature.properties
-
-            //console.log(acc[loc])
-            const keys = ['Sort1','Sort2','Gender','no_student','no_females','no_classes','Type']
-            const hoodCode = x.feature.properties.mygeodat_5.toString()
-            const areaCodes = ['9999',hoodCode]
-
-            areaCodes.forEach(function(code) {
-              acc[code] = acc[code] || {};
-              acc[code].types = acc[code].types || {}
-              keys.forEach(function(i){
-                if (typeof prop[i] === 'string') {
-                  acc[code].types[prop[i]] = !acc[code].types[prop[i]] ? 1 : acc[code].types[prop[i]] + 1
-                } else {
-                  acc[code][i] = !acc[code][i] ? prop[i] || 0 : acc[code][i] + prop[i]
-                }
-              })
-            })
-
-            return acc;
-          },{})
-          console.log('edu',edu)
+          edu = fa.sum(edu,['Sort1','Sort2','Gender','no_student','no_females','no_classes','Type'])
 
           state.indicators.forEach( (x,y) => {
             if (x.year===2015 && x.area_code) {
@@ -125,8 +174,8 @@ const store = new Vuex.Store({
           })
           state.cityIndicators.forEach( (x,y) => {
             if (x.year===2015) {
-              state.cityIndicators[y] = Object.assign({},x,edu['9999'])
-              console.log('eduCity',Object.assign({},x,edu['9999']))
+              state.cityIndicators[y] = Object.assign({},x,edu['total'])
+              //console.log('eduCity',Object.assign({},x,edu['total']))
             }
           })
           console.log('cityindicators',state.cityIndicators)
@@ -134,86 +183,166 @@ const store = new Vuex.Store({
 
         })
       });
-
     },
-    UPDATE (state, obj) {
-      //console.log(obj.value)
-      if (Array.isArray(obj.key)) {
-        const nested =  obj.key.slice(0,obj.key.length-1).reduce((acc,x) =>
-        (acc && acc[x] !== 'undefined') ? acc[x] : undefined
-      , state)
-       nested[obj.key.slice(obj.key.length-1,obj.key.length)] = obj.value
-     } else {
-       state[obj.key] = obj.value
-     }
+    /*api.distinct('layers','feature.properties.neighbourhood').then(i=>{
+    console.log(i.data)
+    state.neighbourhoodsTest = i.data
+  })*/
 
-    },
-    UPDATE_AREA (state, code) {
-      const e = state.geo.areas.filter(x=>x.feature.properties.id ==code)[0]
-      console.log(e);
-      state.neighbourhood = code
-      state.map.center = {
-        lon:e.feature.properties.Centroids_x,
-        lat:e.feature.properties.Centroids_y
-      }
-    }
+  UPDATE_FEATURES (state, params) {
+    api.find(params.collection, params.query).then(x=> {
+      state.geo.features = x.data
+      //console.log('geojson smaple',x.data[0].feature)
+    })
   },
-  getters : {
-    areaSelect: (state, getters) => {
-      if (!state.indicators) return []
-      //console.log('areaSelect',getters.dataByYear.concat(getters.dataByCityYear))
-      return  getters.dataByYear.concat(getters.dataByCityYear)
-    },
-    neighbourhoods : (state, getters) => {
-      if (!state.indicators) return []
-      return state.indicators.reduce((acc,x)=>{
-        acc= acc ||[]
-        if (acc.indexOf(x.name) === -1 ) acc.push(x.name)
-        return acc;
-      },[])
-    },
-    years : state => {
-      if (!state.indicators) return []
-      return state.indicators.reduce((acc,x)=>{
-        acc= acc ||[]
-        if (acc.indexOf(x.year) === -1 && x.year ) acc.push(x.year)
-        return acc;
-      },[])
-    },
-    dataByYear : state => {
-      if (!state.indicators) return []
-      return state.indicators.filter(x=>x.year === state.year)
-    },
-    dataByNeighbourhood : state => {
-      if (!state.indicators) return []
-      const data = state.indicators.filter(x=>x.area_code === state.neighbourhood)
-      return data.length > 0 ? data : state.cityIndicators
+  UPDATE (state, obj) {
+    //console.log(obj.value)
+    if (Array.isArray(obj.key)) {
+      const nested =  obj.key.slice(0,obj.key.length-1).reduce((acc,x) =>
+      (acc && acc[x] !== 'undefined') ? acc[x] : undefined
+      , state)
+      //nested[obj.key.slice(-1)[0]] = obj.value
+      const obj2 = {}
+      obj2[obj.key.slice(-1)[0]] = obj.value
+      Object.assign(nested, obj2);
+    } else if (typeof state[obj.key] === 'object' && typeof state[obj.value] === 'object' && (!Array.isArray(obj.value)) ){
+      console.log('updating store object: ' + JSON.stringify(obj.key), obj.value)
+      state[obj.key] = Object.assign({},state[obj.key], obj.value)
+    } else {
+      console.log('is array', Array.isArray(obj.value), obj.value )
+      console.log('updating store value: ' + obj.key, obj.value)
+      state[obj.key] = obj.value
+    }
 
-    },
-    dataByHoodYear : (state, getters) => {
-      return state.indicators.filter(x=>x.area_code === state.neighbourhood && x.year === state.year)[0] || getters.dataByCityYear || {}
-    },
-    dataByCityYear : state => {
-      return state.cityIndicators.filter(x=>x.year===state.year)[0] || {}
-    },
-    educationalByHood : state => {
-      console.log('edubyhood - init',state.geo.educational);
-      const edu = state.geo.educational.reduce((acc,x)=>{
-        if(x.feature.properties.mygeodat_5 === state.neighbourhood) {
-          acc.push(x.feature.properties)
-        }
-        return acc;
-      },[])
-      console.log('edubyhood',edu);
-      return edu
-    },
-    educationalGeoByHood : state => {
-      if (!state.geo.educational) return []
-      const d = state.geo.educational.filter(x=>x.feature.properties.mygeodat_5 === state.neighbourhood)
-      console.log('educational geo', d)
-      return d;
+  },
+  UPDATE_AREA (state, code) {
+    const e = state.geo.areas.filter(x=>x.feature.properties.id ==code)[0]
+    console.log(e);
+    state.neighbourhood = code
+    state.map.center = {
+      lon:e.feature.properties.Centroids_x,
+      lat:e.feature.properties.Centroids_y
     }
   }
+},
+getters : {
+  areaSelect: (state, getters) => {
+    if (!state.indicators) return []
+    //console.log('areaSelect',getters.dataByYear.concat(getters.dataByCityYear))
+    return  getters.dataByYear.concat(getters.dataByCityYear)
+  },
+  neighbourhoods : (state, getters) => {
+    if (!state.indicators) return []
+    return state.indicators.reduce((acc,x)=>{
+      acc= acc ||[]
+      if (acc.indexOf(x.name) === -1 ) acc.push(x.name)
+      return acc;
+    },[])
+  },
+  years : state => {
+    if (!state.indicators) return []
+    return state.indicators.reduce((acc,x)=>{
+      acc= acc ||[]
+      if (acc.indexOf(x.year) === -1 && x.year ) acc.push(x.year)
+      return acc;
+    },[])
+  },
+  dataByYear : state => {
+    if (!state.indicators) return []
+    return state.indicators.filter(x=>x.year === state.year)
+  },
+  dataByNeighbourhood : state => {
+    if (!state.indicators) return []
+    const data = state.indicators.filter(x=>x.area_code === state.neighbourhood)
+    return data.length > 0 ? data : state.cityIndicators
+
+  },
+  dataByHoodYear : (state, getters) => {
+    return state._col_indicators.filter(x=>x.areaCode === state.neighbourhood && x.year === state.year)[0] || {}
+  },
+  dataByCityYear : state => {
+    return state.cityIndicators.filter(x=>x.year===state.year)[0] || {}
+  },
+  educationalByHood : state => {
+    console.log('edubyhood - init',state.geo.educational);
+    const edu = state.geo.educational.reduce((acc,x)=>{
+      if(x.feature.properties.mygeodat_5 === state.neighbourhood) {
+        acc.push(x.feature.properties)
+      }
+      return acc;
+    },[])
+    console.log('edubyhood',edu);
+    return edu
+  },
+  educationalGeoByHood : state => {
+    if (!state.geo.educational) return []
+    const d = state.geo.educational.filter(x=>x.feature.properties.mygeodat_5 === state.neighbourhood)
+    console.log('educational geo', d)
+    return d;
+  },
+  selectedFeature : state => {
+    return state._col_features.filter(x=>x.feature.properties._id === state.selectedFeature)[0]
+  },
+  selectedAreas : state => {
+    console.log('areas',state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected ))
+    return state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected )
+  },
+  selectedArea : (state, getters) => {
+    return getters.selectedAreas.filter(x=> x.feature.properties._id === state.selectedFeature)[0]
+  },
+  geojson : state => {
+    if (!state._col_features) return []
+    return state._col_features.map(x=>x.feature)
+  },
+  selectedLayer : state => {
+    if (!state._col_layers) return null;
+    return state._col_layers.filter(x=>x._id===state._col_layers_selected)[0]
+  },
+  selectedLayerAttributes : state => {
+    if (!state._col_layerAttributes) return null;
+    return state._col_layerAttributes.filter(x=>x.layer===state._col_layers_selected)
+  },
+  selectedIndicatorBlocks : state => {
+    if (!state._col_indicatorBlocks) return null;
+    return state._col_indicatorBlocks.filter(x=>x.active&&x.layer===state._col_indicatorSections_selected)
+  },
+  allIndicatorsByYear : state => {
+    if (!state._col_indicators) return null;
+    return state._col_indicators.reduce((acc,x)=>{
+      if (!x.year) return acc
+      acc[x.year] = acc[x.year] || []
+      acc[x.year].push(flatten(x))
+      return acc
+    },{})
+  },
+  allIndicatorsByArea : state => {
+    if (!state._col_indicators) return null;
+    return state._col_indicators.reduce((acc,x)=>{
+      if (!x.areaCode) return acc
+      acc[x.areaCode] = acc[x.areaCode] || []
+      acc[x.areaCode].push(flatten(x))
+      return acc
+    },{})
+  },
+  allIndicatorsByAreaYear : state => {
+    if (!state._col_indicators) return null;
+    return state._col_indicators.reduce((acc,x)=>{
+      if (!x.areaCode) return acc
+      acc[x.areaCode] = acc[x.areaCode] || {}
+      acc[x.areaCode][x.year] = x
+      return acc
+    },{})
+  },
+  indicatorsForSelectedYear : (state,getters) => {
+    if (getters.allIndicatorsByYear) return getters.allIndicatorsByYear[state.year]
+  },
+  indicatorsForSelectedArea : (state,getters) => {
+    if (getters.allIndicatorsByArea) return getters.allIndicatorsByArea[state.neighbourhood].sort((a,b)=> a.year - b.year)
+  },
+  selectedIndicator : (state,getters) => {
+    return getNested( [state.neighbourhood,state.year] , getters.allIndicatorsByAreaYear)
+  }
+}
 })
 
 new Vue({

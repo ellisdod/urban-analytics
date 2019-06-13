@@ -395,7 +395,7 @@ export default {
       return L.latLng(crds[1],crds[0]);
     },
     getSurveyNames(){
-      API.getSurveyNames()
+      API.distinct('buildings','feature.properties.neighbourhood')
       .then( x=> {
         this.surveyNames = x.data
       })
@@ -482,7 +482,7 @@ export default {
 
       Object.assign(item.feature.properties.survey, editInfo, this.editFeature);
       //console.log('/building/'+item._id, item.feature.properties);
-      API.updateBuilding(item._id,item);
+      API.update('buildings',{id:item._id}, item);
       this.closeEditor();
 
     },
@@ -584,9 +584,6 @@ export default {
   text-align:right;
 }
 
-.v-toolbar__content, .v-toolbar__extension {
-  align-items:start !important;
-}
 .highlighted {
   background-color:#e8e8e8;
 }
