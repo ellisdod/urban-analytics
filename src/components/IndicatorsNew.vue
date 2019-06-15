@@ -47,7 +47,7 @@
               >
             </indicator-key-stat>
 
-            <v-btn @click="log()">log</v-btn>
+
 
           </v-flex>
         </v-layout>
