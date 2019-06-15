@@ -3,7 +3,7 @@
     <table id="navigator-key">
       <tr id="navigator-header" >
         <td colspan="2" class="subheading grey--text text--darken-2">
-          {{$store.state.navigator.indicator.name}}
+          {{$store.state.navigator.indicator.name}} - {{$store.state.year}}
           <div class="caption py-1">
           {{details.neighbourhood}}
           <div>
@@ -229,8 +229,8 @@ export default {
 #navigator-key {
   position: absolute;
   z-index:10;
-  width:50%;
 }
+
 
 #navigation-map .leaflet-control-container .leaflet-top {
   bottom:0;
@@ -250,6 +250,8 @@ export default {
 
 #navigator-key td {
   vertical-align:top;
+  max-width:10px;
+  overflow:visible;
 }
 .key-max {
   height: 130px;

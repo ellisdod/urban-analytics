@@ -8,58 +8,61 @@
 
         <v-flex sm7 xs12>
           <v-container fluid grid-list-xl pa-0>
-          <v-layout row wrap>
-            <v-flex xs12>
-              <map-view
-              v-if="$store.state._col_features"
-              contextmenu=""
-              style="position:relative;height:400px;"
-              :features="$store.state._col_features"
-              featuresCollection="features"
-              dataType = "Point"
-              zoomLevel="12"
-              v-bind:areas="true"
+            <v-layout row wrap>
+              <v-flex xs12>
+                <map-view
+                v-if="featureLayers"
+                contextmenu=""
+                style="position:relative;height:400px;"
+                :featureLayers="featureLayers"
+                featuresCollection="features"
+                zoomLevel="12"
+                v-bind:areas="true"
+                >
+              </map-view>
+            </v-flex>
+
+            <v-flex sm6 xs12 v-for="(item,index) in items" :key="item._id" @click="updateSelected(index)">
+
+              <!-- DATATABLE -->
+              <div v-if="item.datatable" class="py-3">
+                <v-divider/>
+                <div class="title py-3">{{item.name}}</div>
+                <v-data-table :items="item.data" :headers="item.headers" :rows-per-page-items="[-1]">
+                  <template v-slot:items="props">
+                    <td v-for="header in item.headers">{{ props.item[header.value] }}</td>
+                  </template>
+                </v-data-table>
+              </div>
+
+              <!-- KEYSTAT -->
+              <indicator-key-stat v-else-if="item.type==='Figure' || item.type==='List' || item.type==='Chart'"
+              v-bind:selected="selected===index"
+              :name="item.text"
+              :figure="item.figure"
+              :description="item.description"
+              :unit="item.unit"
+              :year="item.year"
+              :type="item.type"
               >
-            </map-view>
-          </v-flex>
-
-          <v-flex sm6 xs12 v-for="item in items" :key="item._id">
-
-            <!-- DATATABLE -->
-            <div v-if="item.datatable" class="py-3">
-              <v-divider/>
-              <div class="title py-3">{{item.name}}</div>
-              <v-data-table :items="item.data" :headers="item.headers" :rows-per-page-items="[-1]">
-                <template v-slot:items="props">
-                  <td v-for="header in item.headers">{{ props.item[header.value] }}</td>
-                </template>
-              </v-data-table>
-            </div>
-
-            <!-- KEYSTAT -->
-            <indicator-key-stat v-else-if="item.type==='Figure' || item.type==='List' || item.type==='Chart'"
-            :name="item.text"
-            :figure="item.figure"
-            :description="item.description"
-            :unit="item.unit"
-            :year="item.year"
-            :type="item.type">
             </indicator-key-stat>
 
-      </v-flex>
-    </v-layout>
+            <v-btn @click="log()">log</v-btn>
 
-    </v-container>
+          </v-flex>
+        </v-layout>
 
-</v-flex>
-<v-flex sm2 xs12>
-  <map-navigator v-if="$store.getters.indicatorsForSelectedYear" id="map-panel-navigator"></map-navigator>
-  <div id="info-panel">
-  </div>
-</v-flex>
-<!--<v-btn @click="logStore">log</v-btn>-->
+      </v-container>
 
-</v-layout>
+    </v-flex>
+    <v-flex sm2 xs12>
+      <map-navigator v-if="$store.getters.indicatorsForSelectedYear" id="map-panel-navigator"></map-navigator>
+      <div id="info-panel">
+      </div>
+    </v-flex>
+    <!--<v-btn @click="logStore">log</v-btn>-->
+
+  </v-layout>
 </v-container>
 
 </div>
@@ -85,6 +88,7 @@ export default {
   },
   data () {
     return {
+      selected : 0,
       activeTab: null,
       selectedData : this.$store.getters.selected,
     }
@@ -97,17 +101,52 @@ export default {
       console.log('translateion', translation)
       console.log('indicatorsByArea',this.$store.getters.indicatorsByArea)
       return translation
+    },
+    featureLayers () {
+      const section = this.$store.getters.selectedIndicatorSection
+      return section ? section.geodata : null
+  }
+},
+  methods: {
+    updateSelected(index){
+      this.selected = index
+      console.log('updated select',this.selected )
+    },
+    log() {
+      console.log('store', this.$store.state)
     }
   },
-  methods: {
-  },
   mounted () {
-    //this.$store.commit('GET_INDICATORS');
-    //this.indicators = indicators(this.$store);
-    //console.log(this.indicators)
-    //console.log('databyneigh', this.$store.getters.dataByNeighbourhood)
-    //console.log('databyneigh', this.$store.getters.dataByYear)
+
+    this.$store.watch(
+      (state, getters) => getters.selectedIndicatorSection,
+      (newValue, oldValue) => {
+        console.log('section changed',newValue)
+        // Do whatever makes sense now
+        if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
+
+        newValue.geodata.forEach(x=>{
+          if(!this.$store.state['_col_'+x]) this.$store.dispatch('UPDATE_COLLECTION', {
+            name : 'features',
+            query : {},
+            layer : x
+          })
+        })
+
+      // update main map zoom
+      this.$store.commit('UPDATE',{key:['map','zoom'],value:12})
+    })
+
+    console.log('store', this.$store.state)
+    //this.$store.commit('UPDATE',{key:['map','center'],value:this.$store.state.map.defaultCenter})
   }
+
+//this.$store.commit('GET_INDICATORS');
+//this.indicators = indicators(this.$store);
+//console.log(this.indicators)
+//console.log('databyneigh', this.$store.getters.dataByNeighbourhood)
+//console.log('databyneigh', this.$store.getters.dataByYear)
+
 }
 </script>
 

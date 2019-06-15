@@ -23,6 +23,21 @@
   border-bottom:none;
   color:#999;
 }
+#map-legend {
+  position: absolute;
+  top:0px;
+  left:20px;
+  width:200px;
+}
+#map_features .leaflet-control-container .leaflet-left {
+  right:23px;
+  top: 40px;
+  left:auto;
+}
+#map_features.leaflet-touch .leaflet-bar a {
+  color:#000 !important;
+}
+
 
 
 
@@ -43,7 +58,6 @@
 #navigator-key {
   position: absolute;
   z-index:10;
-  width:50%;
 }
 #navigation-map .leaflet-control-container .leaflet-top {
   bottom:0;
@@ -62,6 +76,8 @@
 }
 #navigator-key td {
   vertical-align:top;
+  max-width:10px;
+  overflow:visible;
 }
 .key-max {
   height: 130px;
@@ -146,15 +162,15 @@ td.key-figures {
   font-size:20px;
   vertical-align: top;
 }
-.indicator-hover {
-  border-left: 3px solid #fff0;
-  padding-left:10px;
-  margin-left:-10px;
-}
-.indicator-hover:hover {
-  border-left: 3px solid #000;
-  background-color: #fff;
+.indicator-hover:hover, .indicator-hover:hover>div {
   cursor:pointer;
+  background-color:#fff6e6;
+}
+.indicator-hover:hover .v-slider__thumb {
+  background-color:var(--v-primary-base)!important;
+}
+.indicator-hover:hover .display-1 {
+  color:var(--v-primary-base)!important;
 }
 .v-slider__ticks span {
   font-size:0.70em;

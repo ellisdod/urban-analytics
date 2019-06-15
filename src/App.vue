@@ -11,26 +11,42 @@
 
   <v-spacer></v-spacer>
 
-  <v-btn v-for="item in items" :to="item.route" icon>
-    <v-icon>{{ item.icon }}</v-icon>
-  </v-btn>
+  <v-tooltip v-for="(item,i) in items" bottom :key="i" open-delay="100">
+      <template v-slot:activator="{ on }">
+        <v-btn v-on="on" :to="item.route" icon>
+          <v-icon color="grey darken-2">{{ item.icon }}</v-icon>
+        </v-btn>
+      </template>
+      <span>{{item.text}}</span>
+  </v-tooltip>
+
+
 
   <v-menu min-width="300" offset-y>
-    <template v-slot:activator="{ on }">
+    <template  #activator="{ on: menu }">
       <!--<v-btn @click.prevent="login" flat v-on="on"><v-icon @click.prevent="login" v-on="on">person</v-icon></v-btn>-->
-      <v-list-tile v-on="on">
-        <v-list-tile-action>
-          <v-icon>person</v-icon>
-        </v-list-tile-action>
-        <v-list-tile-content>
-          <v-list-tile-title v-if="activeUser" class="grey--text">
-            {{ activeUser.email }}
-          </v-list-tile-title>
-          <v-list-tile-title v-else class="grey--text">
-            Login
-          </v-list-tile-title>
-        </v-list-tile-content>
-      </v-list-tile>
+      <v-tooltip bottom open-delay="100">
+        <template #activator="{ on: tooltip }">
+          <v-list-tile>
+            <v-list-tile-content>
+              <v-list-tile-title v-if="activeUser" class="grey--text body-1">
+                {{ activeUser.email }}
+              </v-list-tile-title>
+              <v-list-tile-title v-else class="grey--text">
+                Login
+              </v-list-tile-title>
+            </v-list-tile-content>
+            <v-list-tile-action>
+              <v-btn v-on="{...menu,...tooltip}" icon>
+              <v-icon color="grey darken-2">person</v-icon>
+            </v-btn>
+            </v-list-tile-action>
+          </v-list-tile>
+        </template>
+        <span>Account</span>
+      </v-tooltip>
+
+
 
     </template>
 
@@ -136,12 +152,11 @@ export default {
   computed : {
     items () {
       const actions = [
-        { icon: 'help', text: 'Help', route: 'help' },
+        { icon: 'help', text: 'About', route: 'help' },
         { icon: 'cloud_download', text: 'Export Data' },
         { icon: 'bar_chart', text: 'Urban Indicators', route: 'indicators' },
       ];
       const loggedInActions = [
-        { divider : true},
         { icon: 'settings', text: 'Manage Data', route: 'manage' }
       ]
       return this.activeUser ? actions.concat(loggedInActions): actions;
@@ -184,7 +199,6 @@ export default {
     this.$store.dispatch('UPDATE_COLLECTION','indicators'),
     this.$store.dispatch('UPDATE_COLLECTION','indicatorSections'),
     this.$store.dispatch('UPDATE_COLLECTION','indicatorBlocks'),
-    this.$store.dispatch('UPDATE_COLLECTION','layers'),
     this.$store.dispatch('UPDATE_COLLECTION','layerCalcs'),
     this.$store.dispatch('UPDATE_COLLECTION','layerAttributes'),
     this.$store.dispatch('UPDATE_COLLECTION','areas'),

@@ -1,4 +1,5 @@
 <template>
+  <v-card v-bind:flat="!selected" class="indicator-hover">
 
   <div v-if="type === 'List' && selectedIndicator">
     <v-list>
@@ -14,7 +15,7 @@
   </div>
 
   <!-- WITH CHART -->
-  <div v-else-if="selectedIndicator" class="pa-2 indicator-hover" style="background-color:white;position:relative;" @click="updateIndicator({figure:figure[0],name:name})">
+  <div v-else-if="selectedIndicator" class="pa-2" style="position:relative;" @click="updateIndicator()">
 
     <div class="subheading font-weight-light" style="width:40%;">{{name}}</div>
 
@@ -70,10 +71,10 @@
   <div class="grey--text text--darken-2">
     Source: JIIS {{ year || $store.state.year }} <span style="float:right"><v-icon>save_alt</v-icon> Download data</span>
   </div>
-  <v-btn @click="log">LOG</v-btn>
 </div>
 
 </div>
+</v-card>
 </template>
 
 <script>
@@ -92,7 +93,7 @@ export default {
       selectedYear : '',
     }
   },
-  props: ['name','figure','description','unit','type','small','noChart'],
+  props: ['name','figure','description','unit','type','small','noChart','selected'],
   methods : {
     log() {
       console.log('data',this)
@@ -103,9 +104,10 @@ export default {
       this.expand = !this.expand
       this.rotation = this.rotation === 0 ? 180 : 0
     },
-    updateIndicator(figure,item) {
-      if (!figure || !this.year) return null
-      this.$store.commit("UPDATE",{key:['navigator','indicator'],value:figure})
+    updateIndicator() {
+      this.log()
+      if (!this.figure[0] || !this.year) return null
+      this.$store.commit("UPDATE",{key:['navigator','indicator'],value:{figure:this.figure[0],name:this.name}})
       this.$store.commit("UPDATE",{key:'year',value:this.year})
     },
     getNested (p, o) {
@@ -234,6 +236,7 @@ export default {
   },
   mounted (){
     if (this.areaDataLatest) this.selectedYear = this.areaDataLatest.year
+    if (this.selected) this.updateIndicator()
   //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])
   }
 
@@ -262,15 +265,17 @@ export default {
   font-size:20px;
   vertical-align: top;
 }
-.indicator-hover {
-  border-left: 3px solid #fff0;
-  padding-left:10px;
-  margin-left:-10px;
-}
-.indicator-hover:hover {
-  border-left: 3px solid #000;
-  background-color: #fff;
+
+.indicator-hover:hover, .indicator-hover:hover>div {
   cursor:pointer;
+  background-color:#fff6e6;
+}
+.indicator-hover:hover .v-slider__thumb {
+  background-color:var(--v-primary-base)!important;
+}
+
+.indicator-hover:hover .display-1 {
+  color:var(--v-primary-base)!important;
 }
 .v-slider__ticks span {
   font-size:0.70em;

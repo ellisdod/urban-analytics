@@ -62,7 +62,7 @@
   <v-list dense v-bind:class="cssclass">
     <v-list-tile class="attribute-row"
     v-for="(x, index) in listItems"
-    :key="x._id"
+    :key="index"
     v-model="x.active"
     @click="select(index, x._id)">
     <v-list-tile-action v-if="listKey&&schema.schema[listKey]._options&&schema.schema[listKey]._options[0]">
@@ -267,6 +267,14 @@ export default {
       })
     },
     items() {
+      if (this.collection==='features') {
+        if (this.$store.state.features) {
+          return this.$store.state.features[this.filterId]
+        } else {
+          return []
+        }
+      }
+
       let collectionData = Array.from(this.$store.state[`_col_${this.collection}`])
       console.log('collectiondata',this.collection,collectionData)
       if (!collectionData[0]) {
@@ -406,6 +414,8 @@ methods: {
         console.log('update failed',err)
         rej()}
       )
+
+
     })
 
     //promises.forEach(x=>{
@@ -442,7 +452,7 @@ methods: {
     //console.log('feature data type',this.geoDataType)
     this.selected = index
     this.selectedId = id
-    console.log('updating after select')
+    console.log('updating selected value')
     //this.$store.commit("UPDATE",{key:['selected',this.collection],value:id})
     this.$store.commit("UPDATE",{key:'_col_'+this.collection+'_selected',value: id})
     this.$nextTick(() => this.$forceUpdate())

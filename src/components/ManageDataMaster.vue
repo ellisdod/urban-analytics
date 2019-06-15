@@ -35,6 +35,7 @@
         featuresCollection="features"
         dataType = "Point"
         zoomLevel="12"
+        :featureLayers="featureLayers"
         >
       </map-view>
 
@@ -112,28 +113,36 @@
         v-if="$store.state._col_areas"
         contextmenu=""
         style="position:relative;height:400px;width;100%;"
-        :features="$store.state._col_areas.filter(x=>x.feature)"
+        v-bind:areas="true"
         featuresCollection="areas"
         dataType = "MultiPolygon"
         zoomLevel="12"
         >
       </map-view>
+      <div v-if="$store.state.selectedFeature" class="py-5">
+      <div class="pb-2 subheading font-weight-light">Indicators </div>
+      <v-tabs slider-color="primary" color="background">
+        <v-tab v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index" ripple>
+          {{ indicator.year }}
+        </v-tab>
+        <v-tab-item v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index">
+          <v-card flat>
+          <vue-json-pretty
+          class="px-3 mb-2 code"
+          :data="indicator">
+          </vue-json-pretty>
+        </v-card>
+        </v-tab-item>
+      </v-tabs>
+    </div>
     </v-flex>
     <v-flex sm5 xs12>
-        <v-card>
+        <div class="pb-2 subheading font-weight-light">Attached Attributes</div>
+        <v-card flat>
          <editable-data-list v-bind:addbottom="true" v-if="$store.state._col_areaLayers_selected" collection="areaAttributes" filter="areaLayers" v-bind:datatable="true"></editable-data-list>
         </v-card>
     </v-flex>
-    <v-flex xs12>
-      <vue-json-pretty
-      v-if="$store.state.selectedFeature"
-      class="px-3 mb-2 code"
-      :data="$store.getters.indicatorsForSelectedArea">
-      </vue-json-pretty>
-        <v-card>
-      <!--  <editable-data-list v-if="$store.state.selected.areaLayers" collection="areas" filter="areaLayers" v-bind:datatable="true"></editable-data-list>-->
-        </v-card>
-    </v-flex>
+
 
     <v-flex offset-sm3 sm9 xs12>
       <v-card>
@@ -238,7 +247,10 @@ export default {
     }
   },
   computed : {
-
+    featureLayers () {
+      const section = this.$store.getters.selectedIndicatorSection
+      return section ? section.geodata : null
+    }
   },
   methods: {
     update(tab){
@@ -251,17 +263,12 @@ export default {
     logStore() {
       console.log('data',this)
       console.log('store',this.$store.state)
+      this.$forceUpdate()
       //console.log(this.$store.getters.selectedFeature)
     }
   },
   created(){
-    this.$store.dispatch('UPDATE_COLLECTION','layers')
-    this.$store.dispatch('UPDATE_COLLECTION','areas')
-    this.$store.dispatch('UPDATE_COLLECTION','indicators')
-    this.$store.dispatch('UPDATE_COLLECTION','layerCalcs')
-    this.$store.dispatch('UPDATE_COLLECTION','layerAttributes')
-    this.$store.dispatch('UPDATE_COLLECTION','areaAttributes')
-    this.$store.dispatch('UPDATE_COLLECTION','areaLayers')
+
   }
 }
 </script>
