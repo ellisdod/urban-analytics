@@ -43,7 +43,7 @@ const store = new Vuex.Store({
     _col_areas_selected : '',
     _col_areaLayers : [],
     _col_areaLayers_selected:'',
-    _col_features : [],
+    _col_features : {},
     _col_features_selected : '',
     _col_indicators : [],
     _col_indicators_selected : '',
@@ -71,8 +71,8 @@ const store = new Vuex.Store({
     },
     navigator : {
       zoom:11,
-      center: { lat: 31.800558330295235, lng: 35.201552314749975 },
-      defaultCenter: {lat: 31.809357074964257, lng: 35.18584083885216},
+      center: { lat: 31.77487761850741, lng: 35.20328852089031 },
+      defaultCenter: {lat: 31.77487761850741, lng: 35.20328852089031},
       indicator: {
         figure : 'pop_year_end',
         name : 'Population'
@@ -89,24 +89,40 @@ const store = new Vuex.Store({
   },
   actions : {
     UPDATE_COLLECTION ({state, commit}, col) {
-      //console.log('collections',collections)
+      //console.log('1. update collection',col)
       return new Promise((res,rej)=>{
           const params = {
             name : col.name || col,
             query : col.query || {},
-            layer : col.layer
+            layer : col.layer,
           }
-          if (col.name === 'features' && !params.layer) {
-            params.layer = state._col_layers_selected
-            if (!layers) rej()
+
+          if (params.name === 'features') {
+            params.layer = params.layer || state._col_layers_selected
+            if (!params.layer) rej('no feature layer defined')
           }
-          console.log('collection',col)
+
           api.find(params.name,params.query,'',{lean: true},params.layer).then(i=>{
-            commit('UPDATE',{
-              key:'_col_' + params.name,
-              value:i.data
-            })
-            console.log('updated collection: '+'_col_' + params.name,i.data.length, i.data[0])
+            if (params.name === 'features') {
+              commit('UPDATE_FEATURES',{
+                key: params.layer,
+                value: i.data
+              })
+            } else {
+              const key = '_col_' + params.name
+              const selKey = key + '_selected'
+              commit('UPDATE',{
+                key: key,
+                value: i.data
+              })
+              if (!state[selKey]) {
+                commit('UPDATE',{
+                  key: selKey,
+                  value: i.data[0]._id
+                })
+              }
+            }
+            console.log('2. updated collection: _col_' + params.name,i.data.length, i.data[0])
             res(i.data)
           }).catch(error => {
             console.log('caught error',error)
@@ -189,15 +205,14 @@ const store = new Vuex.Store({
     state.neighbourhoodsTest = i.data
   })*/
 
-  UPDATE_FEATURES (state, params) {
-    api.find(params.collection, params.query).then(x=> {
-      state.geo.features = x.data
-      //console.log('geojson smaple',x.data[0].feature)
-    })
+  UPDATE_FEATURES (state, obj) {
+      console.log('updating feature')
+      Vue.set( state._col_features, obj.key, obj.value )
   },
   UPDATE (state, obj) {
     //console.log(obj.value)
     if (Array.isArray(obj.key)) {
+      console.log('updating store nested: ' + JSON.stringify(obj.key), obj.value)
       const nested =  obj.key.slice(0,obj.key.length-1).reduce((acc,x) =>
       (acc && acc[x] !== 'undefined') ? acc[x] : undefined
       , state)
@@ -205,18 +220,15 @@ const store = new Vuex.Store({
       const obj2 = {}
       obj2[obj.key.slice(-1)[0]] = obj.value
       Object.assign(nested, obj2);
-    } else if (typeof state[obj.key] === 'object' && typeof state[obj.value] === 'object' && (!Array.isArray(obj.value)) ){
-      console.log('updating store object: ' + JSON.stringify(obj.key), obj.value)
-      state[obj.key] = Object.assign({},state[obj.key], obj.value)
     } else {
-      console.log('is array', Array.isArray(obj.value), obj.value )
+      //console.log('is array', Array.isArray(obj.value), obj.value )
       console.log('updating store value: ' + obj.key, obj.value)
       state[obj.key] = obj.value
     }
 
   },
   UPDATE_AREA (state, code) {
-    const e = state.geo.areas.filter(x=>x.feature.properties.id ==code)[0]
+    const e = state.geo.areas.filter(x=>x.feature.properties.id === code)[0]
     console.log(e);
     state.neighbourhood = code
     state.map.center = {
@@ -234,7 +246,7 @@ getters : {
   neighbourhoods : (state, getters) => {
     if (!state.indicators) return []
     return state.indicators.reduce((acc,x)=>{
-      acc= acc ||[]
+      acc= acc || []
       if (acc.indexOf(x.name) === -1 ) acc.push(x.name)
       return acc;
     },[])
@@ -306,6 +318,10 @@ getters : {
     if (!state._col_indicatorBlocks) return null;
     return state._col_indicatorBlocks.filter(x=>x.active&&x.layer===state._col_indicatorSections_selected)
   },
+  selectedIndicatorSection : state => {
+    if (!state._col_indicatorSections_selected) return null;
+    return state._col_indicatorSections.filter(x=>x._id===state._col_indicatorSections_selected)[0]
+  },
   allIndicatorsByYear : state => {
     if (!state._col_indicators) return null;
     return state._col_indicators.reduce((acc,x)=>{
@@ -337,7 +353,7 @@ getters : {
     if (getters.allIndicatorsByYear) return getters.allIndicatorsByYear[state.year]
   },
   indicatorsForSelectedArea : (state,getters) => {
-    if (getters.allIndicatorsByArea) return getters.allIndicatorsByArea[state.neighbourhood].sort((a,b)=> a.year - b.year)
+    if (getters.allIndicatorsByArea&& getters.allIndicatorsByArea[state.neighbourhood]) return getters.allIndicatorsByArea[state.neighbourhood].sort((a,b)=> a.year - b.year)
   },
   selectedIndicator : (state,getters) => {
     return getNested( [state.neighbourhood,state.year] , getters.allIndicatorsByAreaYear)
