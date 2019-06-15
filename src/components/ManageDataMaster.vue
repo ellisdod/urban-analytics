@@ -151,7 +151,6 @@
     </v-flex>
   </v-layout>
     </v-flex>
-    <v-btn @click="logStore">log</v-btn>
 
   </v-layout>
 </v-container>
