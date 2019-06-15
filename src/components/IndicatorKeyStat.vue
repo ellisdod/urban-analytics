@@ -27,7 +27,7 @@
     </div>
     <div class="caption">{{description}}</div>
 
-    <div v-if="dataYears.length>1" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
+    <div v-if="dataYears" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
       <v-slider
       color="grey lighten-2"
       track-color="transparent"
