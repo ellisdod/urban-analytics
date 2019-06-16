@@ -3,16 +3,17 @@
     <div style="height:400px;">
 
       <l-map
+      ref="myMap"
       :zoom="$store.state.map.zoom"
       :center="$store.state.map.center"
       :options="mapOptions"
       @update:center="centerUpdate"
       @update:zoom="zoomUpdate"
       class="main-map"
-      :id="'map_'+featuresCollection">
+      :id="'map_'+featuresCollection"/>
 
-      <l-protobuf v-if="baseMap==='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
-      <l-tile-layer v-if="baseMap==='basic'" url="https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png" :options="protobufOpts"></l-tile-layer>
+      <l-protobuf v-if="baseMap=='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
+      <l-tile-layer v-if="baseMap=='basic'" url="https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png" :options="protobufOpts"/>
 
       <l-geo-json
       v-if="areas"
@@ -29,8 +30,8 @@
     :options="getGeoJsonOptions(index)"/>
 
 
-<!--
-     <l-geo-json
+
+  <!--      <l-geo-json
   v-else-if="survey"
   v-for="(item, i) in surveyData"
   :key="item._id"
@@ -87,15 +88,13 @@ v-for="(item, i) in $store.state.geo.features"
   </v-menu>
 </div>
 
-<div id="map-legend" v-if="showLegend&&legends" style="max-height:400px; overflow-y:auto; overflow-x:visible!important;">
+<div id="map-legend" v-if="showLegend&&legends" style="max-height:300px; overflow-y:auto; overflow-x:visible!important;">
   <div v-for="(legend,i) in legends" :key="i">
-    <div class="body-1 mt-2">{{featuresOpts[i].text}}</div>
     <v-select
-    style="width:100px;margin-top:-15px;"
+    style="width:100px;"
     class="caption"
     color="grey"
     v-bind:items="Object.keys(featuresAttrs[i])"
-    v-model="displayKey[i]"
     ></v-select>
 
     <table v-if="legend&&legend.type===Number">
@@ -121,6 +120,7 @@ v-for="(item, i) in $store.state.geo.features"
     </table>
   </div>
 </div>
+
 
 </div>
 
@@ -367,10 +367,10 @@ computed: {
   },
   featuresOpts () {
     if (!this.featureLayers) return null
-
+    this.log('featuresopts')
     return this.featureLayers.map(x=>{
       const layer = this.$store.state._col_layers.filter(i=>i._id === x)[0]
-      return layer ? { type: layer.data_type, text: layer.text_en } : null
+      return layer ? { type: layer.data_type } : null
     })
   },
   featuresAttrs () {
@@ -378,8 +378,8 @@ computed: {
     //this.featureLayers
     //this.$store.state._col_layerAttributes
     if (!this.featureLayers) return null
-
-    console.log('featureAttrs - featurelayers',this.featureLayers)
+    this.log('featuresattrs')
+    console.log('featurelayers',this.featureLayers)
 
     const attrs = this.featureLayers.reduce((arr,x,index1)=>{
       arr.push(this.$store.state._col_layerAttributes.reduce((obj,i,index2)=>{
@@ -394,17 +394,17 @@ computed: {
     return attrs
   },
   legends () {
-    //console.log('legends - featuresList',this.featuresList)
-    //console.log('legends - featuresAttrs', JSON.stringify(this.featuresAttrs) )
-    //console.log('legends - displayKey', JSON.stringify(this.displayKey) )
+
     //this.featuresAttrs
     //this.displayKey
 
     if (!this.featuresAttrs || !this.featuresList || !this.displayKey['0']) return null
+
+    this.log()
     const legends = this.featuresAttrs.map((att,i)=>{
       const key = this.displayKey[i]
 
-      //console.log('key',key)
+      console.log('key',key)
       const legend = {
         items : {}
       }
@@ -426,7 +426,7 @@ computed: {
 
         items = items.filter(x=>x!==null)
         items = items.sort()
-        //console.log('items',items)
+        console.log('items',items)
 
         //const s1 = ['#c51b7d','#fee08b','#3288bd']
         let scale = ['#ff236c','#2377ff','#f4f141','#42f4b9','#f46441']
@@ -434,12 +434,13 @@ computed: {
           scale = chroma.scale(scale).mode('lch').colors(items.length)
         }
 
+        const colorObj = {'null':'#999'}
+
         legend.items = items.reduce((acc,x,index)=>{
           acc[x] = scale[index]
           //acc[x] = f(index/(items.length-1))
           return acc
-        },{})
-        legend.items.null = '#999'
+        },colorObj)
         legend.type = String
 
       } else if (att[key].type === 'Boolean') {
@@ -447,60 +448,37 @@ computed: {
         legend.type = Boolean
       }
 
-      //console.log('legend',legend, key)
+      console.log('legend',legend, key)
       this.log()
       return legend
     })
-    //console.log('legends',legends)
+    console.log('legends',legends)
     this.log()
     return ( legends[0] && legends[0].items ) ? legends : null
-  },
-  legendsOrdered () {
-    return this.legends.map(x=>{
-      return Object.keys.sort()
-    })
   }
+
 
 },
 methods: {
 
   resetDisplayKey () {
-    //this.log('resetDisplayKey')
+    this.log('resetDisplayKey')
     const keys = this.featuresAttrs.reduce((acc,x,i)=>{
       acc[i] = Object.keys(x)[0]
       return acc
     },{})
 
     this.displayKey = keys
-    //console.log('reset display keys', keys[0])
+    console.log('reset display keys', keys[0])
     return this.displayKey
-  },
-
-  getGeoJsonOptions (index) {
-    //console.log('geojsonopts - featuresOpts', this.featuresOpts)
-    if (this.featuresCollection === 'areas') this.geoJsonAreaOptions
-    if (!this.featuresOpts || !this.featuresOpts[index]) return {}
-    const type = this.featuresOpts[index].type
-    let opts = ''
-    if (type === 'Point') {
-      opts = this.geoJsonPointOptions(index)
-      //console.log('geojsonopts - opts',opts)
-      return opts
-    } else if (type === 'MultiPolygon'){
-      return this.geoJsonAreaOptions
-    }
   },
   geoJsonPointOptions (layerIndex) {
     var self = this;
     if (!self.legends) return null
-    //console.log('geoJsonPointOptions - legend', self.legends[layerIndex], layerIndex)
     return {
       pointToLayer: function (feature, latlng) {
-        const legend = self.legends ?  self.legends[layerIndex] : null
-        const key = layerIndex === undefined  ?  null : self.displayKey[layerIndex]
-        const style = self.getPointStyle(feature, key , legend)
-        //console.log(style)
-        return L.circleMarker( latlng, style )
+        const legend  = self.legends ?  self.legends[layerIndex] : null
+        return L.circleMarker( latlng, self.getPointStyle(feature, self.displayKey[layerIndex] , legend) )
       },
 
       onEachFeature: (feature, layer) => {
@@ -521,9 +499,19 @@ methods: {
       }
     }
   },
+  getGeoJsonOptions (index) {
+    if (this.featuresCollection === 'areas') this.geoJsonAreaOptions
+    if (!this.featuresOpts || !this.featuresOpts[index]) return {}
+    const type = this.featuresOpts[index].type
+    if (type === 'Point') {
+      return this.geoJsonPointOptions(index)
+    } else if (type === 'MultiPolygon'){
+      return this.geoJsonAreaOptions
+    }
+  },
   getPointStyle(feature,key,legend){
     //if (!this.legends) return null
-    //console.log('getPointStyle', legend)
+    //console.log(feature)
     const style = {
       radius: 4,
       fillColor: 'blue',
@@ -532,13 +520,12 @@ methods: {
       fillOpacity: 0.5
     }
     const val = feature.properties[key]
-    //console.log(legend, val,key,feature.properties)
     if (!this.showLegend || !legend) return style
 
     if (this.showLegend && legend.type === Number) {
-      style.fillColor = legend.chroma( (val - legend.items.min)/legend.items.constant ).hex()
+      style.color = legend.chroma( (val - legend.items.min)/legend.items.constant )
     } else if (this.showLegend) {
-      style.fillColor = legend.items[val]
+      style.color = legend.items[val]
     }
     //console.log(key, color,val)
     return style
@@ -632,18 +619,18 @@ methods: {
   log(text) {
     //console.log(this.$refs.myMap.mapObject)
     //this.$forceUpdate()
-    /*const layers = this.$store.state._col_layers.reduce((acc,x)=>{
+    const layers = this.$store.state._col_layers.reduce((acc,x)=>{
       if (acc.indexOf(x._id) ===-1) acc.push(x._id)
       return acc
-    },[])*/
+    },[])
 
-    //console.log(text, 'layers: ' + layers.length, this.$store.state._col_layers_selected, this.featureLayers)
-      //console.log(text, this.featureLayers.join(','), this.featuresList.join(','))
+    console.log(text, 'layers: ' + layers.length, this.$store.state._col_layers_selected)
+
   }
 },
 watch : {
   featuresAttrs () {
-     this.resetDisplayKey()
+    //this.resetDisplayKey()
   }
 },
 mounted(){
@@ -653,7 +640,7 @@ mounted(){
     acc[x.name] = '';
     return acc;
   },{});
-  this.editFeatureDefaults = Object.assign({},this.editFeature)
+  this.editFeatureDefaults = Object.assign({},this.editFeature);
   this.resetDisplayKey()
   //console.log('map',this.$refs.myMap.mapObject)
 
@@ -668,7 +655,7 @@ mounted(){
   this.$store.watch(
     (state, getters) => state._col_layers_selected,
     (newValue, oldValue) => {
-      //this.resetDisplayKey()
+      this.resetDisplayKey()
       //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
     }
   )

@@ -207,7 +207,10 @@ export default {
   ]
   return Promise.all(data)
   })
-  .then(()=> this.loading = false)
+  .then(()=> {
+    console.log('LOADING COMPLETE')
+    this.loading = false
+  })
 
   }
 

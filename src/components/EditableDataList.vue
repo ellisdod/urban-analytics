@@ -24,6 +24,7 @@
           <td v-for="(h,ind) in featureHeaders">
             <template v-if="h.type === Array">
               <v-chip v-for="o in getNested(nestedPath,props.item)[h.value]"
+              :class="'func-'+o"
               outline
               small>
               {{ o }}
@@ -261,15 +262,17 @@ export default {
       return this.$store.state[`_col_${this.filter}_selected`]
     },
     listItems (){
-      return this.items.map((x,i)=>{
+      const items = this.items.map((x,i)=>{
         x.active = this.selected === i ? true : false
         return x
       })
+      console.log('listitems',items)
+      return items
     },
     items() {
       if (this.collection==='features') {
-        if (this.$store.state.features) {
-          return this.$store.state.features[this.filterId]
+        if (this.$store.state._col_features) {
+          return this.$store.state._col_features[this.filterId]
         } else {
           return []
         }
@@ -278,7 +281,7 @@ export default {
       let collectionData = Array.from(this.$store.state[`_col_${this.collection}`])
       console.log('collectiondata',this.collection,collectionData)
       if (!collectionData[0]) {
-        //this.updateStore()
+        //this.updateCollection()
         return []
       }
       if (this.filter&&collectionData[0]) {
@@ -392,9 +395,10 @@ pastedComputed () {
 
 },
 methods: {
-  updateStore(force) {
-    if (!force && !this.collection==='features' && this.$store.state[`_col_${this.collection}_selected`]) return null;
+  updateCollection(force) {
+    if ((!force && !this.collection==='features') || (!force && this.$store.state[`_col_${this.collection}_selected`])) return Promise.reject();
     const self = this
+    console.log('EDITABLEDATALIST updating collection ' + this.collection)
     return new Promise((res,rej)=>{
       let request = this.collection
       if (this.collection==='features') {
@@ -403,7 +407,7 @@ methods: {
           name : 'features',
           layer : layer
         }
-        if (!layer) rej()
+        if (!layer || (!force && this.$store.state._col_features[layer])) rej()
       }
       self.$store.dispatch('UPDATE_COLLECTION',request)
       .then(x=>{
@@ -414,8 +418,6 @@ methods: {
         console.log('update failed',err)
         rej()}
       )
-
-
     })
 
     //promises.forEach(x=>{
@@ -448,15 +450,14 @@ methods: {
     },{})
   },
   select(index,id) {
-    //.log('index',index);
+    console.log('index',index,id  );
     //console.log('feature data type',this.geoDataType)
     this.selected = index
     this.selectedId = id
-    console.log('updating selected value')
+    console.log('updating selected value: ', this.collection, id)
     //this.$store.commit("UPDATE",{key:['selected',this.collection],value:id})
     this.$store.commit("UPDATE",{key:'_col_'+this.collection+'_selected',value: id})
     this.$nextTick(() => this.$forceUpdate())
-
     //this.$forceUpdate()
 
   },
@@ -498,7 +499,7 @@ methods: {
   del(collection,id) {
     this.loading = true
     confirm('Are you sure you want to delete this item?') && api.del(collection,id).then(x=>{
-      this.updateStore()
+      this.updateCollection(true)
       this.selected = this.selected > 0 ? this.selected - 1 : 0;
       this.loading = false;
     })
@@ -520,7 +521,7 @@ methods: {
     console.log('saving', [collection, id, this.edited])
 
     api.update(collection,params,this.edited,{},colparams).then(x=>{
-      this.updateStore()
+      this.updateCollection(true)
       this.close()
     })
 
@@ -539,7 +540,7 @@ methods: {
       console.log('making request...')
       api.create(collection,'',formData).then(x=>{
         console.log('uploaded')
-        this.updateStore()
+        this.updateCollection(true)
         this.close()
         this.pasted = ''
       })
@@ -560,23 +561,7 @@ methods: {
     logStore() {
       console.log('data',this)
       console.log('store',this.$store.state)
-    },
-    updateFeatures(layer) {
-      const params = {
-        name : this.collection,
-        query : {},
-        layer: layer
-      }
-      //console.log(params)
-      this.$store.dispatch('UPDATE_COLLECTION', params).then(x=>{
-        const self=this
-        setTimeout(function(){
-          console.log('update store:', self.$store.state._col_features)
-          //console.log('updated')
-          self.$forceUpdate()
-        }, 500);
-      })
-    },
+    }
 
   },
   watch: {
@@ -589,23 +574,22 @@ methods: {
     },
     filterId (newValue) {
       console.log('WATCH: layerchanged',newValue)
-      if (this.collection==='features') this.updateFeatures(newValue)
+      if (this.collection==='features') this.updateCollection()
     }
   },
   created () {
+
     console.log('created')
-    this.updateStore()
+    this.updateCollection()
     .then(x=>{
-      console.log('fetching ' +this.collection,x)
+      /*console.log('fetching ' +this.collection,x)
       if (!this.$store.state['_col_'+this.collection+'_selected']) this.select(0,x[0]._id)
-      console.log('firstid',x[0]._id)
+      console.log('firstid',x[0]._id)*/
     }) // update store with selected value
     .catch(err=>console.log('failed to update store'))
+
   },
   mounted () {
-
-    //this.$store.commit("UPDATE",{key:'selectedFeature',value:''})
-
   }
 }
 </script>
@@ -670,6 +654,14 @@ methods: {
 }
 .no-background,.no-background div {
   background:none !important;
+}
+
+span.func-sum {
+  color:var(--v-primary-base)!important;
+}
+
+span.func-count {
+  color:#0ddb97 !important;
 }
 
 </style>

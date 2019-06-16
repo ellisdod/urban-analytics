@@ -11,7 +11,7 @@
             <v-layout row wrap>
               <v-flex xs12>
                 <map-view
-                v-if="featureLayers"
+          
                 contextmenu=""
                 style="position:relative;height:400px;"
                 :featureLayers="featureLayers"

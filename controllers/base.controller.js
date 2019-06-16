@@ -275,8 +275,10 @@ function Controller (model) {
   this.find = function (req, res, next) {
     const layer = req.params.collection
     const query = layer ? {layer:layer} : {}
+    console.log('received request', layer, query)
     model.find(query, function (err, x) {
       if (err) return next(err)
+      x.forEach(x=>console.log(x._id))
       res.send(x)
     })
   }

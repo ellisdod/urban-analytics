@@ -39,6 +39,7 @@ const store = new Vuex.Store({
     _col_layers : [],
     _col_layers_selected:'',
     _col_layerAttributes : [],
+    _col_layerAttributes_selected : '',
     _col_areas : [],
     _col_areas_selected : '',
     _col_areaLayers : [],
@@ -102,7 +103,10 @@ const store = new Vuex.Store({
             if (!params.layer) rej('no feature layer defined')
           }
 
+          //console.log('making api request',params.name,params.query,params.layer )
+
           api.find(params.name,params.query,'',{lean: true},params.layer).then(i=>{
+            //console.log('data found: ',params.name,i.data.map(x=>x._id),i.data )
             if (params.name === 'features') {
               commit('UPDATE_FEATURES',{
                 key: params.layer,
@@ -111,6 +115,7 @@ const store = new Vuex.Store({
             } else {
               const key = '_col_' + params.name
               const selKey = key + '_selected'
+              //console.log('before commiting update',key,i.data.map(x=>x._id),i.data  )
               commit('UPDATE',{
                 key: key,
                 value: i.data
@@ -222,7 +227,8 @@ const store = new Vuex.Store({
       Object.assign(nested, obj2);
     } else {
       //console.log('is array', Array.isArray(obj.value), obj.value )
-      console.log('updating store value: ' + obj.key, obj.value)
+      const ids = (obj.value[0] && obj.value[0]._id) ? obj.value.map(x=>x._id) : ''
+      console.log('updating store value: ' + obj.key, obj.value, ids)
       state[obj.key] = obj.value
     }
 

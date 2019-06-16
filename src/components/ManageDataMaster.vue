@@ -35,7 +35,7 @@
         featuresCollection="features"
         dataType = "Point"
         zoomLevel="12"
-        :featureLayers="featureLayers"
+        v-bind:featureLayers="[$store.state._col_layers_selected]"
         >
       </map-view>
 
@@ -120,7 +120,7 @@
         >
       </map-view>
       <div v-if="$store.state.selectedFeature" class="py-5">
-      <div class="pb-2 subheading font-weight-light">Indicators </div>
+      <div class="pb-2 subheading font-weight-light  ejmap-border-bottom">Indicators </div>
       <v-tabs slider-color="primary" color="background">
         <v-tab v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index" ripple>
           {{ indicator.year }}
@@ -128,7 +128,7 @@
         <v-tab-item v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index">
           <v-card flat>
           <vue-json-pretty
-          class="px-3 mb-2 code"
+          class="pa-3 mb-2 code"
           :data="indicator">
           </vue-json-pretty>
         </v-card>
@@ -193,6 +193,7 @@
     </v-btn>
 </div>
 
+<v-btn @click="log()">log</v-btn>
 
 <v-dialog v-model="uploadDialog" max-width="600">
    <upload :layer="$store.state['_col_'+tab+'_selected']"></upload>
@@ -246,10 +247,7 @@ export default {
     }
   },
   computed : {
-    featureLayers () {
-      const section = this.$store.getters.selectedIndicatorSection
-      return section ? section.geodata : null
-    }
+
   },
   methods: {
     update(tab){
@@ -259,15 +257,14 @@ export default {
 			 this.$forceUpdate()
 		  });
     },
-    logStore() {
+    log() {
       console.log('data',this)
       console.log('store',this.$store.state)
-      this.$forceUpdate()
+      //this.$forceUpdate()
       //console.log(this.$store.getters.selectedFeature)
     }
   },
-  created(){
-
+  mounted(){
   }
 }
 </script>
@@ -277,5 +274,11 @@ export default {
   right:12px;
   top:60px;
   margin-top:-50px;
+}
+.vjs-tree .vjs-value__string {
+  color: var(--v-primary-base)
+}
+.vjs-key {
+  color: #555
 }
 </style>

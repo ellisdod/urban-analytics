@@ -1,64 +1,65 @@
 <template>
+
   <v-card v-bind:flat="!selected" class="indicator-hover">
 
-  <div v-if="type === 'List' && selectedIndicator">
-    <v-list>
-      <v-list-item v-for="(val,key) in selectedIndicator[figure[0]]">
-        <v-list-tile-action>
-          {{key}}
-        </v-list-tile-action>
-        <v-list-tile-content>
-          {{val}}
-        </v-list-tile-content>
-      </v-list-item>
-    </v-list>
-  </div>
-
-  <!-- WITH CHART -->
-  <div v-else-if="selectedIndicator" class="pa-2" style="position:relative;" @click="updateIndicator()">
-
-    <div class="subheading font-weight-light" style="width:40%;">{{name}}</div>
-
-
-    <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
-      <span class="display-1 py-0">{{selectedIndicator[figure[0]]}}</span>
-      <span v-if="unit" class="subheading ml-1">{{unit}}</span>
-      <div class="font-weight-light">{{year}}</div>
+    <div v-if="type === 'List' && selectedIndicator">
+      <v-list>
+        <v-list-item v-for="(val,key) in selectedIndicator[figure[0]]">
+          <v-list-tile-action>
+            {{key}}
+          </v-list-tile-action>
+          <v-list-tile-content>
+            {{val}}
+          </v-list-tile-content>
+        </v-list-item>
+      </v-list>
     </div>
-    <div class="caption">{{description}}</div>
 
-    <div v-if="dataYears" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
-      <v-slider
-      color="grey lighten-2"
-      track-color="transparent"
-      always-dirty
-      inverse-label
-      :tick-labels="dataYears"
-      v-model="selectedYear"
-      ticks="always"
-      v-bind:tick-size="2"
-      :min="dataYears[0]"
-      :max="dataYears[dataYears.length-1]"
-      >
-    </v-slider>
-   </div>
+    <!-- WITH CHART -->
+    <div v-else-if="selectedIndicator" class="pa-2" style="position:relative;" @click="updateIndicator()">
+
+      <div class="subheading font-weight-light" style="width:40%;">{{name}}</div>
+
+
+      <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
+        <span class="display-1 py-0">{{selectedIndicator[figure[0]]}}</span>
+        <span v-if="unit" class="subheading ml-1">{{unit}}</span>
+        <div class="font-weight-light">{{year}}</div>
+      </div>
+      <div class="caption">{{description}}</div>
+
+      <div v-if="dataYears" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
+        <v-slider
+        color="grey lighten-2"
+        track-color="transparent"
+        always-dirty
+        inverse-label
+        :tick-labels="dataYears"
+        v-model="selectedYear"
+        ticks="always"
+        v-bind:tick-size="2"
+        :min="dataYears[0]"
+        :max="dataYears[dataYears.length-1]"
+        >
+      </v-slider>
+    </div>
 
     <div v-bind:style="chartWidthClass">
 
-    <bar-vertical v-if="type==='Figure'"
-    style="margin-top:0px;"
-    v-bind:chart-data="prepBarChartData"
-    class="bar-chart-minimal"
-    v-bind:click-handler="true"
-    v-bind:x-labels="false"
-    v-bind:y-labels="false">
+      <bar-vertical v-if="type==='Figure'"
+      style="margin-top:0px;"
+      v-bind:chart-data="prepBarChartData"
+      class="bar-chart-minimal"
+      v-bind:click-handler="true"
+      v-bind:x-labels="false"
+      v-bind:y-labels="false">
     </bar-vertical>
 
-  <bar-vertical v-else-if="type==='Chart' && selectedIndicator"
-  style="height:300px; margin-bottom:-30px;"
-  v-bind:x-labels="true"
-  v-bind:y-labels="true"
-  v-bind:chart-data="generateChartDataSets">
+    <bar-vertical v-else-if="type==='Chart' && selectedIndicator"
+    style="height:300px; margin-bottom:-30px;"
+    v-bind:x-labels="true"
+    v-bind:y-labels="true"
+    v-bind:chart-data="generateChartDataSets">
   </bar-vertical>
 </div>
 
@@ -74,6 +75,7 @@
 </div>
 
 </div>
+
 </v-card>
 </template>
 
@@ -237,7 +239,7 @@ export default {
   mounted (){
     if (this.areaDataLatest) this.selectedYear = this.areaDataLatest.year
     if (this.selected) this.updateIndicator()
-  //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])
+    //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])
   }
 
 }
