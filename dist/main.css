@@ -245,6 +245,12 @@ td.key-figures {
 .no-background,.no-background div {
   background:none !important;
 }
+span.func-sum {
+  color:var(--v-primary-base)!important;
+}
+span.func-count {
+  color:#0ddb97 !important;
+}
 
 
 
@@ -354,5 +360,11 @@ td.key-figures {
   right:12px;
   top:60px;
   margin-top:-50px;
+}
+.vjs-tree .vjs-value__string {
+  color: var(--v-primary-base)
+}
+.vjs-key {
+  color: #555
 }
 

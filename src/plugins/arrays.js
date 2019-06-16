@@ -2,6 +2,8 @@
 const sortNumbers = function (arr, key) {
   //const sorted = arr.map( x => parseInt(getNested(key,x))).sort((a,b)=> (!getNested(key,b))-(!getNested(key,a)) || +(getNested(key,a)>getNested(key,b))||-(getNested(key,a)<getNested(key,b)));
   //numbers to the front
+  if (!arr || !key ) return null
+
   arr = arr.map(x=>getNested(key,x))
   const sorted = arr.sort(function(m1,p1){
       var m=parseInt(m1),
