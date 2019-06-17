@@ -3,6 +3,7 @@
     <div style="height:400px;">
 
       <l-map
+      ref="myMap"
       :zoom="$store.state.map.zoom"
       :center="$store.state.map.center"
       :options="mapOptions"
@@ -466,6 +467,7 @@ methods: {
 
   resetDisplayKey () {
     //this.log('resetDisplayKey')
+    if (!this.featuresAttrs) return null
     const keys = this.featuresAttrs.reduce((acc,x,i)=>{
       acc[i] = Object.keys(x)[0]
       return acc
@@ -644,6 +646,7 @@ methods: {
 watch : {
   featuresAttrs () {
      this.resetDisplayKey()
+
   }
 },
 mounted(){
