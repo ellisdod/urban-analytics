@@ -39,7 +39,6 @@
       v-model="collection"
       ></v-select>
       <v-select
-      v-if="!layer"
       name="layer"
       :items="layers"
       label="Layer"
@@ -52,8 +51,11 @@
       label="Format"
       v-model="indicatorFormat"
       ></v-select>
-      <v-text-field v-if="isSaving" label="Location" v-model="neighbourhood"></v-text-field>
-      <v-btn v-if="isSaving" type="submit" color="blue" dark depressed>Upload</v-btn>
+      <!--<v-text-field v-if="isSaving" label="Location" v-model="neighbourhood"></v-text-field>-->
+      <v-spacer></v-spacer>
+      <v-btn color="grey lighten-1" dark depressed @click="close()">Cancel</v-btn>
+        <v-btn v-if="isSaving" type="submit" :loading="processing" color="blue" dark depressed>Upload</v-btn>
+      </v-card-actions>
     </div>
   </form>
 </div>
@@ -72,6 +74,7 @@ export default {
   props : ['layer', 'layerCollection'],
   data() {
     return {
+      processing : false,
       isSaving:false,
       uploadedFiles: [],
       uploadError: null,
@@ -100,26 +103,42 @@ export default {
       this.neighbourhood = this.file.name.split('.')[0];
       this.indicatorFormat = this.file.name.split('.')[1];
     },
+    close () {
+      this.$emit('close',true)
+    },
     processForm () {
-      let formData = new FormData();
-      formData.append('neighbourhood', this.neighbourhood);
-      formData.append('layer', this.layerSelected || this.layer);
-      formData.append('file', this.file);
-      formData.append('format', this.indicatorFormat);
-      formData.append('update', JSON.stringify(this.update))
-
+      this.processing = true
+      const layer = this.layerSelected || this.layer
       const collectionParams = dbConfig[this.collection].params ? this.layer : ''
       const collection = this.collection || alert('Collection required');
       const func = this.uploadFunction==="update" ? "updateMany" : "create"
 
+      let formData = new FormData();
+      formData.append('neighbourhood', this.neighbourhood);
+      formData.append('layer', layer);
+      formData.append('file', this.file);
+      formData.append('format', this.indicatorFormat);
+      formData.append('update', JSON.stringify(this.update))
+
       api[func](collection, null, formData, {
           'Content-Type': 'multipart/form-data',
         },collectionParams
-        ).then(function(){
+      ).then(x=>{
         console.log('SUCCESS!!');
+        this.$store.dispatch('UPDATE_COLLECTION',{
+          name : 'features',
+          layer : layer,
         })
-       .catch(function(){
-        console.log('FAILURE!!');
+        this.close()
+        })
+       .catch((err)=>{
+         console.log(err.response)
+         if(!err.response) return null
+         const errors = err.response.data.error.errors
+         alert(Object.keys(errors).reduce((acc,x)=>{
+           acc = acc + '\n' + errors[x].name + ': ' + errors[x].message
+           return acc
+         },''))
        });
 
 
@@ -127,7 +146,13 @@ export default {
 },
 computed : {
   layers() {
-    this.$store.state[`_col_${this.layerCollection}`] || []
+    const layers = this.$store.state[`_col_${this.layerCollection}`]
+    if (layers) return layers.map(x=>{
+      return {
+        text : x.name,
+        value : x._id
+      }
+    })
   },
 },
 mounted () {

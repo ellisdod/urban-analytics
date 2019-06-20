@@ -18,7 +18,7 @@
       <l-geo-json
       v-if="areas"
       :geojson="areasGeoJson"
-      v-bind:options-style="areaStyle"
+      :options-style="areaStyle"
       :options="getGeoJsonOptions()"/>
 
 
@@ -27,7 +27,9 @@
     v-if="featureLayers"
     :key="index"
     :geojson="layer"
-    :options="getGeoJsonOptions(index)"/>
+    :options="getGeoJsonOptions(index)"
+    :options-style="geoJsonStyle(index)"
+    />
 
 
 <!--
@@ -181,9 +183,10 @@ export default {
       geoJsonOptions:{
         onEachFeature: (feature, layer) => {
           var self = this;
-          const p = feature.properties
-          const n = self.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === p.id)[0]
-          layer.bindPopup('<p>'+n.name+'</p><p>'+self.$store.state.navigator.indicator.name +': '+n[self.$store.state.navigator.indicator.figure]+'</p>');
+          const html = Object.keys(feature.properties)
+            .reduce((acc,key)=> acc + '<li>' + key + ': ' + feature.properties[key] + '</li>','<ul>')
+            + '</ul>'
+          layer.bindPopup(html);
 
           layer.on({
             click : function(e) {
@@ -207,7 +210,7 @@ export default {
               self.$store.commit('UPDATE',{key:['map','zoom'],value:15});
               self.$store.commit("UPDATE",{key:'selectedFeature',value:e.target.feature.properties._id})
 
-              //console.log('changed',this.$store.state.neighbourhood);
+              console.log('changed',this.$store.state.neighbourhood);
               //console.log(e.target._map.getCenter());
               self.$store.commit('UPDATE',{
                 key:['map','center'],
@@ -235,9 +238,22 @@ export default {
 
     }
   },
+  geoJsonPolygonStyle : function(feature) {
+    //console.log(feature)
+    //getLegendStyle(feature,key,legend)
+    const color = feature._selected ? 'black' : 'white'
+    return {
+      weight: 1,
+      color: color,
+      opacity: 0.9,
+      fillColor: color,
+      fillOpacity: 0.6,
+    }
+  },
   layers :{
     areas : true
   },
+  filtered: false,
   displayKey : {'0':'','1':'','2':''},
   survey : false,
   surveyData : [],
@@ -363,7 +379,15 @@ computed: {
     if (!this.featureLayers) return null
     this.log('featureslist')
     return this.featureLayers.map(x=>{
-      return this.$store.state._col_features[x]
+      let features = this.$store.state._col_features[x]
+      if (!features) return null
+      if (Array.isArray(features)) {
+        this.filtered = false
+        return features
+      } else {
+        this.filtered = true
+        return features[this.$store.state.neighbourhood]
+      }
     })
   },
   featuresOpts () {
@@ -401,7 +425,7 @@ computed: {
     //this.featuresAttrs
     //this.displayKey
 
-    if (!this.featuresAttrs || !this.featuresList || !this.displayKey['0']) return null
+    if (!this.featuresAttrs || !this.featuresList[0] || !this.displayKey['0']) return null
     const legends = this.featuresAttrs.map((att,i)=>{
       const key = this.displayKey[i]
 
@@ -480,7 +504,7 @@ methods: {
 
   getGeoJsonOptions (index) {
     //console.log('geojsonopts - featuresOpts', this.featuresOpts)
-    if (this.featuresCollection === 'areas') this.geoJsonAreaOptions
+    if (this.featuresCollection === 'areas') return this.geoJsonAreaOptions
     if (!this.featuresOpts || !this.featuresOpts[index]) return {}
     const type = this.featuresOpts[index].type
     let opts = ''
@@ -500,7 +524,7 @@ methods: {
       pointToLayer: function (feature, latlng) {
         const legend = self.legends ?  self.legends[layerIndex] : null
         const key = layerIndex === undefined  ?  null : self.displayKey[layerIndex]
-        const style = self.getPointStyle(feature, key , legend)
+        const style = self.getLegendStyle(feature, key , legend)
         //console.log(style)
         return L.circleMarker( latlng, style )
       },
@@ -523,25 +547,41 @@ methods: {
       }
     }
   },
-  getPointStyle(feature,key,legend){
+  geoJsonStyle(layerIndex) {
+    const style = {
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.7,
+      stroke: false
+    }
+    var self = this;
+    const legend = self.legends ?  self.legends[layerIndex] : null
+    const key = layerIndex === undefined  ?  null : self.displayKey[layerIndex]
+    return function (feature) {
+      if (feature.geometry.type ==='Point') return null
+      return self.getLegendStyle(feature,key,legend,style)
+    }
+  },
+  getLegendStyle(feature,key,legend,style){
     //if (!this.legends) return null
     //console.log('getPointStyle', legend)
-    const style = {
+    style = Object.assign({
       radius: 4,
       fillColor: 'blue',
       weight: 0,
       opacity: 1,
-      fillOpacity: 0.5
-    }
+      fillOpacity: 0.5,
+    }, style )
     const val = feature.properties[key]
     //console.log(legend, val,key,feature.properties)
     if (!this.showLegend || !legend) return style
 
     if (this.showLegend && legend.type === Number) {
-      style.fillColor = legend.chroma( (val - legend.items.min)/legend.items.constant ).hex()
+      style.fillColor =  legend.chroma( (val - legend.items.min)/legend.items.constant ).hex()
     } else if (this.showLegend) {
       style.fillColor = legend.items[val]
     }
+    //style.color = style.fillColor
     //console.log(key, color,val)
     return style
 
@@ -669,8 +709,15 @@ mounted(){
   }, 1000);
 
   this.$store.watch(
-    (state, getters) => state._col_layers_selected,
+    (state, getters) => state.neighbourhood,
     (newValue, oldValue) => {
+      if (this.filtered) {
+        this.$store.dispatch('UPDATE_COLLECTION',{layer:this.featureLayers[0],name:'features'})
+        .then(()=>{
+          //this.$forceUpdate()
+          this.$refs.myMap.mapObject.invalidateSize();
+        })
+      }
       //this.resetDisplayKey()
       //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
     }

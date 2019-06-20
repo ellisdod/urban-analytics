@@ -17,8 +17,11 @@
       label="Area"
       v-model="areaLayerSelected"
       ></v-select>
-
-      <v-btn color="blue" dark depressed @click="updateAnalysis()">Analyse</v-btn>
+      <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn color="grey lighten-1" dark depressed @click="close()">Cancel</v-btn>
+      <v-btn color="blue" dark depressed :loading="processing" @click="updateAnalysis()">Analyse</v-btn>
+      </v-card-actions>
 </v-card>
 </template>
 
@@ -31,14 +34,22 @@ export default {
   props : ['layer', 'areaLayer'],
   data() {
     return {
+      processing : false,
       layerSelected : "",
       areaLayerSelected:"",
     }
   },
   methods: {
+    close() {
+      this.$emit('close',true)
+    },
     updateAnalysis() {
+      this.processing = true
 
     api.updateAnalysis('features',this.areaLayerSelected,{},{},this.layerSelected)
+    .then(()=>{
+      this.processing = false
+    })
 
     }
 },
