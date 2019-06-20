@@ -47,7 +47,11 @@ module.exports = {
                console.log('areas analysis select function')
                return store.state._col_areaLayers
             }
-         }
+         },
+          filtered : {
+            type : Boolean,
+            _text:"Filtered by area",
+         },
       },
    },
    layerAttributes : {

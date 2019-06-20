@@ -71,10 +71,15 @@
 </v-toolbar-items>
 </v-toolbar>
 
-<v-content  style="height:100%;" v-if="loading" class="py-5 my-5 text-xs-center">
-<v-progress-circular class="py-5 my-5" indeterminate></v-progress-circular>
-<div class="mt-3">Loading data...</div>
-</v-content>
+<v-container v-if="loading">
+  <v-layout align-center justify-center row fill-height>
+    <div class="text-xs-center">
+    <v-progress-circular indeterminate></v-progress-circular>
+    <div class="mt-5">Loading data...</div>
+  </div>
+  </v-layout>
+</v-container>
+
 <v-content v-else>
   <router-view style="height:100%;"></router-view>
 </v-content>

@@ -1,5 +1,6 @@
 <template>
   <div>
+    <v-btn @click="log()">log</v-btn>
   <v-tabs
   v-model="activeTab"
   color="background"
@@ -25,17 +26,18 @@
 
       <v-layout row wrap>
 
-        <v-flex xs9>
+        <v-flex xs9 style="height:402px">
 
         <map-view
         v-if="$store.state._col_features"
         contextmenu=""
-        style="position:relative;height:400px;"
+        style="position:relative;height:402px;"
         :features="$store.state._col_features"
         featuresCollection="features"
         dataType = "Point"
         zoomLevel="12"
         v-bind:featureLayers="[$store.state._col_layers_selected]"
+        v-bind:class="{minimap:scrollLow, fullmap: !scrollLow}"
         >
       </map-view>
 
@@ -57,6 +59,8 @@
         <v-flex xs12>
           Source:
         </v-flex>
+
+        <area-select></area-select>
 
       </v-layout>
 
@@ -82,9 +86,11 @@
       collection="features"
       filter="layers"
       v-bind:datatable="true"
+      v-bind:multiselect="true"
       nestedPath="feature.properties"
       cssclass="no-background"
       v-bind:addtop="true"
+
       >
      </editable-data-list>
 
@@ -112,7 +118,7 @@
         <map-view
         v-if="$store.state._col_areas"
         contextmenu=""
-        style="position:relative;height:400px;width;100%;"
+        style="position:relative;height:402px;width;100%;"
         v-bind:areas="true"
         featuresCollection="areas"
         dataType = "MultiPolygon"
@@ -128,7 +134,7 @@
         <v-tab-item v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index">
           <v-card flat>
           <vue-json-pretty
-          class="pa-3 mb-2 code"
+          class="pa-3 mb-2 code caption"
           :data="indicator">
           </vue-json-pretty>
         </v-card>
@@ -193,13 +199,19 @@
     </v-btn>
 </div>
 
-<v-btn @click="log()">log</v-btn>
 
 <v-dialog v-model="uploadDialog" max-width="600">
-   <upload :layer="$store.state['_col_'+tab+'_selected']"></upload>
+   <upload
+   :layer="$store.state['_col_'+tab+'_selected']"
+   layerCollection="layers"
+   v-on:close="uploadDialog=false"></upload>
 </v-dialog>
 <v-dialog v-model="analysisDialog" max-width="600">
-   <analysis :layer="$store.state['_col_layers_selected']" :areaLayer="$store.state['_col_areaLayers_selected']"></analysis>
+   <analysis
+     :layer="$store.state['_col_layers_selected']"
+     :areaLayer="$store.state['_col_areaLayers_selected']"
+     v-on:close="analysisDialog=false"
+     ></analysis>
 </v-dialog>
 </div>
 </template>
@@ -208,13 +220,14 @@ import EditableDataList from 'components/EditableDataList.vue'
 import Upload from './Upload.vue'
 import Analysis from './Analysis'
 import MapView from './MapView.vue'
+import AreaSelect from './AreaSelect.vue'
 import VueJsonPretty from 'vue-json-pretty'
 import api from '@/api.js'
 import axios from 'axios'
 
 export default {
   components: {
-    EditableDataList,MapView,Upload,VueJsonPretty,Analysis
+    EditableDataList,MapView,Upload,VueJsonPretty,Analysis,AreaSelect
   },
   data() {
     return {
@@ -223,6 +236,14 @@ export default {
       activeTab :null,
       pages :null,
       tab:'layers',
+      scrollLow : false,
+      minimap : {
+        position:'fixed',
+        top:'20px',
+        left:'20px',
+        width:'20%',
+        height:'200px'
+      },
       pagesX : [
         {
           name: 'features',
@@ -265,6 +286,14 @@ export default {
     }
   },
   mounted(){
+    const self = this
+    window.addEventListener('scroll', function(e){
+      if (window.scrollY > 500 && !self.scrollLow) {
+        self.scrollLow = true
+      } else if (window.scrollY < 500 && self.scrollLow){
+        self.scrollLow = false
+      }
+    })
   }
 }
 </script>
@@ -280,5 +309,18 @@ export default {
 }
 .vjs-key {
   color: #555
+}
+.minimap {
+  position:fixed !important;
+  top:84px;
+  left:20px;
+  width:23%;
+  height:200px;
+  border: 1px solid #e3e3e3;
+}
+.fullmap {
+  position:relative;
+  width:100%;
+  height:400px;
 }
 </style>

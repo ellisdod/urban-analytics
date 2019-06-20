@@ -47,5 +47,12 @@ module.exports = [
       auth: true,
       method: 'post',
       middleware : 'formidable'
+    },
+    {
+      params: '',
+      name: 'deleteMany',
+      auth: true,
+      method: 'post',
+      middleware : ''
     }
   ]

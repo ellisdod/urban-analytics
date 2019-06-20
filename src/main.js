@@ -91,43 +91,59 @@ const store = new Vuex.Store({
   actions : {
     UPDATE_COLLECTION ({state, commit}, col) {
       //console.log('1. update collection',col)
+      const params = {
+        name : col.name || col,
+        query : col.query || {},
+        layer : col.layer,
+      }
+
+      if (params.name === 'features') {
+        params.layer = params.layer || state._col_layers_selected
+        if (!params.layer) rej('no feature layer defined')
+        const filtered = state._col_layers.filter(x=>x._id === params.layer)[0].filtered
+        if (filtered) {
+          const areaLayerCode = state._col_areaLayers.filter(x=>x._id === state._col_areaLayers_selected )[0].code
+          params.query['feature.properties.'+areaLayerCode ] = state.neighbourhood
+          params.nestedKey = state.neighbourhood
+        }
+      }
+
+      function update(data){
+        if (params.name === 'features') {
+          commit('UPDATE_FEATURES',{
+            key: params.layer,
+            value: data,
+            nestedKey:params.nestedKey
+          })
+        } else {
+          const key = '_col_' + params.name
+          const selKey = key + '_selected'
+          //console.log('before commiting update',key,i.data.map(x=>x._id),i.data  )
+          commit('UPDATE',{
+            key: key,
+            value: data
+          })
+          if (!state[selKey]) {
+            commit('UPDATE',{
+              key: selKey,
+              value: data[0]._id
+            })
+          }
+      }
+    }
+
       return new Promise((res,rej)=>{
-          const params = {
-            name : col.name || col,
-            query : col.query || {},
-            layer : col.layer,
+
+          if (col.data) {
+            console.log('supplied data', col.data)
+            update(col.data)
+            return res(col.data)
           }
-
-          if (params.name === 'features') {
-            params.layer = params.layer || state._col_layers_selected
-            if (!params.layer) rej('no feature layer defined')
-          }
-
-          //console.log('making api request',params.name,params.query,params.layer )
-
+          console.log('making api request',params.name,params.query,params.layer )
           api.find(params.name,params.query,'',{lean: true},params.layer).then(i=>{
             //console.log('data found: ',params.name,i.data.map(x=>x._id),i.data )
-            if (params.name === 'features') {
-              commit('UPDATE_FEATURES',{
-                key: params.layer,
-                value: i.data
-              })
-            } else {
-              const key = '_col_' + params.name
-              const selKey = key + '_selected'
-              //console.log('before commiting update',key,i.data.map(x=>x._id),i.data  )
-              commit('UPDATE',{
-                key: key,
-                value: i.data
-              })
-              if (!state[selKey]) {
-                commit('UPDATE',{
-                  key: selKey,
-                  value: i.data[0]._id
-                })
-              }
-            }
-            console.log('2. updated collection: _col_' + params.name,i.data.length, i.data[0])
+            update(i.data)
+            //console.log('2. updated collection: _col_' + params.name,i.data.length, i.data[0])
             res(i.data)
           }).catch(error => {
             console.log('caught error',error)
@@ -211,8 +227,21 @@ const store = new Vuex.Store({
   })*/
 
   UPDATE_FEATURES (state, obj) {
-      console.log('updating feature')
-      Vue.set( state._col_features, obj.key, obj.value )
+      console.log('updating feature', obj.nestedKey, obj.key,obj.value)
+      if (obj.nestedKey) {
+        state._col_features[obj.key] = state._col_features[obj.key] || {}
+        Vue.set( state._col_features[obj.key], obj.nestedKey, obj.value )
+      } else {
+        Vue.set( state._col_features, obj.key, obj.value )
+      }
+  },
+  UPDATE_FEATURE_PROPERTIES (state,obj) {
+     //const feature = Object.assign({},state._col_features[obj.layer][obj.feature.feature.properties._index])
+     //feature.feature.properties = obj.feature
+     state._col_features[obj.layer].splice(obj.feature._index,1,obj.feature)
+     const coords = obj.feature.feature.geometry.coordinates[0][0][0]
+     console.log('coords',coords)
+     state.map.center = {lat:coords[1],lng:coords[0]}
   },
   UPDATE (state, obj) {
     //console.log(obj.value)
@@ -302,11 +331,11 @@ getters : {
     return state._col_features.filter(x=>x.feature.properties._id === state.selectedFeature)[0]
   },
   selectedAreas : state => {
-    console.log('areas',state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected ))
-    return state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected )
+    //console.log('areas',state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected ))
+    return state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected && x.feature.properties.id)
   },
   selectedArea : (state, getters) => {
-    return getters.selectedAreas.filter(x=> x.feature.properties._id === state.selectedFeature)[0]
+    return getters.selectedAreas.filter(x=> x.feature.properties.id === state.neighbourhood)[0]
   },
   geojson : state => {
     if (!state._col_features) return []

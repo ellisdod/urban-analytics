@@ -5,12 +5,19 @@
     <div>
       <!-- DATA TABLE -->
       <div v-if="datatable" >
-        <v-btn v-if="addtop" style="margin-top:-40px;float:right" @click="add(collection)" color="grey" class="mb-2" flat>
-          <v-icon>add</v-icon>Add
-        </v-btn>
+        <div class="datatable-toolbar" style="margin-top:-40px;float:right;">
+          <v-checkbox v-if="multiselect" v-model="selectAll" label="Select All" @change="toggleSelectAll()" color="grey" flat class="mt-2 mr-3"  style="float:left;">
+            <v-icon>add</v-icon>Add
+          </v-checkbox>
+          <v-btn v-if="multiselect" @click="deleteSelected(collection)" color="grey" class="mb-2" flat>
+            Delete Selected
+          </v-btn>
+          <v-btn @click="add(collection)" color="grey" class="mb-2" flat>
+            <v-icon>add</v-icon>Add
+          </v-btn>
+        </div>
 
         <v-data-table
-
         :headers="featureHeaders"
         :items="items"
         :rows-per-page-items="[10,20,50,100,-1]"
@@ -22,6 +29,7 @@
             schema.schema[h.value]._options.filter(x=>x.name===h.value)[0].color
           -->
           <td v-for="(h,ind) in featureHeaders">
+
             <template v-if="h.type === Array">
               <v-chip v-for="o in getNested(nestedPath,props.item)[h.value]"
               :class="'func-'+o"
@@ -29,6 +37,10 @@
               small>
               {{ o }}
             </v-chip>
+           </template>
+
+          <template v-else-if="h.type === 'select'">
+            <v-checkbox style="padding-bottom:0;" color="grey" v-model="props.item.feature._selected" @change="selectFeature(props.item)"/>
           </template>
 
           <template v-else>
@@ -101,7 +113,7 @@
 -->
 </div>
 
-<v-dialog v-if="editedSchema" v-model="dialog" max-width="500px">
+<v-dialog v-if="editedSchema" v-model="dialog" max-width="700px">
   <v-card>
     <v-card-title>
       <span class="headline">{{mode}} {{ schema.name.slice(0,schema.name.length-1) }}</span>
@@ -230,7 +242,7 @@ export default {
   components: {
     VueJsonPretty, Upload
   },
-  props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom'],
+  props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom','multiselect'],
   data() {
     return {
       updateKey : 0,
@@ -249,7 +261,8 @@ export default {
       edited : {},
       uploadDialog:false,
       featureEdit:[],
-      datatableTab:null
+      datatableTab:null,
+      selectAll:false,
     }
   },
   computed : {
@@ -271,11 +284,16 @@ export default {
     },
     items() {
       if (this.collection==='features') {
-        if (this.$store.state._col_features) {
-          return this.$store.state._col_features[this.filterId]
-        } else {
-          return []
-        }
+        let features = this.$store.state._col_features[this.filterId]
+        if (!features) return []
+        features = Array.isArray(features) ? features : features[this.$store.state.neighbourhood]
+        if (!this.multiselect) return items
+        return features.map((x,i)=>{
+          x.feature.properties._selected = x.feature.properties._selected || false
+          x.feature.properties._index = i
+          return x
+        })
+        return features ? features : []
       }
 
       let collectionData = Array.from(this.$store.state[`_col_${this.collection}`])
@@ -356,6 +374,7 @@ tabledata () {
 },
 featureHeaders() {
   if (!this.schema.schema) return []
+  let base = this.multiselect ? [{value:'select',type:'select',_text:''}] : []
   const x = Object.keys(this.schema.schema).reduce((acc,x)=>{
     if (this.schema.schema[x]._text) acc.push({
       value:x,
@@ -363,7 +382,7 @@ featureHeaders() {
       type:this.schema.schema[x].type
     })
     return acc
-  },[])
+  },base)
   /*const x = this.$store.state.collections[this.collection].map(x=>{
   return {value:x.name,text:x.name}
 })*/
@@ -395,6 +414,14 @@ pastedComputed () {
 
 },
 methods: {
+  addSelects(items,value) {
+    if (!this.multiselect) return items
+    return items.map((x,i)=>{
+      x.feature._selected = x._selected || value || false
+      x.feature.properties._index = i
+      return x
+    })
+  },
   updateCollection(force) {
     if ((!force && !this.collection==='features') || (!force && this.$store.state[`_col_${this.collection}_selected`])) return Promise.reject();
     const self = this
@@ -407,7 +434,7 @@ methods: {
           name : 'features',
           layer : layer
         }
-        if (!layer || (!force && this.$store.state._col_features[layer])) rej()
+        if (!layer || (!force && this.$store.state._col_features[layer])) rej('No layer specified')
       }
       self.$store.dispatch('UPDATE_COLLECTION',request)
       .then(x=>{
@@ -416,8 +443,8 @@ methods: {
       })
       .catch(err=> {
         console.log('update failed',err)
-        rej()}
-      )
+        rej()
+      })
     })
 
     //promises.forEach(x=>{
@@ -449,6 +476,10 @@ methods: {
       return acc
     },{})
   },
+  selectFeature(item,value) {
+    console.log(item)
+    this.$store.commit("UPDATE_FEATURE_PROPERTIES",{layer:this.$store.state._col_layers_selected, feature: item})
+  },
   select(index,id) {
     console.log('index',index,id  );
     //console.log('feature data type',this.geoDataType)
@@ -457,6 +488,7 @@ methods: {
     console.log('updating selected value: ', this.collection, id)
     //this.$store.commit("UPDATE",{key:['selected',this.collection],value:id})
     this.$store.commit("UPDATE",{key:'_col_'+this.collection+'_selected',value: id})
+
     this.$nextTick(() => this.$forceUpdate())
     //this.$forceUpdate()
 
@@ -546,6 +578,27 @@ methods: {
       })
     }
 
+  },
+  toggleSelectAll() {
+    const data = this.addSelects(this.items, this.selectAll)
+    const request = {
+      name : 'features',
+      layer : this.filter,
+      data : this.addSelects(this.items, this.selectAll)
+    }
+
+    this.$store.dispatch('UPDATE_COLLECTION', request)
+    .then(()=> this.$forceUpdate())
+  },
+  deleteSelected() {
+    console.log(this.items)
+    const data = this.items.filter(x=>x.feature._selected)
+    confirm('Are you sure you want to delete '+data.length+' items?') &&
+    api.deleteMany('features','',data.map(x=>x._id),'',this.filterId)
+    .then(()=>{
+      console.log('deleted')
+      this.updateCollection(true)
+    })
   },
   getNested (p, o) {
     p = typeof p === 'string' ? p.split('.') : p
@@ -654,6 +707,12 @@ methods: {
 }
 .no-background,.no-background div {
   background:none !important;
+}
+.v-input--checkbox .v-input__control .v-input__slot {
+  margin-bottom:0 !important;
+}
+.v-input--checkbox .v-input__control .v-messages {
+  min-height:0;
 }
 
 span.func-sum {
