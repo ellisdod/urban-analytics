@@ -13,6 +13,8 @@ import api from './api.js'
 import colors from 'vuetify/es5/util/colors'
 import {theme} from './plugins/theme.js'
 import {featureAnalysis} from './plugins/featureAnalysis.js'
+import VueMasonry from 'vue-masonry-css'
+
 var flatten = require('flatten-obj')()
 
 Vue.use(Vuetify, {
@@ -23,6 +25,7 @@ Vue.use(Vuetify, {
 })
 Vue.use(VeeValidate)
 Vue.use(Vuex)
+Vue.use(VueMasonry);
 
 Vue.config.productionTip = true
 
@@ -52,7 +55,9 @@ const store = new Vuex.Store({
     _col_indicatorSections_selected : '',
     _col_indicatorBlocks : [],
     _col_indicatorBlocks_selected : '',
+    mode:null,
     neighbourhoodsTest:null,
+    selectedFeatureLayers:[],
     updateCount:0,
     indicators: [],
     collections:{},
@@ -66,12 +71,12 @@ const store = new Vuex.Store({
     theme : theme,
     tab:'',
     map : {
-      zoom:14,
+      zoom:15,
       center: {lat: 31.827982118391024,lng: 35.22958321000619},
       defaultCenter: {lat: 31.827982118391024,lng: 35.22958321000619}
     },
     navigator : {
-      zoom:11,
+      zoom:12,
       center: { lat: 31.77487761850741, lng: 35.20328852089031 },
       defaultCenter: {lat: 31.77487761850741, lng: 35.20328852089031},
       indicator: {
@@ -100,12 +105,15 @@ const store = new Vuex.Store({
       if (params.name === 'features') {
         params.layer = params.layer || state._col_layers_selected
         if (!params.layer) rej('no feature layer defined')
+        console.log(params.layer)
         const filtered = state._col_layers.filter(x=>x._id === params.layer)[0].filtered
         if (filtered) {
           const areaLayerCode = state._col_areaLayers.filter(x=>x._id === state._col_areaLayers_selected )[0].code
           params.query['feature.properties.'+areaLayerCode ] = state.neighbourhood
           params.nestedKey = state.neighbourhood
         }
+      } else if (params.name === 'areaAttributes') {
+        //params.layer = 'areas'
       }
 
       function update(data){
@@ -123,7 +131,7 @@ const store = new Vuex.Store({
             key: key,
             value: data
           })
-          if (!state[selKey]) {
+          if (!state[selKey]&&data[0]) {
             commit('UPDATE',{
               key: selKey,
               value: data[0]._id
@@ -139,17 +147,20 @@ const store = new Vuex.Store({
             update(col.data)
             return res(col.data)
           }
-          console.log('making api request',params.name,params.query,params.layer )
-          api.find(params.name,params.query,'',{lean: true},params.layer).then(i=>{
+          console.log('making api request',params.name,params.query,params.layer)
+          //update([])
+          api.find(params.name,params.query,'',{lean: true},params.layer).then((i,err)=>{
+            if (err) {
+              console.log('api error',err)
+              rej(err)
+            }
             //console.log('data found: ',params.name,i.data.map(x=>x._id),i.data )
             update(i.data)
             //console.log('2. updated collection: _col_' + params.name,i.data.length, i.data[0])
             res(i.data)
-          }).catch(error => {
-            console.log('caught error',error)
-            rej(error)
+          }).catch(err=>{
+            if (err.response) console.log('api error: ' + params.name, err.response)
           })
-
       });
     },
     UPDATE_INDICATORS ({state,commit}) {
@@ -228,18 +239,33 @@ const store = new Vuex.Store({
 
   UPDATE_FEATURES (state, obj) {
       console.log('updating feature', obj.nestedKey, obj.key,obj.value)
+      Vue.set( state._col_features, obj.key, obj.value )
+      /*
       if (obj.nestedKey) {
         state._col_features[obj.key] = state._col_features[obj.key] || {}
-        Vue.set( state._col_features[obj.key], obj.nestedKey, obj.value )
+        const newObj = {}
+        newObj[obj.nestedKey] = obj.value
+        Object.assign(newObj, state._col_features[obj.key])
+        Vue.set( state._col_features, obj.key, newObj )
       } else {
         Vue.set( state._col_features, obj.key, obj.value )
       }
+      */
   },
   UPDATE_FEATURE_PROPERTIES (state,obj) {
+    function getFirstCoordinates(feature){
+      if(Array.isArray(feature)) {
+        if (typeof feature[0] === 'number') return feature
+        else getFirstCoordinates(feature[0])
+      }
+      else {
+        getFirstCoordinates(feature.geometry.coordinates)
+      }
+    }
      //const feature = Object.assign({},state._col_features[obj.layer][obj.feature.feature.properties._index])
      //feature.feature.properties = obj.feature
      state._col_features[obj.layer].splice(obj.feature._index,1,obj.feature)
-     const coords = obj.feature.feature.geometry.coordinates[0][0][0]
+     let coords = getFirstCoordinates(obj.feature.feature.geometry.coordinates)
      console.log('coords',coords)
      state.map.center = {lat:coords[1],lng:coords[0]}
   },
@@ -247,13 +273,8 @@ const store = new Vuex.Store({
     //console.log(obj.value)
     if (Array.isArray(obj.key)) {
       console.log('updating store nested: ' + JSON.stringify(obj.key), obj.value)
-      const nested =  obj.key.slice(0,obj.key.length-1).reduce((acc,x) =>
-      (acc && acc[x] !== 'undefined') ? acc[x] : undefined
-      , state)
       //nested[obj.key.slice(-1)[0]] = obj.value
-      const obj2 = {}
-      obj2[obj.key.slice(-1)[0]] = obj.value
-      Object.assign(nested, obj2);
+      Vue.set(state[obj.key[0]], obj.key[1], obj.value);
     } else {
       //console.log('is array', Array.isArray(obj.value), obj.value )
       const ids = (obj.value[0] && obj.value[0]._id) ? obj.value.map(x=>x._id) : ''
@@ -332,10 +353,17 @@ getters : {
   },
   selectedAreas : state => {
     //console.log('areas',state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected ))
-    return state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected && x.feature.properties.id)
+    return state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected)
   },
   selectedArea : (state, getters) => {
     return getters.selectedAreas.filter(x=> x.feature.properties.id === state.neighbourhood)[0]
+  },
+  areaNames : (state,getters) => {
+    if (!getters.selectedAreas) return null;
+    return getters.selectedAreas.reduce((acc,x)=>{
+      acc[x.feature.properties.areaCode] = x.feature.properties.name
+      return acc
+    },{})
   },
   geojson : state => {
     if (!state._col_features) return []
@@ -356,6 +384,21 @@ getters : {
   selectedIndicatorSection : state => {
     if (!state._col_indicatorSections_selected) return null;
     return state._col_indicatorSections.filter(x=>x._id===state._col_indicatorSections_selected)[0]
+  },
+  allIndicatorKeyYears: (state,getters) => {
+    const ind = getters.allIndicatorsByYear;
+    if (!ind) return null;
+    return Object.keys(ind).reduce((acc,year)=>{
+      const y = parseInt(year)
+      ind[year].forEach(area=>{
+        Object.keys(area).forEach(key=>{
+          acc[key] = acc[key] || []
+          if (acc[key].indexOf(y)===-1) acc[key].push(y)
+        })
+
+      })
+      return acc
+    },{})
   },
   allIndicatorsByYear : state => {
     if (!state._col_indicators) return null;
@@ -392,6 +435,28 @@ getters : {
   },
   selectedIndicator : (state,getters) => {
     return getNested( [state.neighbourhood,state.year] , getters.allIndicatorsByAreaYear)
+  },
+  featuresBySelectedArea : (state) => {
+    return Object.keys(state._col_features).reduce((acc,key)=>{
+      acc[key] = state._col_features[key][state.neighbourhood]
+      return acc
+    },{})
+  },
+  selectedFeatures : (state,getters) => {
+    let layerIds;
+    if (state.mode === 'indicatorSections') {
+      layerIds = getters.selectedIndicatorSection ? getters.selectedIndicatorSection.geodata : null
+    } else if (state.mode === 'layers') {
+      layerIds = [ state._col_layers_selected ]
+    }
+    if (!layerIds || !layerIds[0]) return null
+    return layerIds.map(x => {
+      let features = state._col_features[x]
+      if (!features) return [state._col_features, x, state._col_features[x], Object.keys(state._col_features), typeof state._col_features];
+
+      return features.map(x=>x.feature)
+
+    })
   }
 }
 })

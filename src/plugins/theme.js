@@ -5,5 +5,6 @@ export const theme = {
   secondary: colors.grey.lighten3,
   tertiary: colors.blue.base,
   error: '#b71c1c',
-  background: '#f8f9fa'
+  background: '#f8f9fa',
+  grey: colors.grey.base
 }

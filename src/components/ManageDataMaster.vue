@@ -1,6 +1,5 @@
 <template>
   <div>
-    <v-btn @click="log()">log</v-btn>
   <v-tabs
   v-model="activeTab"
   color="background"
@@ -9,14 +8,12 @@
   >
 
 
-<v-tab :key="1" ripple @click="update('layers')">Features </v-tab>
-<v-tab :key="2" ripple @click="update('areaLayers')">Spatial Analysis</v-tab>
-<v-tab :key="3" ripple @click="update('indicatorSections')">Indicator Sections</v-tab>
+<v-tab v-for="(val,key,index) in tabs" :key="index" ripple @click="update(key)">{{val.text_en}}</v-tab>
 
 <v-tab-item key="0a">
-  <v-container fluid grid-list-xl v-if="tab==='layers'">
+  <v-container fluid grid-list-xl v-if="tab==='features'">
     <div class="text-xs-right caption grey--text" style="margin-top:-20px;">
-      <span>Layer id: {{$store.state[`_col_${tab}_selected`]}}</span>
+      <span>Layer id: {{$store.state[`_col_${tabs[tab].uploadLayerCol}_selected`]}}</span>
     </div>
     <v-layout row wrap>
       <v-flex sm3 xs-12>
@@ -26,53 +23,30 @@
 
       <v-layout row wrap>
 
-        <v-flex xs9 style="height:402px">
+        <v-flex xs12 style="height:402px">
 
         <map-view
         v-if="$store.state._col_features"
         contextmenu=""
         style="position:relative;height:402px;"
-        :features="$store.state._col_features"
         featuresCollection="features"
         dataType = "Point"
         zoomLevel="12"
-        v-bind:featureLayers="[$store.state._col_layers_selected]"
+        height="400px"
+        :featureLayers="$store.state._col_layers_selected"
         v-bind:class="{minimap:scrollLow, fullmap: !scrollLow}"
+        v-bind:options="{legendBottom:scrollLow,areaSelect:true}"
         >
       </map-view>
 
     </v-flex>
 
-    <v-flex xs3>
-      <div v-if="$store.getters.selectedLayer" class="ejmap-border-top pl-3">
-      <div class="subheading font-weight-light py-2">Summary</div>
-      <v-layout row wrap class="body-1 ejmap-border-bottom grey--text text--darken-2">
-        <v-flex xs12>
-          Name: <span style="float:right;"> {{$store.getters.selectedLayer.text_en}} </span>
-        </v-flex>
-        <v-flex xs12 >
-          Data Type: <span style="float:right;">{{$store.getters.selectedLayer.data_type}}</span>
-        </v-flex>
-        <v-flex xs12>
-          Feature Count: <span style="float:right;">{{$store.state._col_features.length}}</span>
-        </v-flex>
-        <v-flex xs12>
-          Source:
-        </v-flex>
-
-        <area-select></area-select>
-
-      </v-layout>
-
-    </div>
-    </v-flex>
-
-      <v-flex xs6>
-        <div class="subheading font-weight-light ejmap-border-bottom pl-3 pb-2">Layer Attributes</div>
+      <v-flex xs12>
+        <div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2">Layer Attributes</div>
         <editable-data-list v-if="$store.state._col_layers_selected" collection="layerAttributes" filter="layers" v-bind:datatable="true" cssclass="no-background" v-bind:addtop="true"></editable-data-list>
 </v-flex>
-<v-flex xs6>
-        <div class="subheading font-weight-light ejmap-border-bottom pl-3 pb-2">Layer Calculations</div>
+<v-flex xs12>
+        <div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2">Layer Calculations</div>
         <editable-data-list v-if="$store.state._col_layers_selected" collection="layerCalcs" filter="layers" v-bind:datatable="true" cssclass="no-background" v-bind:addtop="true"></editable-data-list>
 
       </v-flex>
@@ -80,7 +54,7 @@
     <v-flex xs12>
 
 
-      <div class="subheading font-weight-light ejmap-border-bottom pb-2 pt-5 pl-3">Features Table</div>
+      <div class="subheading font-weight-light ejmap-border-bottom py-2 pt-5 pl-3">Features Table</div>
 
       <editable-data-list v-show="$store.state._col_layerAttributes_selected"
       collection="features"
@@ -89,8 +63,6 @@
       v-bind:multiselect="true"
       nestedPath="feature.properties"
       cssclass="no-background"
-      v-bind:addtop="true"
-
       >
      </editable-data-list>
 
@@ -106,8 +78,66 @@
 
 </v-tab-item>
 
+
 <v-tab-item  key="1a">
-  <v-container fluid grid-list-xl v-if="tab==='areaLayers'">
+  <v-container fluid grid-list-xl v-if="tab==='areas'">
+    <v-layout row wrap>
+      <v-flex sm3>
+        <editable-data-list v-bind:addbottom="true" collection="areaLayers"></editable-data-list>
+      </v-flex>
+      <v-flex xs9>
+      <v-layout row wrap>
+      <v-flex xs12>
+        <map-view
+        v-if="$store.state._col_areas"
+        contextmenu=""
+        style="position:relative;height:402px;width;100%;"
+        v-bind:areas="true"
+        featuresCollection="areas"
+        dataType = "MultiPolygon"
+        zoomLevel="12"
+        height="400px"
+        >
+      </map-view>
+    </v-flex>
+
+    <v-flex sm5 xs12>
+        <div class="py-2 subheading font-weight-light">Attributes</div>
+        <v-card flat>
+         <editable-data-list
+           v-if="$store.state._col_areaLayers_selected"
+           collection="areaAttributes"
+           v-bind:datatable="true"
+           >
+         </editable-data-list>
+        </v-card>
+    </v-flex>
+    <v-flex sm7 xs12>
+        <div class="py-2 subheading font-weight-light">Areas</div>
+        <v-card flat>
+          <editable-data-list v-show="$store.state._col_layerAttributes_selected"
+          collection="areas"
+          filter="areaLayers"
+          v-bind:datatable="true"
+          v-bind:multiselect="true"
+          nestedPath="feature.properties"
+          cssclass="no-background"
+          >
+         </editable-data-list>
+
+        </v-card>
+    </v-flex>
+
+  </v-layout>
+    </v-flex>
+
+  </v-layout>
+</v-container>
+
+</v-tab-item>
+
+<v-tab-item  key="2a">
+  <v-container fluid grid-list-xl v-if="tab==='indicatorAttributes'">
     <v-layout row wrap>
       <v-flex sm3>
         <editable-data-list v-bind:addbottom="true" collection="areaLayers"></editable-data-list>
@@ -123,10 +153,21 @@
         featuresCollection="areas"
         dataType = "MultiPolygon"
         zoomLevel="12"
+        height="400px"
         >
-      </map-view>
+       </map-view>
+
+    </v-flex>
+    <v-flex sm5 xs12>
+        <div class="py-2 subheading font-weight-light">Attached Attributes</div>
+        <v-card>
+         <editable-data-list v-bind:addbottom="true" v-if="$store.state._col_areaLayers_selected" collection="indicatorAttributes" filter="areaLayers" v-bind:datatable="true"></editable-data-list>
+        </v-card>
+    </v-flex>
+
+    <v-flex xs12>
       <div v-if="$store.state.selectedFeature" class="py-5">
-      <div class="pb-2 subheading font-weight-light  ejmap-border-bottom">Indicators </div>
+      <div class="py-2 subheading font-weight-light  ejmap-border-bottom">Indicators </div>
       <v-tabs slider-color="primary" color="background">
         <v-tab v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index" ripple>
           {{ indicator.year }}
@@ -142,19 +183,12 @@
       </v-tabs>
     </div>
     </v-flex>
-    <v-flex sm5 xs12>
-        <div class="pb-2 subheading font-weight-light">Attached Attributes</div>
-        <v-card flat>
-         <editable-data-list v-bind:addbottom="true" v-if="$store.state._col_areaLayers_selected" collection="areaAttributes" filter="areaLayers" v-bind:datatable="true"></editable-data-list>
-        </v-card>
+
+    <v-flex xs12>
+    <!--  <editable-data-list v-if="$store.state.selected.indicators" collection="indicators" filter="areaLayers" v-bind:datatable="true"></editable-data-list>
+    -->
     </v-flex>
 
-
-    <v-flex offset-sm3 sm9 xs12>
-      <v-card>
-      <!--  <editable-data-list v-if="$store.state.selected.indicators" collection="indicators" filter="areaLayers" v-bind:datatable="true"></editable-data-list> -->
-      </v-card>
-    </v-flex>
   </v-layout>
     </v-flex>
 
@@ -163,7 +197,7 @@
 
 </v-tab-item>
 
-<v-tab-item  key="2a">
+<v-tab-item  key="3a">
 
   <v-container fluid grid-list-xl v-if="tab==='indicatorSections'">
     <v-layout row wrap>
@@ -202,8 +236,8 @@
 
 <v-dialog v-model="uploadDialog" max-width="600">
    <upload
-   :layer="$store.state['_col_'+tab+'_selected']"
-   layerCollection="layers"
+   :layer="tabs[tab].uploadLayer"
+   :layerCollection="tabs[tab].uploadLayerCol"
    v-on:close="uploadDialog=false"></upload>
 </v-dialog>
 <v-dialog v-model="analysisDialog" max-width="600">
@@ -233,9 +267,9 @@ export default {
     return {
       uploadDialog : false,
       analysisDialog: false,
-      activeTab :null,
+      activeTab : null,
       pages :null,
-      tab:'layers',
+      tab:'features',
       scrollLow : false,
       minimap : {
         position:'fixed',
@@ -244,38 +278,40 @@ export default {
         width:'20%',
         height:'200px'
       },
-      pagesX : [
-        {
-          name: 'features',
-          mainCollection: 'layers',
-          relatedCollection: 'layerAttributes',
-          featuresCollection: 'features'
-        },
-        {
-          name: 'spatial_areas',
-          mainCollection: 'areaLayers',
-          featuresCollection: 'areas',
-          indicators:true
-        },
-        {
-          name: 'indicators',
-          mainCollection: 'indicatorSections',
-          relatedCollection: 'indicatorBlocks',
-          featuresCollection: 'indicators',
-          indicators:true,
-        }
-      ]
     }
   },
   computed : {
-
+    tabs () {
+    return {
+        features : {
+          text_en : 'Features',
+          uploadLayer : this.$store.state['_col_layers_selected'],
+          uploadLayerCol : 'layers'
+        },
+        areas : {
+          text_en : 'Areas',
+          uploadLayer : 'areas',
+          uploadLayerCol  : 'areaLayers',
+        },
+        indicatorAttributes : {
+          text_en : 'Indicators',
+          uploadLayer : this.$store.state['_col_areaLayers_selected'],
+          uploadLayerCol : 'areaLayers'
+        },
+        indicatorSections : {
+          text_en : 'Indicator Sections'
+        }
+      }
+    }
   },
   methods: {
     update(tab){
+      console.log('activetab',this.activeTab)
+      const self = this
       this.tab = tab
       this.$store.commit('UPDATE',{key:'tab',value:tab})
       this.$nextTick(() => {
-			 this.$forceUpdate()
+			 self.$forceUpdate()
 		  });
     },
     log() {

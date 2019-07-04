@@ -19,7 +19,9 @@
   "dependencies": {
     "@okta/jwt-verifier": "0.0.14",
     "@okta/okta-vue": "1.1.0",
+    "@turf/area": "6.0.1",
     "@turf/centroid": "6.0.2",
+    "@turf/length": "6.0.2",
     "@turf/tag": "5.1.5",
     "axios": "0.18.0",
     "axios-debug-log": "0.4.0",
@@ -52,6 +54,7 @@
     "vue": "2.6.10",
     "vue-chartjs": "3.4.2",
     "vue-json-pretty": "1.6.0",
+    "vue-masonry-css": "1.0.3",
     "vue-material-design-icons": "3.1.0",
     "vue-router": "3.0.6",
     "vue2-leaflet": "2.0.3",

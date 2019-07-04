@@ -1,8 +1,7 @@
 <template>
-  <div>
-    <div style="height:400px;">
-
+    <div ref="container" v-bind:style="mapStyle">
       <l-map
+      v-if="layers"
       ref="myMap"
       :zoom="$store.state.map.zoom"
       :center="$store.state.map.center"
@@ -10,56 +9,63 @@
       @update:center="centerUpdate"
       @update:zoom="zoomUpdate"
       class="main-map"
-      :id="'map_'+featuresCollection">
+      :id="'map_'+featuresCollection"
+      v-bind:style="{height:mapHeight}"
+      >
 
       <l-protobuf v-if="baseMap==='detailed'" url="https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=ArAI1SXQTYA6P3mWFnDs" :options="protobufOpts"></l-protobuf>
       <l-tile-layer v-if="baseMap==='basic'" url="https://cartodb-basemaps-b.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png" :options="protobufOpts"></l-tile-layer>
 
-      <l-geo-json
+      <!--<l-geo-json
       v-if="areas"
       :geojson="areasGeoJson"
       :options-style="areaStyle"
       :options="getGeoJsonOptions()"/>
+-->    <l-geo-json
+v-if="featuresCollection==='areas'"
+:geojson="areasGeoJson"
+:options="getGeoJsonOptions()"
+:options-style="getAreaStyle()"
+/>
+
+      <l-geo-json
+      v-else v-for="(val,key) in layers"
+      v-if="layers[key].on && layers[key].features"
+      :key="key"
+      :geojson="layers[key].features"
+      :options="getGeoJsonOptions(key)"
+      :options-style="geoJsonStyle(key)"
+      />
 
 
+
+      <!--
+
+      <l-geo-json
+      v-else-if="survey"
+      v-for="(item, i) in surveyData"
+      :key="item._id"
+      :options="geoJsonOptions"
+      :options-stylce="item.feature.properties.style"
+      :geojson="item.feature"
+      >
+    </l-geo-json>
     <l-geo-json
-    v-for="(layer,index) in featuresListParsed"
-    v-if="featureLayers"
-    :key="index"
-    :geojson="layer"
-    :options="getGeoJsonOptions(index)"
-    :options-style="geoJsonStyle(index)"
-    />
-
-
-<!--
-     <l-geo-json
-  v-else-if="survey"
-  v-for="(item, i) in surveyData"
+    v-else-if="layers.areas"
+    v-for="(item, i) in $store.state.geo.areas"
+    :key="item._id"
+    :geojson="item.feature"
+    v-bind:options-style="getAreaStyle(item.feature.properties.id)"
+    >
+  </l-geo-json>
+  <l-geo-json
+  v-else-if="$store.state.geo.features[0]"
+  v-for="(item, i) in $store.state.geo.features"
   :key="item._id"
-  :options="geoJsonOptions"
-  :options-style="item.feature.properties.style"
   :geojson="item.feature"
+  :options="geoJsonPointOptions(dataType,item)"
   >
-</l-geo-json>
-<l-geo-json
-v-else-if="layers.areas"
-v-for="(item, i) in $store.state.geo.areas"
-:key="item._id"
-:geojson="item.feature"
-v-bind:options-style="getAreaStyle(item.feature.properties.id)"
->
-</l-geo-json>
-<l-geo-json
-v-else-if="$store.state.geo.features[0]"
-v-for="(item, i) in $store.state.geo.features"
-:key="item._id"
-:geojson="item.feature"
-:options="geoJsonPointOptions(dataType,item)"
->
 </l-geo-json>-->
-</l-map>
-
 <div class="map-menu">
   <v-menu min-width="300px" flat>
     <v-spacer></v-spacer>
@@ -86,48 +92,61 @@ v-for="(item, i) in $store.state.geo.features"
         v-model="showLegend"/>
       </div>
     </v-list>
-
   </v-menu>
 </div>
 
-<div id="map-legend" v-if="showLegend&&legends" style="max-height:400px; overflow-y:auto; overflow-x:visible!important;">
-  <div v-for="(legend,i) in legends" :key="i">
-    <div class="body-1 mt-2">{{featuresOpts[i].text}}</div>
-    <v-select
-    style="width:100px;margin-top:-15px;"
-    class="caption"
-    color="grey"
-    v-bind:items="Object.keys(featuresAttrs[i])"
-    v-model="displayKey[i]"
-    ></v-select>
-
-    <table v-if="legend&&legend.type===Number">
-      <tr>
-        <td class="key-gradient" v-bind:style="{backgroundImage: 'linear-gradient('+legend.chroma(0)+','+legend.chroma(1)+')'}">
-        </td>
-        <td class="key-figures">
-          <div class="key-max">
-            {{legend.items.max }}
-          </div>
-          <div class="key-min">
-            {{legend.items.min }}
-          </div>
-        </td>
-      </tr>
-    </table>
-
-    <table v-else-if="legend">
-      <tr v-for="(val,key) in legend.items">
-        <td class="key-icon" v-bind:style="{color:val}">●</td>
-        <td class="key-figures"><span style="background-color: #fff;padding:1px 5px;" class="grey--text text--darken-2">{{key}}</span> </td>
-      </tr>
-    </table>
+<div v-if="loading" style="position:absolute;top:180px;z-index:10;width:100%;">
+  <div class="text-xs-center">
+    <v-progress-circular indeterminate></v-progress-circular>
+    <div class="mt-5">Loading data...</div>
   </div>
 </div>
 
+</l-map>
+
+
+
+<div class="legend-right" id="map-legend" v-if="showLegend" :style="legendStyle">
+  <area-select v-if="options&&options.areaSelect" titleclass="pb-0 pt-3 px-3 font-weight-medium" class="ejmap-border-bottom px-3"></area-select>
+  <div v-if="allLayers">
+  <v-expansion-panel expand v-model="layerPanels">
+    <v-expansion-panel-content v-for="(item,key) in layers" :key="key">
+      <template v-slot:header>
+        {{item.text_en}}
+      </template>
+
+      <v-card class="pt-0">
+          <v-card-text class="pt-0">
+            <map-legend
+              v-if="layers[key].on"
+              :legend="layers[key].legend"
+              :value="layers[key].attribute"
+              v-bind:items="Object.keys(layers[key].attributes)"
+              @input="function(e){updateAttributeKey(key,e)}"
+              ></map-legend>
+            </v-card-text>
+    </v-card>
+      </v-expansion-panel-content>
+    </v-expansion-panel>
+  </div>
+
+  <v-card v-else class="pt-0">
+<v-card-text class="pt-0">
+  <map-legend
+    v-for="(item,key) in layers"
+    v-if="item.on"
+    :key="key"
+    :legend="layers[key].legend"
+    :value="layers[key].attribute"
+    v-bind:items="Object.keys(layers[key].attributes)"
+    @input="function(e){updateAttributeKey(key,e)}"
+    ></map-legend>
+  </v-card-text>
+  </v-card>
 </div>
 
 </div>
+
 </template>
 
 <script>
@@ -137,7 +156,9 @@ import Vue2LeafletVectorGridProtobuf from '@/../public/Vue2LeafletVectorGridProt
 import vectorTileStyling2 from '@/../public/mapStyle2.js'
 import API from '@/api.js'
 import chroma from 'chroma-js'
-import arrays from '@/plugins/arrays.js'
+import arrays from '@/plugins/arrayUtils.js'
+import MapLegend from './MapLegend.vue'
+import AreaSelect from './AreaSelect.vue'
 
 //const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');
@@ -148,7 +169,7 @@ import L from 'leaflet'
 
 export default {
   name: 'MapView',
-  props: ['featureLayers','featuresCollection','zoomLevel','options','areas'],
+  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -157,14 +178,18 @@ export default {
     LTooltip:LTooltip,
     LProtobuf : Vue2LeafletVectorGridProtobuf,
     LPolygon : LPolygon,
-    LGeoJson : LGeoJson
+    LGeoJson : LGeoJson,
+    MapLegend : MapLegend,
+    AreaSelect : AreaSelect,
   },
   $_veeValidate: {
     validator: 'new'
   },
   data () {
     return {
-      showLegend:true,
+      layerPanels : [],
+      loadingValue : null,
+      loading : false,
       language: 'ar',
       languages: ['ar','en'],
       basemaps : {
@@ -180,23 +205,8 @@ export default {
       mapOptions: {
         zoomSnap: 0.5,
       },
-      geoJsonOptions:{
-        onEachFeature: (feature, layer) => {
-          var self = this;
-          const html = Object.keys(feature.properties)
-            .reduce((acc,key)=> acc + '<li>' + key + ': ' + feature.properties[key] + '</li>','<ul>')
-            + '</ul>'
-          layer.bindPopup(html);
+      layers: {
 
-          layer.on({
-            click : function(e) {
-              console.log(e.target)
-            },
-            mouseover : function(e) {
-
-            },
-          });
-        }
       },
       geoJsonAreaOptions:{
         onEachFeature: (feature, layer) => {
@@ -205,18 +215,16 @@ export default {
           layer.on({
             click : function(e) {
               const p = e.target.feature.properties
-              console.log(e.target)
-              self.$store.commit('UPDATE',{key:'neighbourhood',value:p.id});
-              self.$store.commit('UPDATE',{key:['map','zoom'],value:15});
-              self.$store.commit("UPDATE",{key:'selectedFeature',value:e.target.feature.properties._id})
+              self.$store.commit('UPDATE',{key:'neighbourhood',value:p.areaCode});
+              self.$store.commit("UPDATE",{key:'selectedFeature',value:p._id})
 
-              console.log('changed',this.$store.state.neighbourhood);
+              //console.log('changed',this.$store.state.neighbourhood);
               //console.log(e.target._map.getCenter());
               self.$store.commit('UPDATE',{
                 key:['map','center'],
                 value: {
-                  lon:p.Centroids_x,
-                  lat:p.Centroids_y
+                  lon:p.centroid_lng,
+                  lat:p.centroid_lat
                 }
               })
             },/*
@@ -250,11 +258,7 @@ export default {
       fillOpacity: 0.6,
     }
   },
-  layers :{
-    areas : true
-  },
   filtered: false,
-  displayKey : {'0':'','1':'','2':''},
   survey : false,
   surveyData : [],
   surveyNames: false,
@@ -279,35 +283,69 @@ export default {
     complete: {color:'#00C7FF',text:'Complete'},
     inProgress: {color:'#FFBD00',text:'In Progress'},
     notStarted:{color:'#FF0063',text:'Not Started'}
-  }
+  },
+  geoJsonOptions : {
+
+    onEachFeature: (feature, layer) => {
+      var self = this;
+      const html = Object.keys(feature.properties).reduce((acc,key)=>
+      acc + '<li>' + key + ': ' + feature.properties[key] + '</li>','<ul>')
+      + '</ul>'
+      layer.bindPopup(html);
+
+      layer.on({
+        click : function(e) {
+          console.log(e.target)
+        },
+        mouseover : function(e) {
+
+        },
+      });
+    }
+  },
 };
 
 },
 computed: {
-  items () {
-    const layers = [
+  showLegend () {
+    return this.hideLegend || this.featuresCollection === 'areas' ? false : true
+  },
+  featureLayersArray() {
+    if (!this.featureLayers) {
+      return []
+    } else if (Array.isArray(this.featureLayers)) {
+      return this.featureLayers
+    } else {
+      return [this.featureLayers]
+    }
+  },
+  legendStyle() {
+    const style = this.options ? this.options.legendStyle : {}
+    return Object.assign(
       {
-        heading: 'Layers',
-        icon: 'keyboard_arrow_up',
-        'icon-alt': 'keyboard_arrow_down',
-        text: 'More',
-        model: false,
-        children: [
-          { icon: 'add', text: 'Background' },
-          { icon: 'add', text: 'Boundaries' },
-          { icon: 'add', text: 'Buildings' },
-          { icon: 'add', text: 'Roads' }
-        ]
-      },
-      { divider : true}
-    ];
-    const loggedInActions = [
+        height: this.options && this.options.legendBottom ? '200px' : 'auto',
+        maxHeight: this.options && this.options.legendBottom ? '200px':'400px',
+        overflowY:'auto',
+        overflowX: 'visible!important'
+      }, style || {})
 
-    ]
-    return this.$auth.isAuthenticated() ? [] : [];
+  },
+  widthSmall () {
+    return this.$refs.container && this.$refs.container.clientWidth < 300 ? true : false
+  },
+  mapHeight() {
+    const navHeight = document.getElementsByTagName('nav')[0].clientHeight
+    return this.height || (window.innerHeight-navHeight) + 'px'
+  },
+  mapStyle () {
+    const style = this.options ? this.options.mapStyle : {}
+    //console.log('mapstyle',style)
+    return Object.assign( {
+      display: this.options && this.options.legendBottom ? 'block' : 'flex'
+    }, style || {} )
   },
   areaStyle () {
-    if (this.featureLayers) {
+    if (this.layers) {
       return {
         weight: 1,
         color: '#ccc',
@@ -353,21 +391,9 @@ computed: {
   zoom () {
     return parseInt(this.zoomLevel) || this.$store.state.map.zoom ||14
   },
-  featuresListParsed() {
-    if (!this.featuresList || !this.featuresList[0]) return null
-    console.log('MapView featuresList', this.featuresList, this.options)
-    this.log()
-    return this.featuresList.reduce((acc,x)=>{
-      acc.push(x.reduce((arr,i)=>{
-        if (i.feature) arr.push(i.feature)
-        return arr
-      },[]))
-      return acc
-    },[])
-  },
   areasGeoJson () {
     // remove features without area code
-    let data = this.$store.state._col_areas
+    let data = this.$store.getters.selectedAreas
     if (!data) return null
     return data.reduce((acc,x)=>{
       x.feature.properties._id = x._id
@@ -375,76 +401,31 @@ computed: {
       return acc
     },[])
   },
-  featuresList () {
-    if (!this.featureLayers) return null
-    this.log('featureslist')
-    return this.featureLayers.map(x=>{
-      let features = this.$store.state._col_features[x]
-      if (!features) return null
-      if (Array.isArray(features)) {
-        this.filtered = false
-        return features
-      } else {
-        this.filtered = true
-        return features[this.$store.state.neighbourhood]
-      }
-    })
-  },
-  featuresOpts () {
-    if (!this.featureLayers) return null
 
-    return this.featureLayers.map(x=>{
-      const layer = this.$store.state._col_layers.filter(i=>i._id === x)[0]
-      return layer ? { type: layer.data_type, text: layer.text_en } : null
-    })
-  },
-  featuresAttrs () {
-    //this.featuresList
-    //this.featureLayers
-    //this.$store.state._col_layerAttributes
-    if (!this.featureLayers) return null
 
-    console.log('featureAttrs - featurelayers',this.featureLayers)
+},
+methods: {
+  updateLegend (layerKey) {
 
-    const attrs = this.featureLayers.reduce((arr,x,index1)=>{
-      arr.push(this.$store.state._col_layerAttributes.reduce((obj,i,index2)=>{
-        if (i.layer === x && i.func.length !== 0) {
-          obj[i.name] = i
-        }
-        return obj
-      },{}))
-      return arr
-    },[])
-    console.log('attrs',attrs)
-    return attrs
-  },
-  legends () {
-    //console.log('legends - featuresList',this.featuresList)
-    //console.log('legends - featuresAttrs', JSON.stringify(this.featuresAttrs) )
-    //console.log('legends - displayKey', JSON.stringify(this.displayKey) )
-    //this.featuresAttrs
-    //this.displayKey
-
-    if (!this.featuresAttrs || !this.featuresList[0] || !this.displayKey['0']) return null
-    const legends = this.featuresAttrs.map((att,i)=>{
-      const key = this.displayKey[i]
-
-      //console.log('key',key)
+      const layer = this.layers[layerKey]
+      if (!layer.on || !layer.features) return
+      const attribute = layer.attributes[layer.attribute]
+      if (!attribute) return
       const legend = {
         items : {}
       }
-      if (!att[key]) return null
+      console.log('attribute',attribute,legend)
 
-      if (att[key].type === 'Number') {
+      if (attribute.type === 'Number') {
 
-        legend.items = arrays.sortNumbers(this.featuresList[i],'feature.properties.' + key)
+        legend.items = arrays.sortNumbers(layer.features,'properties.' + layer.attribute)
         legend.type = Number
         legend.chroma = chroma.scale(['#ff236c','#2377ff']);
 
-      } else if (att[key].type === 'String') {
+      } else if (attribute.type === 'String') {
 
-        let items = this.featuresList[i].reduce((acc,x)=>{
-          const val = x.feature.properties[key]
+        let items = layer.features.reduce((acc,x)=>{
+          const val = x.properties[layer.attribute]
           if (acc.indexOf(val) === -1 ) acc.push(val)
           return acc
         },[])
@@ -467,64 +448,52 @@ computed: {
         legend.items.null = '#999'
         legend.type = String
 
-      } else if (att[key].type === 'Boolean') {
+      } else if (attribute.type === 'Boolean') {
         legend.items = { true : 'red', false: 'blue' }
         legend.type = Boolean
       }
+      this.$set(this.layers[layerKey],'legend',legend)
 
       //console.log('legend',legend, key)
-      this.log()
-      return legend
-    })
-    //console.log('legends',legends)
-    this.log()
-    return ( legends[0] && legends[0].items ) ? legends : null
+      //this.log()
   },
-  legendsOrdered () {
-    return this.legends.map(x=>{
-      return Object.keys.sort()
-    })
-  }
+  updateLayers(key,e) {
+    key = typeof key === 'number' ? Object.keys(this.layers)[key] : key
+    this.$set(this.layers[key], 'on', e)
+    //Object.assign(this.layers[key],{on:e})
+    if (e) {
+      this.checkForUpdate()
+    } else {
+      this.$forceUpdate()
+    }
 
-},
-methods: {
-
-  resetDisplayKey () {
-    //this.log('resetDisplayKey')
-    if (!this.featuresAttrs) return null
-    const keys = this.featuresAttrs.reduce((acc,x,i)=>{
-      acc[i] = Object.keys(x)[0]
-      return acc
-    },{})
-
-    this.displayKey = keys
-    //console.log('reset display keys', keys[0])
-    return this.displayKey
+    console.log(this.layers)
   },
-
-  getGeoJsonOptions (index) {
-    //console.log('geojsonopts - featuresOpts', this.featuresOpts)
+  updateAttributeKey(key,e) {
+    this.$set(this.layers[key],'attribute',e)
+    this.updateLegend(key)
+    console.log(this.layers)
+  },
+  getGeoJsonOptions (key) {
+    console.log('getgeojsonopts',key)
     if (this.featuresCollection === 'areas') return this.geoJsonAreaOptions
-    if (!this.featuresOpts || !this.featuresOpts[index]) return {}
-    const type = this.featuresOpts[index].type
+    const type = this.layers[key].data_type
     let opts = ''
     if (type === 'Point') {
-      opts = this.geoJsonPointOptions(index)
-      //console.log('geojsonopts - opts',opts)
+      opts = this.geoJsonPointOptions(key)
+      console.log('geojsonopts - opts',opts)
       return opts
-    } else if (type === 'MultiPolygon'){
-      return this.geoJsonAreaOptions
+    } else if (type === 'Polygon' || type === 'MultiPolygon' || type === 'LineString' || type === 'MultiLineString'){
+      return this.geoJsonOptions
     }
   },
-  geoJsonPointOptions (layerIndex) {
+  geoJsonPointOptions (key) {
+    console.log('geojsonopts',key)
     var self = this;
-    if (!self.legends) return null
     //console.log('geoJsonPointOptions - legend', self.legends[layerIndex], layerIndex)
     return {
       pointToLayer: function (feature, latlng) {
-        const legend = self.legends ?  self.legends[layerIndex] : null
-        const key = layerIndex === undefined  ?  null : self.displayKey[layerIndex]
-        const style = self.getLegendStyle(feature, key , legend)
+        const style = self.getLegendStyle(feature, key , self.layers[key].legend)
         //console.log(style)
         return L.circleMarker( latlng, style )
       },
@@ -547,7 +516,7 @@ methods: {
       }
     }
   },
-  geoJsonStyle(layerIndex) {
+  geoJsonStyle(key) {
     const style = {
       weight: 2,
       opacity: 1,
@@ -555,11 +524,8 @@ methods: {
       stroke: false
     }
     var self = this;
-    const legend = self.legends ?  self.legends[layerIndex] : null
-    const key = layerIndex === undefined  ?  null : self.displayKey[layerIndex]
-    return function (feature) {
-      if (feature.geometry.type ==='Point') return null
-      return self.getLegendStyle(feature,key,legend,style)
+    return (feature) => {
+      return self.getLegendStyle(feature, self.layers[key].attribute, self.layers[key].legend, style)
     }
   },
   getLegendStyle(feature,key,legend,style){
@@ -572,156 +538,267 @@ methods: {
       opacity: 1,
       fillOpacity: 0.5,
     }, style )
+
+    let colorKey = 'fillColor'
     const val = feature.properties[key]
+
+    if (feature.geometry.type ==='LineString' || feature.geometry.type ==='MultiLineString') {
+      style.stroke = true
+      colorKey = 'color'
+    }
+
     //console.log(legend, val,key,feature.properties)
     if (!this.showLegend || !legend) return style
 
     if (this.showLegend && legend.type === Number) {
-      style.fillColor =  legend.chroma( (val - legend.items.min)/legend.items.constant ).hex()
+      style[colorKey] =  legend.chroma( (val - legend.items.min)/legend.items.constant ).hex()
     } else if (this.showLegend) {
-      style.fillColor = legend.items[val]
+      style[colorKey] = legend.items[val]
     }
     //style.color = style.fillColor
     //console.log(key, color,val)
     return style
 
   },
-  getAreaStyle(id){
-    if (this.$store.state.neighbourhood === id) {
-      return {
-        weight: 2,
-        color: 'black',
-        opacity: 0.6,
-        fillColor: '#fff',
-        fillOpacity: 0,
-      }
-    } else {
-      return {
-        opacity: 0,
-        fillOpacity: 0
+  getAreaStyle(){
+    const self = this
+    const style = {
+      weight: 2,
+      color: 'grey',
+      opacity: 0.4,
+      fillColor: 'grey',
+      fillOpacity: 0.2,
+    }
+    return function(feature){
+      if (self.$store.state.neighbourhood === feature.properties.areaCode) {
+        return Object.assign({},style, {color: 'orange',
+          fillColor: 'orange'
+        })
+      } else {
+        return style
       }
     }
+
   },
   updateMap(){
+    /*
+    const self = this
+    let map = self.$refs.myMap
     //  this.displayKey = Object.assign({},this.displayKey)
-    //  this.$forceUpdate()
-  },
-  updateBaseMap(map,on) {
-    console.log(map,on);
-    this.baseMap = on ? map : '';
-    this.baseMaps.forEach(x=> x.selected = x.type == map ? on :false )
-  },
-  zoomUpdate (zoom) {
-    this.currentZoom = zoom;
-  },
-  centerUpdate (center) {
-    this.currentCenter = center;
-  },
-  getCoordsPoint(feature) {
-    const crds = feature.geometry.coordinates[0][0];
-    return L.latLng(crds[1],crds[0]);
-  },
-  getSurveyNames(){
-    API.distinct('buildings','feature.properties.neighbourhood')
-    .then( x=> {
-      this.surveyNames = x.data
-    })
-  },
-  getSurveyData(name) {
-    //console.log(name);
-    API.getSurveyData(name)
-    .then( x=> {
-      //console.log(x);
-      x.data.forEach(x => {
-        x.feature.properties.Id = x._id
-        x.feature.properties.survey = x.feature.properties.survey || {};
-      });
-      this.surveyData = x.data;
-      this.styleSurveyData();
-      this.survey = true
-      //console.log(this.survey)
-      //this.surveys.forEach(x=> x.selected = x.name==name ? true : false );
-      this.center = this.editMapCenter =this.getCoordsPoint(x.data[0].feature)
-    })
-  },
-  toggleOptionsDialog() {
-    this.optionsDialog = ! this.optionsDialog;
-    if (this.optionsDialog) {
-      setTimeout(function(){
-        const layerPanel = document.getElementsByClassName('v-toolbar__extension')[0].style;
-        console.log(layerPanel);
-        layerPanel.overflow = 'auto';
-      }, 500);
-    }
-  },
-  translate(obj,key,language) {
-
-    function selectLanguageKey (obj,key,language) {
-      return obj.reduce((acc,val) => {
-        if(typeof val === 'object') {
-          val[key] = val[key+'_'+language];
-          Object.keys(val).forEach(x=>{
-            if (Array.isArray(val[x])) selectLanguageKey(val[x], key,language)
-          });
-          acc = acc || []
-          acc.push(val);
-          return acc;
-        }
-      },[]);
-    }
-    return selectLanguageKey(obj,key,language);
-  },
-  log(text) {
-    //console.log(this.$refs.myMap.mapObject)
-    //this.$forceUpdate()
-    /*const layers = this.$store.state._col_layers.reduce((acc,x)=>{
-      if (acc.indexOf(x._id) ===-1) acc.push(x._id)
-      return acc
-    },[])*/
-
-    //console.log(text, 'layers: ' + layers.length, this.$store.state._col_layers_selected, this.featureLayers)
-      //console.log(text, this.featureLayers.join(','), this.featuresList.join(','))
+    setTimeout(function(){
+    if (map) {
+    map = map.mapObject
+    console.log('MAPOBJECT redrawing',map)
+    console.log('layers', Object.keys(map._layers))
+    if (Object.keys(map._layers).length === 1) {
+    self.updateMap()
+  } else {
+  Object.keys(map._layers).forEach(key=>{
+  if (!map._layers[key]._tiles) {
+  map._layers[key]._update()
+  //map._layers[key]._updatePoly()
+  //map._layers[key]._destroyContainer()
+}
+})
+}
+//map.invalidateSize()
+} else {
+console.log('delaying updating map', self.$refs)
+self.updateMap()
+}
+}, 500);
+*/
+},
+updateBaseMap(map,on) {
+  console.log(map,on);
+  this.baseMap = on ? map : '';
+  this.baseMaps.forEach(x=> x.selected = x.type == map ? on :false )
+},
+zoomUpdate (zoom) {
+  this.currentZoom = zoom;
+},
+centerUpdate (center) {
+  this.currentCenter = center;
+},
+getCoordsPoint(feature) {
+  const crds = feature.geometry.coordinates[0][0];
+  return L.latLng(crds[1],crds[0]);
+},
+getSurveyNames(){
+  API.distinct('buildings','feature.properties.neighbourhood')
+  .then( x=> {
+    this.surveyNames = x.data
+  })
+},
+getSurveyData(name) {
+  //console.log(name);
+  API.getSurveyData(name)
+  .then( x=> {
+    //console.log(x);
+    x.data.forEach(x => {
+      x.feature.properties.Id = x._id
+      x.feature.properties.survey = x.feature.properties.survey || {};
+    });
+    this.surveyData = x.data;
+    this.styleSurveyData();
+    this.survey = true
+    //console.log(this.survey)
+    //this.surveys.forEach(x=> x.selected = x.name==name ? true : false );
+    this.center = this.editMapCenter =this.getCoordsPoint(x.data[0].feature)
+  })
+},
+toggleOptionsDialog() {
+  this.optionsDialog = ! this.optionsDialog;
+  if (this.optionsDialog) {
+    setTimeout(function(){
+      const layerPanel = document.getElementsByClassName('v-toolbar__extension')[0].style;
+      console.log(layerPanel);
+      layerPanel.overflow = 'auto';
+    }, 500);
   }
 },
-watch : {
-  featuresAttrs () {
-     this.resetDisplayKey()
+translate(obj,key,language) {
 
+  function selectLanguageKey (obj,key,language) {
+    return obj.reduce((acc,val) => {
+      if(typeof val === 'object') {
+        val[key] = val[key+'_'+language];
+        Object.keys(val).forEach(x=>{
+          if (Array.isArray(val[x])) selectLanguageKey(val[x], key,language)
+        });
+        acc = acc || []
+        acc.push(val);
+        return acc;
+      }
+    },[]);
+  }
+  return selectLanguageKey(obj,key,language);
+},
+update () {
+  console.log('updating map...')
+  const map = this.$children[0] ? this.$children[0].mapObject : null
+  if (!map) {
+    console.log('no map object',this.$children,this.$refs.myMap)
+    this.$forceUpdate()
+    return null
+  }
+  //this.$nextTick(() => self.$forceUpdate())
+  console.log('invalidating map - layers', this.layers)
+  setTimeout(()=>map.invalidateSize(),500)
+  //console.log('updated store 2', this.layers, this.$store.getters.selectedFeatures, this.$store.getters.featuresBySelectedArea)
+},
+log(text) {
+  //console.log(this.$refs.myMap.mapObject)
+  //this.$forceUpdate()
+  /*const layers = this.$store.state._col_layers.reduce((acc,x)=>{
+  if (acc.indexOf(x._id) ===-1) acc.push(x._id)
+  return acc
+},[])*/
+
+//console.log(text, 'layers: ' + layers.length, this.$store.state._col_layers_selected, this.layers)
+//console.log(text, this.layers.join(','), this.featuresList.join(','))
+},
+checkForUpdate() {
+  const featurecol = this.$store.state._col_features
+  if (!this.layers) return null
+  let promises = Object.keys(this.layers).reduce((arr,key)=>{
+    if (!this.layers[key].on) return arr
+    arr.push(new Promise((res,rej)=> {
+      const returnObj = {}
+      const filtered = this.layers[key].filtered
+      let featuresNo = featurecol[key].length
+      if (!this.loading && (featuresNo === 0 || filtered ) ) {
+        this.loading = true
+        this.$store.dispatch('UPDATE_COLLECTION', {layer:key, name:'features'} )
+        .then((x,err)=>{
+          if (err) console.log('update error', err)
+          console.log('dispatch return', x)
+          this.loading = false
+          returnObj[key] = x
+          return res(returnObj)
+          //let features = this.$store.state._col_features[this.featureLayers[index]][newValue].map(x=>x.feature)
+          //console.log('adding features to map:',  features)
+          //new L.geoJSON([{type:'FeatureCollection',features:features.map(x=>x.feature)}], this.geoJsonOptions(index) ).addTo(map)
+        })
+      } else {
+        returnObj[key] = featurecol[key]
+        return res(returnObj)
+      }
+    }))
+    return arr
+  },[])
+  Promise.all(promises).then((arr)=>{
+    console.log('promises complete', arr, this.$store.state._col_features)
+    arr.forEach(x=>{
+      const key = Object.keys(x)[0]
+      this.$set(this.layers[key],'features',x[key].map(x=>x.feature))
+      this.updateLegend(key)
+    })
+    this.update()
+  })
+},
+setLayers() {
+
+  let layers = this.$store.state._col_layers
+  let attrs = this.$store.state._col_layerAttributes
+
+  if (!this.allLayers) {
+    //layers = layers.filter(x=> this.featureLayers === x._id)
+  }
+  layers.forEach(x=>{
+    const layer = Object.assign({features:'',legend:''},x)
+    layer.attributes = attrs.reduce((obj,i)=>{
+        if (layer._id === i.layer && i.func.length > 0) {
+          obj[i.name] = i
+        }
+        return obj
+      },{})
+    layer.attribute = Object.keys(layer.attributes)[0]
+    layer.on =  this.featureLayersArray.indexOf(layer._id) > -1 ? true : false
+    this.layerPanels.push(layer.on)
+    this.$set(this.layers, layer._id, layer)
+  })
+  console.log('layers',this.layers)
+
+  }
+
+},
+created() {
+  this.setLayers()
+},
+watch: {
+  featureLayers: function(newVal,oldVal) {
+    console.log('selected',newVal)
+    this.updateLayers(oldVal,false)
+    this.updateLayers(newVal,true)
+  },
+  layerPanels: function(newVal,oldVal) {
+    for (var x=0; x<newVal.length;x++) {
+      if (!oldVal[x] || newVal[x] != oldVal[x]) this.updateLayers(x,newVal[x])
+    }
+    //if this panelIndex matches this component's index.. do stuff since we're selected
   }
 },
 mounted(){
-  if (window.screen.width < 800) this.updateBaseMap('basic',true);
-  //this.getSurveyNames();
-  this.editFeature = surveyQuestionsJson.reduce((acc,x)=>{
-    acc[x.name] = '';
-    return acc;
-  },{});
+  console.log('layers on mount',this.layers)
+  this.$nextTick(() => {
+  //if (window.screen.width < 800) this.updateBaseMap('basic',true);
   this.editFeatureDefaults = Object.assign({},this.editFeature)
-  this.resetDisplayKey()
+  //this.resetDisplayKey()
+  this.checkForUpdate()
+})
   //console.log('map',this.$refs.myMap.mapObject)
+  this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
+  this.$store.watch( (state) => state._col_layers_selected, this.checkForUpdate )
+  this.$store.watch( (state) => state._col_indicatorSections_selected, this.checkForUpdate )
 
-  const self = this
-  setTimeout(function(){
-    console.log('mounting map')
-    self.log()
-    //console.log('updated')
-    if (self.$refs.myMap) self.$refs.myMap.mapObject.invalidateSize();
-  }, 1000);
-
-  this.$store.watch(
-    (state, getters) => state.neighbourhood,
-    (newValue, oldValue) => {
-      if (this.filtered) {
-        this.$store.dispatch('UPDATE_COLLECTION',{layer:this.featureLayers[0],name:'features'})
-        .then(()=>{
-          //this.$forceUpdate()
-          this.$refs.myMap.mapObject.invalidateSize();
-        })
-      }
-      //this.resetDisplayKey()
-      //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
-    }
-  )
+  //create survey plugin
+  //this.getSurveyNames();
+  /*this.editFeature = surveyQuestionsJson.reduce((acc,x)=>{
+  acc[x.name] = '';
+  return acc;
+},{});
+*/
 
 }
 
@@ -734,11 +811,12 @@ mounted(){
   z-index:0;
   background-color:#eee;
   height:400px;
+  flex: 1;
 }
 
 .map-menu {
   width:300px;
-  z-index:1;
+  z-index:500;
   position:absolute;
   top:12px;
   right:12px;
@@ -757,12 +835,6 @@ mounted(){
   border-bottom:none;
   color:#999;
 }
-#map-legend {
-  position: absolute;
-  top:0px;
-  left:20px;
-  width:200px;
-}
 
 #map_features .leaflet-control-container .leaflet-left {
   right:23px;
@@ -771,6 +843,48 @@ mounted(){
 }
 #map_features.leaflet-touch .leaflet-bar a {
   color:#000 !important;
+}
+
+#map-legend {
+  top:0px;
+  width:20%;
+  max-width:300px;
+  min-width:200px;
+  color: var(--v-grey-darken2)
+}
+#map-legend .v-list__tile {
+  height:auto;
+}
+#map-legend .v-expansion-panel__header__icon {
+  display: none;
+}
+#map-legend .v-expansion-panel__header:hover{
+  background-color:#eee;
+}
+#map-legend .v-expansion-panel__container{
+  border-top:none;
+  background:none;
+}
+#map-legend .v-expansion-panel__container--active {
+  border-top:1px solid #e3e3e3;
+  border-bottom:1px solid #e3e3e3;
+}
+#map-legend .v-expansion-panel__container--active .v-expansion-panel__header{
+  color:var(--v-primary-base);
+  font-weight:700;
+}
+#map-legend .v-expansion-panel {
+  box-shadow: none;
+}
+
+#map-legend.legend-right  {
+  top:0px;
+  right:20px;
+  left:auto;
+}
+#map-legend .v-card {
+  background: none;
+  box-shadow:none;
 }
 
 

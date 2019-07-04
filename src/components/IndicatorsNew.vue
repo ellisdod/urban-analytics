@@ -2,27 +2,19 @@
   <div>
     <v-container fluid grid-list-xl>
       <v-layout row wrap>
-        <v-flex sm3 xs-12>
+        <v-flex sm2 xs-12>
           <editable-data-list collection="indicatorSections"></editable-data-list>
         </v-flex>
 
         <v-flex sm7 xs12>
-          <v-container fluid grid-list-xl pa-0>
-            <v-layout row wrap>
-              <v-flex xs12>
-                <map-view
-          
-                contextmenu=""
-                style="position:relative;height:400px;"
-                :featureLayers="featureLayers"
-                featuresCollection="features"
-                zoomLevel="12"
-                v-bind:areas="true"
-                >
-              </map-view>
-            </v-flex>
+          <div style="position:relative;display:block;">
 
-            <v-flex sm6 xs12 v-for="(item,index) in items" :key="item._id" @click="updateSelected(index)">
+              <masonry
+  :cols="2"
+  :gutter="20"
+  >
+
+            <div sm6 xs12 v-for="(item,index) in items" :key="item._id" @click="updateSelected(index)" style="margin-bottom:20px;">
 
               <!-- DATATABLE -->
               <div v-if="item.datatable" class="py-3">
@@ -45,17 +37,32 @@
               :year="item.year"
               :type="item.type"
               >
-            </indicator-key-stat>
+              </indicator-key-stat>
 
+            <!-- MAP -->
+            <v-card v-else-if="item.type==='Map'">
+              <v-card-title>
+                {{item.text}}
+              </v-card-title>
+            <map-view
+            contextmenu=""
+            style="position:relative;"
+            featuresCollection="features"
+            zoomLevel="12"
+            height="400px"
+            :featureLayers="item.figure"
+            v-bind:areas="true"
+            v-bind:options="{legendBottom:true}"
+            >
+          </map-view>
+        </v-card>
 
-
-          </v-flex>
-        </v-layout>
-
-      </v-container>
+      </div>
+    </masonry>
+  </div>
 
     </v-flex>
-    <v-flex sm2 xs12>
+    <v-flex sm3 xs12>
       <map-navigator v-if="$store.getters.indicatorsForSelectedYear" id="map-panel-navigator"></map-navigator>
       <div id="info-panel">
       </div>
@@ -123,6 +130,7 @@ export default {
       (newValue, oldValue) => {
         console.log('section changed',newValue)
         // Do whatever makes sense now
+        this.selected = 0
         if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
 
         newValue.geodata.forEach(x=>{
@@ -134,7 +142,7 @@ export default {
         })
 
       // update main map zoom
-      this.$store.commit('UPDATE',{key:['map','zoom'],value:12})
+      this.$store.commit('UPDATE',{key:['map','zoom'],value:15})
     })
 
     console.log('store', this.$store.state)
@@ -171,8 +179,8 @@ export default {
   top:0;
 }
 #map-panel-navigator{
-  height:400px;
-  width:16%;
+  height:600px;
+  width:24%;
 }
 #info-panel{
   display:none;
@@ -208,6 +216,9 @@ export default {
   position:fixed;
   width:40%;
   height:100%;
+}
+.ejmap-border {
+  border:1px solid #e3e3e3;
 }
 .ejmap-border-right {
   border-right:1px solid #e3e3e3;

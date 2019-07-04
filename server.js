@@ -88,7 +88,8 @@ if (process.env.NODE_ENV === 'production') {
   })
 }
 
-const dbControl = require('./controllers/base.controller')
+const controllers = require('./controllers/features.controller')
+//const controllers = require('./controllers/base.controller')
 const func = require('./src/api.functions.js')
 const dbConfig = require('./src/db.config')
 
@@ -97,22 +98,37 @@ const middlewareKey = {
 }
 
 //console.log(dbConfig)
-Object.keys(dbConfig).forEach(col => {
-  for (let i = 0; i < func.length; i++) {
-    //console.log(col.name,func.name,func.method, func.params)
-    if (func[i].restrict && func[i].restrict.indexOf(col)===-1 )
-      continue;
+controllers.then(controllers=>{
+  console.log(Object.keys(controllers))
+  //console.log('layers',controllers.layers)
+  //console.log('arealayers model',controllers.areaLayers.model)
 
-    const params = dbConfig[col].params || ''
-    const url = `/${col}${params}/${func[i].name}${func[i].params}`
-    console.log(func[i].method,url)
-    if (func[i].middleware) {
-        app[func[i].method](url, middlewareKey[func[i].middleware], dbControl[col][func[i].name])
-    } else {
-        app[func[i].method](url, dbControl[col][func[i].name])
+  Object.keys(dbConfig).forEach(col => {
+    console.log(col +' find',controllers[col].find)
+    //console.log(controllers[col] instanceof base.controller)
+    //console.log(controllers[col])
+    if (!controllers[col]) return null
+    for (let i = 0; i < func.length; i++) {
+      //console.log(col.name,func.name,func.method, func.params)
+      if (func[i].restrict && func[i].restrict.indexOf(col)===-1 )
+        continue;
+
+      const params = dbConfig[col].params || ''
+      const url = `/${col}${params}/${func[i].name}${func[i].params}`
+      console.log(func[i].method,url)
+      const method = function(req, res,next) { controllers[col][func[i].name](req, res,next) }
+
+      if (func[i].middleware) {
+          app[func[i].method](url, middlewareKey[func[i].middleware], method)
+      } else {
+          app[func[i].method](url, method)
+      }
     }
-  }
+  })
+
 })
+
+
 
 //console.log('features controller', dbControl.areas)
 //console.log('features controller', dbControl.features.find)

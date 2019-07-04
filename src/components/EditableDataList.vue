@@ -5,7 +5,7 @@
     <div>
       <!-- DATA TABLE -->
       <div v-if="datatable" >
-        <div class="datatable-toolbar" style="margin-top:-40px;float:right;">
+        <div style="margin-top:-43px;float:right;">
           <v-checkbox v-if="multiselect" v-model="selectAll" label="Select All" @change="toggleSelectAll()" color="grey" flat class="mt-2 mr-3"  style="float:left;">
             <v-icon>add</v-icon>Add
           </v-checkbox>
@@ -37,7 +37,7 @@
               small>
               {{ o }}
             </v-chip>
-           </template>
+          </template>
 
           <template v-else-if="h.type === 'select'">
             <v-checkbox style="padding-bottom:0;" color="grey" v-model="props.item.feature._selected" @change="selectFeature(props.item)"/>
@@ -116,7 +116,7 @@
 <v-dialog v-if="editedSchema" v-model="dialog" max-width="700px">
   <v-card>
     <v-card-title>
-      <span class="headline">{{mode}} {{ schema.name.slice(0,schema.name.length-1) }}</span>
+      <span v-if="schema&&schema.name" class="headline">{{mode}} {{ schema.name.slice(0,schema.name.length-1) }}</span>
     </v-card-title>
     <v-tabs
     v-model="activeTab"
@@ -133,10 +133,10 @@
             <v-flex v-for="(i,key) in editedSchema.schema" xs12>
 
               <v-select v-if="i._options&&Array.isArray(i._options)" v-model="edited[key]" :label="i._text" :small-chips="i._multiple" :multiple="i._multiple"
-                 v-bind:items="i._options.map(x=>x.name)">
-              </v-select>
+              v-bind:items="i._options.map(x=>x.name)">
+            </v-select>
 
-              <v-select v-else-if="typeof i._options==='function'&&!i._categorised"
+            <v-select v-else-if="typeof i._options==='function'&&!i._categorised"
             v-model="edited[key]"
             :label="i._text"
             :small-chips="i._multiple"
@@ -144,9 +144,9 @@
             v-bind:items="i._options($store,edited,collection)"
             item-text="name"
             item-value="_id">
-             </v-select>
+          </v-select>
 
-            <div v-else-if="i._categorised">
+          <div v-else-if="i._categorised">
             <v-combobox v-model="edited[key]" multiple small-chips> </v-combobox>
             <v-menu full-width offset-y>
 
@@ -158,31 +158,40 @@
               {{ key }}
             </v-btn>
             <v-list dense>
+              <template v-for="(val,name) in i._options($store,edited,collection)">
 
-
-              <v-menu full-width offset-x max-height="500" :key="name" open-on-hover v-for="(val,name) in i._options($store,edited,collection)" >
-                <v-list-tile slot="activator" @click="">
-                  <v-list-tile-title>{{val.name}}</v-list-tile-title>
+                <v-list-tile v-if="val.value" :key="name" @click="edited[key].push(val.value)">
+                  {{val.name}}
+        
                 </v-list-tile>
-                <v-list dense>
-                  <v-list-tile v-for="(j,ind) in val.items " @click="edited[key].push(name+'.'+j)">
-                    <v-list-tile-title>{{ j }}</v-list-tile-title>
+
+                <v-menu v-else-if="val.items" full-width offset-x max-height="500" :key="name" open-on-hover >
+                  <v-list-tile slot="activator" @click="">
+                    <v-list-tile-title>{{val.name}}</v-list-tile-title>
                   </v-list-tile>
-                </v-list>
-              </v-menu>
+                  <v-list dense>
+                    <v-list-tile v-for="(j,ind) in val.items " @click="edited[key].push(name+'.'+j)">
+                      <v-list-tile-title>{{ j }}</v-list-tile-title>
+                    </v-list-tile>
+                  </v-list>
+                </v-menu>
+
+              </template>
 
             </v-list>
 
+          </v-list>
 
-          </v-menu>
-        </div>
 
-        <v-switch v-else-if="i.type===Boolean" v-model="edited[key]" :label="i._text"></v-switch>
-        <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text"></v-text-field>
-        <v-text-field v-else v-model="edited[key]" :label="i._text" disabled></v-text-field>
-      </v-flex>
-    </v-layout>
-  </v-container>
+        </v-menu>
+      </div>
+
+      <v-switch v-else-if="i.type===Boolean" v-model="edited[key]" :label="i._text"></v-switch>
+      <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text"></v-text-field>
+      <v-text-field v-else v-model="edited[key]" :label="i._text" disabled></v-text-field>
+    </v-flex>
+  </v-layout>
+</v-container>
 </v-card-text>
 
 <v-card-actions>
@@ -323,22 +332,16 @@ export default {
     },
     schema () {
       let schema = dbconfig[this.collection]
-      if (this.collection==='features') {
-        let attributes = this.$store.getters.selectedLayerAttributes
-        if (!attributes) {
-          this.$store.dispatch('UPDATE_COLLECTION','layerAttributes')
-          .then(i=> {
-            console.log('callback attrs',i)
-            schema = Object.assign(schema, {schema: this.schemaFromAttributes(Array.from(i))} )
-          })
-        } else {
-          console.log('attrs',attributes)
-          schema = Object.assign(schema, {schema: this.schemaFromAttributes(Array.from(attributes))} )
-        }
+      if (typeof schema.schema === 'string') {
+        console.log('attrs1',this.$store.state[`_col_${schema.schema}`])
+        let attributes = this.$store.state[`_col_${schema.schema}`].filter(x=>x.layer === this.$store.state[`_col_${this.filter}_selected`] ) // need to filter!
+        console.log('attrs2',attributes, attributes.length)
+        console.log('attrs3',this.schemaFromAttributes(Array.from(attributes)))
+        return {schema:this.schemaFromAttributes(Array.from(attributes))}
       }
-      console.log('schema',schema)
-      console.log('schematype',typeof schema.schema)
-      return schema ? schema : {}
+      //console.log('schema',schema)
+      //console.log('schematype',typeof schema.schema)
+      return schema || {}
     },
     editedSchema() {
       return Object.assign({},this.schema)
@@ -361,6 +364,7 @@ return dbconfig[this.editedCollection]
 },
 schemaNames () {
   //returns array of strings
+  if (!this.schema.name)return null
   return [this.schema.name,this.relatedSchema.name].reduce((acc,x)=>{
     if (x) {
       //console.log('check', x, typeof x)
@@ -423,21 +427,22 @@ methods: {
     })
   },
   updateCollection(force) {
-    if ((!force && !this.collection==='features') || (!force && this.$store.state[`_col_${this.collection}_selected`])) return Promise.reject();
+    if (!force && !this.collection==='features' && !this.$store.state[`_col_${this.collection}_selected`]) return Promise.reject();
     const self = this
     console.log('EDITABLEDATALIST updating collection ' + this.collection)
     return new Promise((res,rej)=>{
       let request = this.collection
-      if (this.collection==='features') {
+      if (this.collection==='features'||this.collection==='areas') {
         const layer = self.filterId
         request = {
-          name : 'features',
+          name : this.collection,
           layer : layer
         }
         if (!layer || (!force && this.$store.state._col_features[layer])) rej('No layer specified')
       }
       self.$store.dispatch('UPDATE_COLLECTION',request)
       .then(x=>{
+        console.log('forcing update')
         self.$forceUpdate()
         res(x)
       })
@@ -469,16 +474,18 @@ methods: {
     //console.log('selected layer', this.$store.state.selected.layers)
     console.log('schema from attributes, attrs', attrs)
     return attrs.reduce((acc,x)=> {
-      if (x.layer === this.$store.state._col_layers_selected) {
-        x._text = x._text || x.name
-        acc[x.name] = x
-      }
+      x._text = x._text || x.name
+      acc[x.name] = x
       return acc
     },{})
   },
   selectFeature(item,value) {
-    console.log(item)
-    this.$store.commit("UPDATE_FEATURE_PROPERTIES",{layer:this.$store.state._col_layers_selected, feature: item})
+    const layer = this.$store.state._col_layers_selected
+    console.log(item, layer)
+    this.$store.commit("UPDATE_FEATURE_PROPERTIES",{layer:layer, feature: item})
+  },
+  setMode() {
+    this.$store.commit("UPDATE",{key:'mode',value: this.collection})
   },
   select(index,id) {
     console.log('index',index,id  );
@@ -488,10 +495,10 @@ methods: {
     console.log('updating selected value: ', this.collection, id)
     //this.$store.commit("UPDATE",{key:['selected',this.collection],value:id})
     this.$store.commit("UPDATE",{key:'_col_'+this.collection+'_selected',value: id})
-
-    this.$nextTick(() => this.$forceUpdate())
+    this.setMode()
+    const self = this;
+    this.$nextTick(() => self.$forceUpdate())
     //this.$forceUpdate()
-
   },
   add(collection) {
     console.log(collection)
@@ -552,9 +559,11 @@ methods: {
 
     console.log('saving', [collection, id, this.edited])
 
-    api.update(collection,params,this.edited,{},colparams).then(x=>{
+    api.update(collection,params,this.edited,{},colparams).then(()=>{
       this.updateCollection(true)
       this.close()
+    }).catch(err=>{
+      alert(err)
     })
 
   },
@@ -583,18 +592,22 @@ methods: {
     const data = this.addSelects(this.items, this.selectAll)
     const request = {
       name : 'features',
-      layer : this.filter,
+      layer : this.$store.state['_col_'+this.filter+'_selected'],
       data : this.addSelects(this.items, this.selectAll)
     }
-
+    const self = this
     this.$store.dispatch('UPDATE_COLLECTION', request)
-    .then(()=> this.$forceUpdate())
+    .then(()=> self.$forceUpdate())
   },
   deleteSelected() {
     console.log(this.items)
+    let query;
     const data = this.items.filter(x=>x.feature._selected)
-    confirm('Are you sure you want to delete '+data.length+' items?') &&
-    api.deleteMany('features','',data.map(x=>x._id),'',this.filterId)
+    const filter = dbconfig[this.collection].params ? this.filterId : null
+    if (!confirm('Are you sure you want to delete '+data.length+' items?')) return null
+    if (this.selectAll && this.filter) query = {'layer':this.$store.state['_col_'+this.filter+'_selected']}
+    else query = data.map(x=>x._id)
+    api.deleteMany(this.collection,'',query,'',filter)
     .then(()=>{
       console.log('deleted')
       this.updateCollection(true)
@@ -607,43 +620,44 @@ methods: {
     //console.log('nested',n)
     return n
   },
-    forceUpdate() {
-      this.$forceUpdate()
-      console.log('force updated', this.$store.getters.selectedLayerAttributes)
-    },
-    logStore() {
-      console.log('data',this)
-      console.log('store',this.$store.state)
-    }
-
+  forceUpdate() {
+    this.$forceUpdate()
+    console.log('force updated', this.$store.getters.selectedLayerAttributes)
   },
-  watch: {
-    dialog(val) {
-      console.log(val)
-      val || this.close();
-    },
-    menuItems (newVal) {
-      console.log('menuItems', newValue)
-    },
-    filterId (newValue) {
-      console.log('WATCH: layerchanged',newValue)
-      if (this.collection==='features') this.updateCollection()
-    }
-  },
-  created () {
-
-    console.log('created')
-    this.updateCollection()
-    .then(x=>{
-      /*console.log('fetching ' +this.collection,x)
-      if (!this.$store.state['_col_'+this.collection+'_selected']) this.select(0,x[0]._id)
-      console.log('firstid',x[0]._id)*/
-    }) // update store with selected value
-    .catch(err=>console.log('failed to update store'))
-
-  },
-  mounted () {
+  logStore() {
+    console.log('data',this)
+    console.log('store',this.$store.state)
   }
+
+},
+watch: {
+  dialog(val) {
+    console.log(val)
+    val || this.close();
+  },
+  menuItems (newVal) {
+    console.log('menuItems', newValue)
+  },
+  filterId (newValue) {
+    console.log('WATCH: layerchanged',newValue)
+    if (this.collection==='features') this.updateCollection()
+  }
+},
+created () {
+
+  console.log('created')
+  this.updateCollection()
+  .then(x=>{
+    /*console.log('fetching ' +this.collection,x)
+    if (!this.$store.state['_col_'+this.collection+'_selected']) this.select(0,x[0]._id)
+    console.log('firstid',x[0]._id)*/
+  }) // update store with selected value
+  .catch(err=>console.log('failed to update store'))
+  if (!this.datatable) this.setMode()
+
+},
+mounted () {
+}
 }
 </script>
 
@@ -693,7 +707,6 @@ methods: {
 .v-tabs__container {
   margin-left:50px;
 }
-
 .data-toolbar {
   position:absolute;
   right:12px;
@@ -702,8 +715,11 @@ methods: {
 }
 .v-list__tile--active{
   border-right: 3px solid;
-  background-color: rgba(0,0,0,0.02);
+  background-color: var(--v-grey-lighten3);
   border-right-color: var(--v-primary-base);
+}
+.v-list__tile--active .v-list__tile__content {
+  font-weight:500;
 }
 .no-background,.no-background div {
   background:none !important;

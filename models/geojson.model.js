@@ -3,6 +3,7 @@ const GeoJSON = require('mongoose-geojson-schema');
 const axios = require('axios')
 const Models = require('./models.model')
 const dbConfig = require('../src/db.config')
+const arrayUtils = require('../src/plugins/arrayUtils')
 
 
 var featureSchema = new mongoose.Schema({
@@ -37,120 +38,182 @@ function stringToType(string){
 }
 //const featureSchemaBase = mongoose.Schema({},baseOptions);
 //const Features = mongoose.model('Features',featureSchema,'features');
+function Schema(name,collection) {
+  this.name = name
+  this.collection = collection
 
-function createLayerSchema (properties) {
-  return new mongoose.Schema({
-  feature: {
-    type : {
-      type : String,
-      required : true
-    },
-    geometry : mongoose.Schema.Types.Geometry,
-    properties : properties
-  },
-  layer : {
-    type : mongoose.Schema.Types.ObjectId,
-    required : true
+  this.schema = {}
+
+  this.merge = function(key,value) {
+    Object.assign(arrayUtils.getNested(key,this.schema), value)
   }
-})
-}
 
-function createModel (name,schema,collection) {
-  try {
-    exports[name] = mongoose.model(name,schema,collection);
-  } catch (err) {
-    delete mongoose.models[name];
-    delete mongoose.modelSchemas[name];
-    exports[name] = mongoose.model(name,schema,collection);
+  this.set = function(key,value) {
+    this.schema.feature[key] = value
   }
-}
 
-function createLayerModels(featureLayers, attributes) {
-  //console.log('featureLayers',featureLayers)
-  if (featureLayers.length===0) return null;
-
-  featureLayers.forEach( layer => {
-
-    const properties = attributes.reduce((acc,i) => {
+  this.addPropertiesFromLayerAttrs = function(layer,attributes,schemaPath) {
+    console.log('this.schema',this.schema)
+    const schema = schemaPath ? arrayUtils.getNested(schemaPath,this.schema) : this.schema
+    attributes.reduce((acc,i) => {
       if (i.layer.toString() !== layer._id.toString()) return acc
       acc[i.name] = {
         type : stringToType(i.type),
         required : i.required || false
       }
       return acc
-    },{})
+    },schema)
+  }
 
-    properties.data_type = {
-        type: String,
-        required:true,
-        validate: {
-          validator: function(v) {
-            return v.toLowerCase() === layer.data_type.toLowerCase();
-          },
-          message: props => `${props.value} does not match layer data type`
-        }
-    }
-    properties.year = {
-      type: Number,
+  this.addDataTypeVerifier = function(layer) {
+
+    this.schema.feature.properties.data_type = {
+      type: String,
       required:true,
+      validate: {
+        validator: function(v) {
+
+          return v.toLowerCase() === layer.data_type.toLowerCase() ||
+                 v.toLowerCase() === 'multi'+layer.data_type.toLowerCase();
+        },
+        message: props => `${props.value} does not match layer data type`
+      }
     }
+  }
 
-    createModel(layer._id, createLayerSchema(properties), 'features')
+  this.exportModel = function(opts) {
+    const schema = new mongoose.Schema(this.schema,opts)
+    try {
+      exports[this.name] = mongoose.model(this.name,schema,this.collection);
+    } catch (err) {
+      delete mongoose.models[this.name];
+      delete mongoose.modelSchemas[this.name];
+      exports[this.name] = mongoose.model(this.name,schema,this.collection);
+    }
+  }
+}
 
-  })
+geoSchema = function (name,collection) {
+  Schema.call(this,name,collection)
+  this.schema = {
+    feature:  {
+      type : {
+        type : String,
+        required : true
+      },
+      geometry : mongoose.Schema.Types.Geometry,
+      properties : {
+        year : {
+          type: Number,
+          required:true,
+        }
+      }
+    },
+    layer : {
+      type : mongoose.Schema.Types.ObjectId,
+      required : true
+    }
+  }
 
 }
 
 
-Models.layers.find({}, function (err, layers) {
-  if (err) {
-    console.log('failed to download layer schemas')
-    return
+const indicatorSchema = function (name,collection) {
+  Schema.call(this,name,collection)
+  this.schema = {
+  year : {
+    type : Number,
+    required : true
+  },
+  layer : {
+    type : mongoose.Schema.Types.ObjectId,
+    required : true
+  },
+  areaCode : {
+    type : Number,
+    required : true
+  },
+  attached : {
+    type : mongoose.Schema.Types.Mixed,
   }
-  Models.layerAttributes.find({}, function (err, layerAttributes) {
-    if (err) {
-      console.log('failed to download layer attribute schemas')
-      return
-    }
-    //console.log('layerAttributes',layerAttributes)
-    createLayerModels(layers, layerAttributes)
-  })
-})
-
-//exports.education = mongoose.model('education', featureSchema, 'features')
-Object.keys(dbConfig).forEach(x=>{
-  if (dbConfig[x].schema==='spatial') {
-    const schema = createLayerSchema(mongoose.Schema.Types.Mixed)
-    createModel(x,schema, x)
-  }
-})
-
-//console.log('featureschema',featureSchema)
-
-//exports.facilities = mongoose.model('Facility',featureSchema, 'facilities');
-
-/*
-const polygonSchema = new mongoose.Schema({
-type: {
-type: String,
-enum: ['Polygon'],
-required: true
-},
-coordinates: {
-type: [[[[Number]]]], // Array of arrays of arrays of numbers
-required: true
 }
-});
+}
 
-const buildingSchema = new mongoose.Schema({
-type: String,
-properties: {
-Id : Number,
-Neighbourhood : String
-},
-geometry: schema
-});
 
-// Export the model
-module.exports = mongoose.model('GeoJSON', schema );
-*/
+
+function setLayerModels () {
+  console.log('creating layer models')
+  return new Promise((res,rej) => {
+    Promise.all(['layers','layerAttributes'].map(x => Models[x].find({})))
+    .then(arr=>{
+      const layers = arr[0];
+      const attributes = arr[1]
+      if (layers.length===0) return null;
+      for (var x=0;x<layers.length;x++){
+        let schema = new geoSchema(layers[x]._id,'features')
+        schema.addPropertiesFromLayerAttrs(layers[x],attributes,'feature.properties')
+        console.log('layer schema ' + layers[x]._id.toString(),schema.schema)
+        schema.addDataTypeVerifier(layers[x])
+        schema.exportModel()
+        //console.log('schema',schema.schema)
+        //console.log(Object.keys(exports))
+      }
+      res()
+    })
+  })
+}
+
+
+function setAreaModels () {
+  console.log('creating area models')
+  return new Promise((res,rej) => {
+    Models['areaAttributes'].find({}).then(attributes=>{
+      const layer = {_id:'areas',data_type:'multipolygon'}
+      let schema = new geoSchema('areas','areas')
+      schema.addPropertiesFromLayerAttrs(layer,attributes,'feature.properties')
+      delete schema.schema.feature.properties.year;
+      schema.exportModel()
+      //console.log('areas',schema.schema)
+      //console.log(Object.keys(exports))
+      res()
+    })
+  })
+}
+
+
+function setIndicatorModels () {
+  console.log('creating indicator models')
+  return new Promise((res,rej) => {
+    Promise.all(['areaLayers','indicatorAttributes'].map(x => Models[x].find({})))
+    .then(arr=>{
+      const layers = arr[0];
+      const attributes = arr[1]
+      if (layers.length===0) return null;
+      layers.forEach( layer => {
+        let schema = new indicatorSchema('indicators','indicators')
+        schema.addPropertiesFromLayerAttrs(layer,attributes)
+        schema.exportModel({strict:false})
+        //console.log('schema',schema.schema)
+        //console.log(Object.keys(exports))
+      })
+      res()
+    })
+  })
+}
+
+
+exports.load = function() {
+  return new Promise((res,rej) => {
+    Promise.all([setLayerModels(),setAreaModels(),setIndicatorModels()]).then(x=>{
+      Object.keys(dbConfig).forEach(x=>{
+        if (dbConfig[x].schema==='spatial') {
+          let schema = new Schema(x,x)
+          schema.set('properties',mongoose.Schema.Types.Mixed)
+          schema.exportModel()
+          //console.log('buildings',schema.schema)
+        }
+      })
+      res()
+    })
+  })
+}

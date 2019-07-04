@@ -134,7 +134,7 @@ import Vue2LeafletVectorGridProtobuf from '@/../public/Vue2LeafletVectorGridProt
 import vectorTileStyling2 from '@/../public/mapStyle2.js'
 import API from '@/api.js'
 import chroma from 'chroma-js'
-import arrays from '@/plugins/arrays.js'
+import arrays from '@/plugins/arrayUtils.js'
 
 //const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');

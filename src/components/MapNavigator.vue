@@ -2,11 +2,14 @@
   <div>
     <table id="navigator-key">
       <tr id="navigator-header" >
-        <td colspan="2" class="subheading grey--text text--darken-2">
+        <td colspan="2">
+          <area-select titleclass="title"></area-select>
+          <div class="subheading grey--text text--darken-2">
           {{$store.state.navigator.indicator.name}} - {{$store.state.year}}
+          </div>
           <div class="caption py-1">
           {{details.neighbourhood}}
-          <div>
+          <div style="height:15px;">
           {{details.value}}
         </div>
           </div>
@@ -59,11 +62,11 @@ import { LMap, LTileLayer, LMarker, LPopup, LTooltip, LPolygon, LGeoJson} from '
 //var vectorTileStyling = require('../../public/mapStyle.js');
 import API from '@/api.js'
 import chroma from 'chroma-js'
+import AreaSelect from 'components/AreaSelect.vue'
 
 //const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');
 //const vectorTileStyling = require('../../public/mapStyle.js');
-import axios from 'axios';
 
 export default {
   name: 'MapView',
@@ -74,11 +77,12 @@ export default {
     LPopup:LPopup,
     LTooltip:LTooltip,
     LPolygon : LPolygon,
-    LGeoJson : LGeoJson
+    LGeoJson : LGeoJson,
+    AreaSelect : AreaSelect
   },
   data () {
     return {
-      zoom: 14,
+      zoom: 15,
       center: L.latLng(31.801141899926307,35.18584083885216),
       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
       showParagraph: false,
@@ -109,8 +113,8 @@ export default {
               self.$store.commit('UPDATE',{
                 key:['map','center'],
                 value: {
-                  lon:p.Centroids_x,
-                  lat:p.Centroids_y
+                  lon:p.centroid_lng,
+                  lat:p.centroid_lat
                 }
               })
             },
@@ -149,7 +153,7 @@ export default {
   },
   methods: {
     getAreaStyle(id){
-      const f = chroma.scale(['white', 'orange']);
+      const f = chroma.scale(['#eaeaea', this.$vuetify.theme.primary]);
       const area = this.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === id)[0]
       if (!area) return {
         opacity: 0,
@@ -245,7 +249,7 @@ export default {
 .key-gradient {
   width:6px;
   height:150px;
-  background-image: linear-gradient(var(--v-primary-base), white);
+  background-image: linear-gradient(var(--v-primary-base), #eaeaea);
 }
 
 #navigator-key td {

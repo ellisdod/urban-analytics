@@ -2,7 +2,7 @@
   <v-app id="keep" app >
 
 <v-toolbar app light clipped-left flat color="#fff" class="ejmap-border-bottom">
-  <v-toolbar-side-icon @click.stop="miniNav=!miniNav"></v-toolbar-side-icon>
+  <v-toolbar-side-icon @click="log()"></v-toolbar-side-icon>
 
   <v-toolbar-title>
   <div style="margin-bottom:-5px;">Urban Analytics</div>
@@ -84,9 +84,9 @@
   <router-view style="height:100%;"></router-view>
 </v-content>
 
-<div class="pa-3" style="position:absolute;bottom:20px;left:20px;" >
+<!--<div class="pa-3" style="position:absolute;bottom:20px;left:20px;" >
   <img src="../public/undp-logo.svg" width="46px;" style="position:absolute;bottom:20px;"></img>
-</div>
+</div>-->
 
 </v-app>
 </template>
@@ -111,54 +111,13 @@ export default {
     drawerIndicators : false,
     layersPanel:true,
     currentView: 'map-view',
-    layers : [],
-    indicators: [
-      {
-        heading: 'Demographics',
-        icon: 'keyboard_arrow_up',
-        'icon-alt': 'keyboard_arrow_down',
-        text: 'More',
-        model: false,
-        children: [
-          { name: 'Persons', value: 290000 },
-          { name: 'Median Age', value: 25.4 },
-          { name: 'Growth - natural (2018)', value: '3.5%' },
-          { name: 'Growth - migration (2018)', value: '4.5%' },
-          { name: 'Gender m/f', value: '49/50' }
-        ]
-      },
-      {
-        heading: 'Housing' ,
-        icon: 'keyboard_arrow_up',
-        'icon-alt': 'keyboard_arrow_down',
-        text: 'More',
-        model: false,
-        children: [
-          { name: 'Housing Units', value: 36700 },
-          { name: 'Avg. Persons per Household', value: 5.2 },
-          { name: 'Avg. Rooms per Household', value: 3.5 },
-          { name: 'Avg. Area of Household', value: '70m2' }
-        ]
-      },
-      {
-        heading: 'Services',
-        icon: 'keyboard_arrow_up',
-        'icon-alt': 'keyboard_arrow_down',
-        text: 'More',
-        model: false,
-        children: [
-          { name: 'Secondary Schools', value: 3 },
-          { name: 'Primary Schools', value: 2 },
-          { name: 'Kindergartens', value: 5 },
-        ]
-      }
-    ]
+    layers : []
   }),
   computed : {
     items () {
       const actions = [
         { icon: 'help', text: 'About', route: 'help' },
-        { icon: 'cloud_download', text: 'Export Data' },
+        { icon: 'map', route: 'map', text: 'Map'  },
         { icon: 'bar_chart', text: 'Urban Indicators', route: 'indicators' },
       ];
       const loggedInActions = [
@@ -178,6 +137,9 @@ export default {
     '$route': 'refreshActiveUser'
   },
   methods: {
+    log(){
+      console.log('store',this.$store.state)
+    },
     login () {
       this.$auth.loginRedirect()
     },
@@ -196,25 +158,35 @@ export default {
     }
   },
   mounted () {
-
-
-  this.$store.dispatch('UPDATE_COLLECTION','layers')
-  .then(x=>{
+  var layerIds;
+  Promise.all([
+    this.$store.dispatch('UPDATE_COLLECTION','areaLayers'),
+    this.$store.dispatch('UPDATE_COLLECTION','layers')
+    ])
+  .then(arr=>{
+    const areaLayer = arr[0][0]
+    layerIds = arr[1].reduce((acc,x)=> {
+      acc[x._id] = []
+      return acc
+    },{})
+    console.log('layerIds',layerIds)
     const data = [
-    this.$store.dispatch('UPDATE_COLLECTION','indicators'),
+    this.$store.dispatch('UPDATE_COLLECTION',{name:'areas',layer:areaLayer._id}),
+    this.$store.dispatch('UPDATE_COLLECTION',{name:'indicators',layer:areaLayer._id}),
     this.$store.dispatch('UPDATE_COLLECTION','indicatorSections'),
     this.$store.dispatch('UPDATE_COLLECTION','indicatorBlocks'),
     this.$store.dispatch('UPDATE_COLLECTION','layerCalcs'),
     this.$store.dispatch('UPDATE_COLLECTION','layerAttributes'),
-    this.$store.dispatch('UPDATE_COLLECTION','areas'),
     this.$store.dispatch('UPDATE_COLLECTION','areaAttributes'),
-    this.$store.dispatch('UPDATE_COLLECTION','areaLayers')
-  ]
+    this.$store.dispatch('UPDATE_COLLECTION','indicatorAttributes'),
+    ]
+
   return Promise.all(data)
   })
   .then(()=> {
     console.log('LOADING COMPLETE')
     this.loading = false
+    this.$store.commit('UPDATE',{key:'_col_features',value: layerIds})
   })
 
   }

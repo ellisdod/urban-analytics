@@ -547,7 +547,7 @@ export default {
       (newValue, oldValue) => {
         // Do whatever makes sense now
         if (newValue === 9999) {
-          this.$store.commit('UPDATE',{key:['map','zoom'],value:12})
+          this.$store.commit('UPDATE',{key:['map','zoom'],value:15})
           this.$store.commit('UPDATE',{key:['map','center'],value:this.$store.state.map.defaultCenter})
         }
       }
@@ -558,7 +558,7 @@ export default {
       (newValue, oldValue) => {
         // Do whatever makes sense now
         if (newValue === 9999) {
-          this.$store.commit('UPDATE',{key:['map','zoom'],value:12})
+          this.$store.commit('UPDATE',{key:['map','zoom'],value:15})
           this.$store.commit('UPDATE',{key:['map','center'],value:this.$store.state.map.defaultCenter})
         }
       }

@@ -48,7 +48,7 @@ module.exports = {
                return store.state._col_areaLayers
             }
          },
-          filtered : {
+         filtered : {
             type : Boolean,
             _text:"Filtered by area",
          },
@@ -119,76 +119,76 @@ module.exports = {
    layerCalcs : {
       name : "Attributes",
       schema : {
-        name : {
-           type : String,
-           required : true,
-           _text : "Name"
-        },
-        type : {
-           type : String,
-           required : true,
-           _text : "Type",
-           _multiple: false,
-           _options : [
-              {
-                 name : 'String',
-              },
-              {
-                 name : 'Number',
-              },
-              {
-                 name : 'Boolean',
-              }
-           ]
-        },
-        layer : {
-           type : mongoose.Schema.Types.ObjectId,
-           required : true,
-        },
-        func : {
-           type : Array,
-           _text : "Functions",
-           _multiple: true,
-           _combobox:true,
-           _categorised : true,
-        _options: function(store,edited) {
-           //if(!edited.areaLayer)return {}
-           const layers = store.state._col_layers
-           const layersObj = layers.reduce((acc,x)=>{
-             acc[x._id]=x
-             return acc
-          },{})
+         name : {
+            type : String,
+            required : true,
+            _text : "Name"
+         },
+         type : {
+            type : String,
+            required : true,
+            _text : "Type",
+            _multiple: false,
+            _options : [
+               {
+                  name : 'String',
+               },
+               {
+                  name : 'Number',
+               },
+               {
+                  name : 'Boolean',
+               }
+            ]
+         },
+         layer : {
+            type : mongoose.Schema.Types.ObjectId,
+            required : true,
+         },
+         func : {
+            type : Array,
+            _text : "Functions",
+            _multiple: true,
+            _combobox:true,
+            _categorised : true,
+            _options: function(store,edited) {
+               //if(!edited.areaLayer)return {}
+               const layers = store.state._col_layers
+               const layersObj = layers.reduce((acc,x)=>{
+                  acc[x._id]=x
+                  return acc
+               },{})
 
-           const layerAttrs = store.state._col_layerAttributes
-           //console.log('options layerAttrs',layerAttrs)
-           const areaLayers = layersObj[store.state._col_layers_selected].spatial_intersect
+               const layerAttrs = store.state._col_layerAttributes
+               //console.log('options layerAttrs',layerAttrs)
+               const areaLayers = layersObj[store.state._col_layers_selected].spatial_intersect
 
-           const filtered = layers.reduce((acc,x)=>{
-             if(x.spatial_intersect.some(a=>areaLayers.indexOf(a)>-1)) acc.push(x._id)
-             return acc
-          },[])
+               const filtered = layers.reduce((acc,x)=>{
+                  if(x.spatial_intersect.some(a=>areaLayers.indexOf(a)>-1)) acc.push(x._id)
+                  return acc
+               },[])
 
-           const options = layerAttrs.reduce((acc,att)=>{
-             if (att.func.length > 0) {
-                 const index = filtered.indexOf(att.layer)
-                 if (index>-1) {
-                    const id = filtered[index]
-                    acc[id] = acc[id] || { name: layersObj[id].text_en, items : ['count'] }
-                    att.func.forEach(func=>{
-                       if (func) acc[id].items.push(att.name+'.'+func)
-                    })
-                 }
-             }
-             return acc
-           },{})
+               const options = layerAttrs.reduce((acc,att)=>{
+                  if (att.func.length > 0) {
+                     const index = filtered.indexOf(att.layer)
+                     if (index>-1) {
+                        const id = filtered[index]
+                        acc[id] = acc[id] || { name: layersObj[id].text_en, items : ['count'] }
+                        att.func.forEach(func=>{
+                           if (func) acc[id].items.push(att.name+'.'+func)
+                        })
+                     }
+                  }
+                  return acc
+               },{})
 
-           //console.log('categorised options',options)
-           return options
+               //console.log('categorised options',options)
+               return options
 
+            }
          }
-       }
-     }
-  },
+      }
+   },
    indicatorSections: {
       name : "Sections",
       schema : {
@@ -239,12 +239,15 @@ module.exports = {
                },
                {
                   name :'List',
+               },
+               {
+                  name :'Map',
                }
             ]
          },
          active : {
-           type : Boolean,
-           _text : "Active"
+            type : Boolean,
+            _text : "Active"
          },
          layer : {
             type : mongoose.Schema.Types.ObjectId,
@@ -272,17 +275,27 @@ module.exports = {
             _text : "Figure",
             _categorised : true,
             _options : function(store,edited) {
-               if(!edited.areaLayer)return {}
+
                const replaceString = '%%%'
                const areaKey = 'attached'
 
                const layers = store.state._col_layers
+
+               if (edited.type==='Map') {
+                  return layers.reduce((acc,x)=>{
+                  acc.push({'name': x.text_en,'value':x._id})
+                  return acc
+               },[])
+               } else if (!edited.areaLayer) {
+               return {error:{name:'First select a spatial intersect',value:'error'}}
+               }
+
                const layersObj = layers.reduce((acc,x)=>{
                   acc[x._id]=x
                   return acc
                },{'attached':{text_en:'Area'}})
 
-               const areaAttrs = store.state._col_areaAttributes.map(x => {
+               const areaAttrs = store.state._col_indicatorAttributes.map(x => {
                   x.func = [replaceString]
                   x.layer = areaKey
                   return x
@@ -308,7 +321,7 @@ module.exports = {
                         const id = filtered[index]
                         acc[id] = acc[id] || { name: layersObj[id].text_en, items : [] }
                         att.func.forEach(func=>{
-                          if (func) acc[id].items.push((att.name+'.'+func).replace('.'+replaceString,''))
+                           if (func) acc[id].items.push((att.name+'.'+func).replace('.'+replaceString,''))
                         })
                      }
                   }
@@ -337,15 +350,16 @@ module.exports = {
    },
    features: {
       name:'Features',
-      schema:'meta',
+      schema:'layerAttributes',
       params : '/:collection'
    },
    indicators: {
       name:'Indicators',
-      schema : {},
+      schema : 'indicatorAttributes',
       schemaOpts : {
-         strict: false
-      }
+         strict: true
+      },
+      params : '/:collection'
    },
    areaLayers : {
       name:'AreasLayers',
@@ -365,10 +379,46 @@ module.exports = {
    },
    areas : {
       name:'Areas',
-      schema:'spatial'
+      schema:'areaAttributes',
+      params : '/:collection'
    },
    areaAttributes : {
-      name : "Area Attributes",
+      name:'AreaAttributes',
+      schema : {
+         name : {
+            type : String,
+            required : true,
+            _text : "Name"
+         },
+         type : {
+            type : String,
+            required : true,
+            _text : "Type",
+            _multiple: false,
+            _options : [
+               {
+                  name : 'String',
+               },
+               {
+                  name : 'Number',
+               },
+               {
+                  name : 'Boolean',
+               }
+            ]
+         },
+         required : {
+            type : Boolean,
+            _text : "Required",
+         },
+         layer : {
+            type : String,
+            required : true,
+         }
+      },
+   },
+   indicatorAttributes : {
+      name : "IndicatorAttributes",
       canPaste : true,
       _description_en : "For non-spatial attribute data that is directly associatied with the spatial area i.e data from JIIS relating to a statistical area",
       schema : {
@@ -403,9 +453,5 @@ module.exports = {
             required : true,
          }
       },
-   },
-   buildings : {
-      name:'Buildings',
-      schema:'spatial',
    }
 }
