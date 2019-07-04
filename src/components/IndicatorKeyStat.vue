@@ -1,6 +1,6 @@
 <template>
 
-  <v-card v-bind:flat="!selected" class="indicator-hover">
+  <v-card hover ripple raised v-bind:class="[{selected : selected},'indicator-hover']">
 
     <div v-if="type === 'List' && selectedIndicator">
       <v-list>
@@ -30,11 +30,10 @@
 
       <div v-if="dataYears" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
         <v-slider
-        color="grey lighten-2"
         track-color="transparent"
         always-dirty
         inverse-label
-        :tick-labels="dataYears"
+        :tick-labels="makeSliderLabels(dataYears)"
         v-model="selectedYear"
         ticks="always"
         v-bind:tick-size="2"
@@ -66,11 +65,11 @@
 <div class="text-xs-right" style="margin-right:-18px;clear:both;display:block;margin-bottom: -10px;">
   <v-btn icon @click="toggleExpand()"><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
 </div>
-<div v-if="expand" class="pa-2">
+<div v-if="selected" class="pa-2">
   Lorem ipsum dolor sit amet, id principes honestatis sadipscing eum, malorum ceteros percipitur ea qui. Omnesque postulant eu quo, ei mei wisi vituperata repudiandae. No est meliore consulatu,e.
   <br><br>
   <div class="grey--text text--darken-2">
-    Source: JIIS {{ year || $store.state.year }} <span style="float:right"><v-icon>save_alt</v-icon> Download data</span>
+    Source: JIIS {{ year || $store.state.year }}
   </div>
 </div>
 
@@ -97,10 +96,25 @@ export default {
   },
   props: ['name','figure','description','unit','type','small','noChart','selected'],
   methods : {
+    makeSliderLabels (years) {
+      const min = years[0]
+      const max = years[years.length-1]
+      const steps = max - min + 1
+      const labels = []
+      for (var x=0;x<steps;x++) {
+        const y = min + x
+        labels.push(years.indexOf(y)>-1 ? y : '')
+      }
+      console.log('labels',labels,years)
+      return labels
+    },
     log() {
       console.log('data',this)
       console.log('store',this.$store.state)
       //console.log(this.$store.getters.selectedFeature)
+    },
+    clickHandler(){
+      console.log('click')
     },
     toggleExpand() {
       this.expand = !this.expand
@@ -125,11 +139,11 @@ export default {
         if (this.dataYears.indexOf(year)===-1) {
           year ++
         } else {
-          this.year = year
+          this.selectedYear = year
           break;
         }
-
       }
+      return true
     }
   },
   computed : {
@@ -153,6 +167,7 @@ export default {
       if (!areas) return null
       const matched = areas.reduce((acc,x)=>{
         if (this.figure.some(f=>x[f])) acc.push(x)
+        //acc.push(x)
         return acc
       },[])
       console.log('areaDataMatched',matched)
@@ -173,25 +188,31 @@ export default {
       return this.selectedYear || this.latestYear
     },
     selectedIndicator () {
-      if (!this.dataYears || !this.selectedYear) return {}
-      return this.areaDataMatched[this.dataYears.indexOf(this.selectedYear)]
+      if (!this.dataYears || !this.selectedYear) {
+        return {}
+      }
+      const selectedIndicator =  this.areaDataMatched[this.dataYears.indexOf(this.selectedYear)]
+      console.log('selectedIndicator',selectedIndicator)
+      return selectedIndicator
     },
     dataYears () {
-      if (!this.areaDataMatched) return null
-      return this.areaDataMatched.map(x=>x.year)
+      const d = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
+      console.log('datayears',d,this.$store.getters.allIndicatorKeyYears,this.$store.getters.allIndicatorsByYear)
+    return d
     },
     generateChartDataSets() {
       if (this.type !== 'Chart' || !this.selectedIndicator) {
         console.log('chart data test', this.selectedIndicator)
         return null
       }
+      const color = this.selected ? this.$vuetify.theme.primary : this.$vuetify.theme.grey
       //console.log('chartdata', this.figure.map(x=>this.selectedIndicator[x]))
       return {
         datasets :[
           {
             //label:store.state.neighbourhood,
             data: this.figure.map(x=>this.selectedIndicator[x]),
-            borderColor: '#000',
+            borderColor: color,
             type:"line",
             fill:false,
           }
@@ -209,7 +230,8 @@ export default {
       if (!this.type === ' Figure') return {}
       const key = this.figure
       const neighbourhood = this.$store.state.neighbourhood
-      const color = this.$vuetify.theme.tertiary;
+      const label = this.name
+      const highlight = this.selected ? this.$vuetify.theme.primary : '#000'
       let citydata = this.$store.getters.allIndicatorsByYear
       console.log('citydata',citydata)
       if (!citydata || !this.year) return {};
@@ -221,24 +243,33 @@ export default {
         return x
       })
       const sorted = citydata.sort((a,b)=> (!b[key])-(!a[key]) || +(a[key]>b[key])||-(a[key]<b[key]))
-      const label = this.name
-      console.log('sorted',sorted)
+      const names = this.$store.getters.areaNames
+      const sleected = this.$store.getters.selectedAreas
+      console.log('sorted',sorted,names,sleected)
       return {
-        labels: sorted.map(x=> x.name),
+        labels: sorted.map(x=> names[x.areaCode]),
         area_code: neighbourhood,
         datasets :[{
           label: label,
           backgroundColor: sorted.map(x=> {
-            return x.area_code === neighbourhood ? color : colors.grey.lighten2;
+            return x.areaCode === neighbourhood ? highlight : colors.grey.lighten2;
           }),
           data: sorted.map(x=> {return x[key]})
         }]
       }
     },
   },
+  watch : {
+    selectedYear : function(newVal,oldVal) {
+      this.validateYear(newVal)
+      //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
+    }
+  },
   mounted (){
     if (this.areaDataLatest) this.selectedYear = this.areaDataLatest.year
-    if (this.selected) this.updateIndicator()
+    this.$nextTick(()=>{
+      if (this.selected) this.updateIndicator()
+    })
     //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])
   }
 
@@ -267,25 +298,29 @@ export default {
   font-size:20px;
   vertical-align: top;
 }
-
-.indicator-hover:hover, .indicator-hover:hover>div {
-  cursor:pointer;
-  background-color:#fff6e6;
+div.selected>div {
+  background-color:var(--v-grey-lighten4);
 }
-.indicator-hover:hover .v-slider__thumb {
-  background-color:var(--v-primary-base)!important;
-}
-
-.indicator-hover:hover .display-1 {
+.selected span  {
   color:var(--v-primary-base)!important;
 }
-.v-slider__ticks span {
-  font-size:0.70em;
+.selected .v-slider__thumb {
+  background-color:var(--v-primary-base)!important;
 }
-.v-slider__thumb {
-  width: 10px;
-  height: 10px;
-  left: -6px;
+.indicator-hover:hover, .indicator-hover:hover>div {
+  cursor:pointer;
+  background-color:var(--v-grey-lighten4);
+}
+.theme--light.v-input--slider .v-slider__ticks {
+  font-size:0.70em;
+  border-color: var(--v-grey-lighten2) !important;
+}
+
+div.v-slider__thumb{
+  background-color: #bcbcbc !important;
+}
+div.v-slider__track-fill {
+  background-color: var(--v-grey-lighten2) !important;
 }
 .v-slider__thumb:hover {
   width: 24px;

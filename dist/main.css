@@ -1,12 +1,30 @@
 
+.area-select div.v-messages {
+  height:0px;
+  min-height:0px;
+}
+.area-select div.v-input__slot,
+.area-select.v-text-field.v-text-field--enclosed div.v-text-field__details {
+  margin-bottom:0;
+}
+.area-select.theme--light.v-text-field--solo>.v-input__control>.v-input__slot {
+  background:none;
+  padding:0;
+}
+
+
+
+
+
 .main-map {
   z-index:0;
   background-color:#eee;
   height:400px;
+  flex: 1;
 }
 .map-menu {
   width:300px;
-  z-index:1;
+  z-index:500;
   position:absolute;
   top:12px;
   right:12px;
@@ -23,12 +41,6 @@
   border-bottom:none;
   color:#999;
 }
-#map-legend {
-  position: absolute;
-  top:0px;
-  left:20px;
-  width:200px;
-}
 #map_features .leaflet-control-container .leaflet-left {
   right:23px;
   top: 40px;
@@ -36,6 +48,46 @@
 }
 #map_features.leaflet-touch .leaflet-bar a {
   color:#000 !important;
+}
+#map-legend {
+  top:0px;
+  width:20%;
+  max-width:300px;
+  min-width:200px;
+  color: var(--v-grey-darken2)
+}
+#map-legend .v-list__tile {
+  height:auto;
+}
+#map-legend .v-expansion-panel__header__icon {
+  display: none;
+}
+#map-legend .v-expansion-panel__header:hover{
+  background-color:#eee;
+}
+#map-legend .v-expansion-panel__container{
+  border-top:none;
+  background:none;
+}
+#map-legend .v-expansion-panel__container--active {
+  border-top:1px solid #e3e3e3;
+  border-bottom:1px solid #e3e3e3;
+}
+#map-legend .v-expansion-panel__container--active .v-expansion-panel__header{
+  color:var(--v-primary-base);
+  font-weight:700;
+}
+#map-legend .v-expansion-panel {
+  box-shadow: none;
+}
+#map-legend.legend-right  {
+  top:0px;
+  right:20px;
+  left:auto;
+}
+#map-legend .v-card {
+  background: none;
+  box-shadow:none;
 }
 
 
@@ -72,7 +124,7 @@
 .key-gradient {
   width:6px;
   height:150px;
-  background-image: linear-gradient(var(--v-primary-base), white);
+  background-image: linear-gradient(var(--v-primary-base), #eaeaea);
 }
 #navigator-key td {
   vertical-align:top;
@@ -162,23 +214,28 @@ td.key-figures {
   font-size:20px;
   vertical-align: top;
 }
-.indicator-hover:hover, .indicator-hover:hover>div {
-  cursor:pointer;
-  background-color:#fff6e6;
+div.selected>div {
+  background-color:var(--v-grey-lighten4);
 }
-.indicator-hover:hover .v-slider__thumb {
-  background-color:var(--v-primary-base)!important;
-}
-.indicator-hover:hover .display-1 {
+.selected span  {
   color:var(--v-primary-base)!important;
 }
-.v-slider__ticks span {
-  font-size:0.70em;
+.selected .v-slider__thumb {
+  background-color:var(--v-primary-base)!important;
 }
-.v-slider__thumb {
-  width: 10px;
-  height: 10px;
-  left: -6px;
+.indicator-hover:hover, .indicator-hover:hover>div {
+  cursor:pointer;
+  background-color:var(--v-grey-lighten4);
+}
+.theme--light.v-input--slider .v-slider__ticks {
+  font-size:0.70em;
+  border-color: var(--v-grey-lighten2) !important;
+}
+div.v-slider__thumb{
+  background-color: #bcbcbc !important;
+}
+div.v-slider__track-fill {
+  background-color: var(--v-grey-lighten2) !important;
 }
 .v-slider__thumb:hover {
   width: 24px;
@@ -239,8 +296,11 @@ td.key-figures {
 }
 .v-list__tile--active{
   border-right: 3px solid;
-  background-color: rgba(0,0,0,0.02);
+  background-color: var(--v-grey-lighten3);
   border-right-color: var(--v-primary-base);
+}
+.v-list__tile--active .v-list__tile__content {
+  font-weight:500;
 }
 .no-background,.no-background div {
   background:none !important;
@@ -280,8 +340,8 @@ span.func-count {
   top:0;
 }
 #map-panel-navigator{
-  height:400px;
-  width:16%;
+  height:600px;
+  width:24%;
 }
 #info-panel{
   display:none;
@@ -317,6 +377,9 @@ span.func-count {
   width:40%;
   height:100%;
 }
+.ejmap-border {
+  border:1px solid #e3e3e3;
+}
 .ejmap-border-right {
   border-right:1px solid #e3e3e3;
 }
@@ -338,32 +401,6 @@ span.func-count {
   column-gap:           0px;
 }
 
-
-
-#main-map {
-  z-index:0;
-  background-color:#eee;
-}
-#map-menu {
-  width:300px;
-  z-index:1;
-  position:absolute;
-  top:12px;
-  right:12px;
-  text-align:right;
-}
-.highlighted {
-  background-color:#e8e8e8;
-}
-.v-label {
-  font-size: 13px;
-}
-
-
-
-.btn-title div[data-v-08699199] {
-  text-transform:none;
-}
 
 
 .data-toolbar {

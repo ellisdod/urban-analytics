@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Indicators from './../components/IndicatorsNew.vue'
-import MapSurvey from './../components/MapSurvey.vue'
+import MapFull from './../components/MapFull.vue'
 import Upload from './../components/Upload.vue'
 import ManageData from './../components/ManageDataMaster.vue'
 import Auth from '@okta/okta-vue'
@@ -27,7 +27,10 @@ let router = new Router({
     },
     {
       path: '/upload',
-      component: Upload
+      component: Upload,
+      meta: {
+        requiresAuth: true
+      }
     },
     {
       path: '/manage',
@@ -38,7 +41,7 @@ let router = new Router({
     },
     {
       path: '/map',
-      component: MapSurvey
+      component: MapFull
     },
     {
       path: '/indicators',

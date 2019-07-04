@@ -74,8 +74,8 @@ export default {
   props : ['layer', 'layerCollection'],
   data() {
     return {
-      processing : false,
-      isSaving:false,
+      processing: false,
+      isSaving: false,
       uploadedFiles: [],
       uploadError: null,
       currentStatus: null,
@@ -104,6 +104,7 @@ export default {
       this.indicatorFormat = this.file.name.split('.')[1];
     },
     close () {
+      this.processing = false
       this.$emit('close',true)
     },
     processForm () {
@@ -123,17 +124,24 @@ export default {
       api[func](collection, null, formData, {
           'Content-Type': 'multipart/form-data',
         },collectionParams
-      ).then(x=>{
+      ).then(()=>{
         console.log('SUCCESS!!');
-        this.$store.dispatch('UPDATE_COLLECTION',{
-          name : 'features',
+        return this.$store.dispatch('UPDATE_COLLECTION',{
+          name : collection,
           layer : layer,
+         })
         })
-        this.close()
-        })
+       .then(()=>{
+         this.$forceUpdate()
+         this.close()
+       })
        .catch((err)=>{
+         this.processing = false
          console.log(err.response)
-         if(!err.response) return null
+         if(!err.response) {
+           console.log(err)
+           return null
+         }
          const errors = err.response.data.error.errors
          alert(Object.keys(errors).reduce((acc,x)=>{
            acc = acc + '\n' + errors[x].name + ': ' + errors[x].message

@@ -37,5 +37,16 @@ const getNested = function (p, o) {
   return n
 }
 
+const rowsToObjects = function (headers,rows) {
+  return rows.reduce((arr,row)=>{
+    arr.push(headers.reduce((acc,x,index)=>{
+      acc[x] = row[index]
+      return acc
+    },{}))
+    return arr
+  },[])
+}
+
+exports.rowsToObjects = rowsToObjects
 exports.sortNumbers = sortNumbers
 exports.getNested = getNested

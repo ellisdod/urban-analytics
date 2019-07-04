@@ -47,7 +47,8 @@ export default {
       this.processing = true
 
     api.updateAnalysis('features',this.areaLayerSelected,{},{},this.layerSelected)
-    .then(()=>{
+    .then((x,err)=>{
+      if (err) console.log(err)
       this.processing = false
     })
 
