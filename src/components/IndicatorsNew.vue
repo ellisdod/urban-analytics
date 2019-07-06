@@ -2,17 +2,18 @@
   <div>
     <v-container fluid grid-list-xl>
       <v-layout row wrap>
-        <v-flex sm2 xs-12>
-          <editable-data-list collection="indicatorSections"></editable-data-list>
+        <v-flex sm2 xs-12 style="z-index:2;">
+          <editable-data-list v-bind:disabled="true"  collection="indicatorSections"></editable-data-list>
         </v-flex>
 
-        <v-flex sm7 xs12>
+        <v-flex sm7 xs12 style="z-index:2;">
           <div style="position:relative;display:block;">
 
-              <masonry
-  :cols="2"
-  :gutter="20"
-  >
+            <div class="title mb-4 pt-1">
+            <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  {{section.text_en}} </div> <area-select class="title font-weight-light"></area-select>
+            </div>
+
+            <masonry :cols="{default:2,800:1}" :gutter="20">
 
             <div sm6 xs12 v-for="(item,index) in items" :key="item._id" @click="updateSelected(index)" style="margin-bottom:20px;">
 
@@ -39,38 +40,62 @@
               >
               </indicator-key-stat>
 
-            <!-- MAP -->
-            <v-card v-else-if="item.type==='Map'">
-              <v-card-title>
-                {{item.text}}
-              </v-card-title>
-            <map-view
-            contextmenu=""
-            style="position:relative;"
-            featuresCollection="features"
-            zoomLevel="12"
-            height="400px"
-            :featureLayers="item.figure"
-            v-bind:areas="true"
-            v-bind:options="{legendBottom:true}"
-            >
-          </map-view>
-        </v-card>
+               <!-- MAP -->
+              <div v-else-if="item.type==='Map'">
+                <div class="subheading font-weight-light my-2">{{item.text}}</div>
+          <v-card>
+              <map-view
+              contextmenu=""
+              style="position:relative;"
+              featuresCollection="features"
+              zoomLevel="12"
+              height="400px"
+              :featureLayers="item.figure"
+              v-bind:areas="true"
+              v-bind:options="{legendBottom:true}"
+              class="ejmap-border"
+              >
+            </map-view>
+          </v-card>
+        </div>
 
       </div>
     </masonry>
+
+<!--   <div v-for="(item,index) in items" :key="item._id">
+
+    <div v-if="item.type==='Map'">
+      <div class="my-2">{{item.text}}</div>
+<v-card>
+    <map-view
+    contextmenu=""
+    style="position:relative;"
+    featuresCollection="features"
+    zoomLevel="12"
+    height="400px"
+    :featureLayers="item.figure"
+    v-bind:areas="true"
+    v-bind:options="{}"
+    class="ejmap-border"
+    >
+  </map-view>
+</v-card>
+
+</div>
+</div> -->
+
   </div>
 
     </v-flex>
-    <v-flex sm3 xs12>
-      <map-navigator v-if="$store.getters.indicatorsForSelectedYear" id="map-panel-navigator"></map-navigator>
-      <div id="info-panel">
-      </div>
-    </v-flex>
+
+
+
     <!--<v-btn @click="logStore">log</v-btn>-->
 
   </v-layout>
 </v-container>
+<map-navigator v-if="$store.getters.indicatorsForSelectedYear" id="map-panel-navigator"></map-navigator>
+<div style="position:fixed;background:none;top:0;width:74%;height:100%;z-index:1;"></div>
 
 </div>
 
@@ -87,11 +112,11 @@ import {translate} from '../plugins/translate.js'
 import MapView from 'components/MapView.vue'
 import MapNavigator from 'components/MapNavigator.vue'
 import EditableDataList from 'components/EditableDataList.vue'
-import axios from 'axios'
+import AreaSelect from 'components/AreaSelect.vue'
 
 export default {
   components: {
-    MapView, MapNavigator, BarHorizontal,BarVertical, IndicatorKeyStat, IndicatorHeading,EditableDataList
+    MapView, MapNavigator, BarHorizontal,BarVertical, IndicatorKeyStat, IndicatorHeading,EditableDataList,AreaSelect
   },
   data () {
     return {
@@ -112,6 +137,9 @@ export default {
     featureLayers () {
       const section = this.$store.getters.selectedIndicatorSection
       return section ? section.geodata : null
+  },
+  section () {
+    return this.$store.state._col_indicatorSections.filter(x=>x._id === this.$store.state._col_indicatorSections_selected)[0]
   }
 },
   methods: {
@@ -179,8 +207,10 @@ export default {
   top:0;
 }
 #map-panel-navigator{
-  height:600px;
-  width:24%;
+  height:100%;
+  width:100%;
+  z-index:0;
+  top:0;
 }
 #info-panel{
   display:none;

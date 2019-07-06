@@ -76,9 +76,9 @@ const store = new Vuex.Store({
       defaultCenter: {lat: 31.827982118391024,lng: 35.22958321000619}
     },
     navigator : {
-      zoom:12,
-      center: { lat: 31.77487761850741, lng: 35.20328852089031 },
-      defaultCenter: {lat: 31.77487761850741, lng: 35.20328852089031},
+      zoom:11.8,
+      center: { lat: 31.8072, lng: 35.02 }, //800 = 35.14004811644555 1200 35.07534384727479
+      defaultCenter: {lat: 31.8072, lng: 35.02},
       indicator: {
         figure : 'pop_year_end',
         name : 'Population'

@@ -2,7 +2,7 @@
   <v-app id="keep" app >
 
 <v-toolbar app light clipped-left flat color="#fff" class="ejmap-border-bottom">
-  <v-toolbar-side-icon @click="log()"></v-toolbar-side-icon>
+  <img src="../public/urban_analytics_logo.svg">
 
   <v-toolbar-title>
   <div style="margin-bottom:-5px;">Urban Analytics</div>
@@ -13,12 +13,44 @@
 
   <v-tooltip v-for="(item,i) in items" bottom :key="i" open-delay="100">
       <template v-slot:activator="{ on }">
-        <v-btn v-on="on" :to="item.route" icon>
-          <v-icon color="grey darken-2">{{ item.icon }}</v-icon>
+        <v-btn class="hidden-xs-only" v-on="on" :to="item.route" icon>
+          <v-icon color="grey darken-1">{{ item.icon }}</v-icon>
         </v-btn>
       </template>
       <span>{{item.text}}</span>
   </v-tooltip>
+
+
+
+  <v-menu>
+        <template v-slot:activator="{ on }">
+          <v-btn icon v-on="on" class="hidden-sm-and-up">
+            <v-icon>more_vert</v-icon>
+          </v-btn>
+        </template>
+        <v-list>
+
+        <v-list-tile v-for="(item,i) in items" bottom :key="i" :to="item.route">
+          <v-list-tile-action>
+                <v-icon color="grey darken-1">{{ item.icon }}</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>
+              {{ item.text }}
+          </v-list-tile-content>
+        </v-list-tile>
+        <v-list-tile @click="toggleLogin">
+          <v-list-tile-action>
+                <v-icon color="grey darken-1">person</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content v-if="activeUser">
+            Logout
+          </v-list-tile-content>
+          <v-list-tile-content v-else>
+            Login
+          </v-list-tile-content>
+        </v-list-tile>
+      </v-list>
+  </v-menu>
 
 
 
@@ -27,18 +59,18 @@
       <!--<v-btn @click.prevent="login" flat v-on="on"><v-icon @click.prevent="login" v-on="on">person</v-icon></v-btn>-->
       <v-tooltip bottom open-delay="100">
         <template #activator="{ on: tooltip }">
-          <v-list-tile>
+          <v-list-tile class="hidden-xs-only">
             <v-list-tile-content>
-              <v-list-tile-title v-if="activeUser" class="grey--text body-1">
+              <v-list-tile-title v-if="activeUser" class="grey--text body-1" >
                 {{ activeUser.email }}
               </v-list-tile-title>
-              <v-list-tile-title v-else class="grey--text">
+              <v-list-tile-title v-else class="grey--text hidden-xs-only">
                 Login
               </v-list-tile-title>
             </v-list-tile-content>
             <v-list-tile-action>
-              <v-btn v-on="{...menu,...tooltip}" icon>
-              <v-icon color="grey darken-2">person</v-icon>
+              <v-btn class="hidden-xs-only" v-on="{...menu,...tooltip}" icon>
+              <v-icon color="grey darken-1">person</v-icon>
             </v-btn>
             </v-list-tile-action>
           </v-list-tile>
@@ -139,6 +171,10 @@ export default {
   methods: {
     log(){
       console.log('store',this.$store.state)
+    },
+    toggleLogin() {
+      if(  this.activeUser ) this.logout()
+      else this.login()
     },
     login () {
       this.$auth.loginRedirect()

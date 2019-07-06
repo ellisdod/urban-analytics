@@ -84,7 +84,7 @@
     <v-list-tile-content>
       <div v-if="x._id" class="attribute-controls-wrapper">
         {{x.text || x.text_en || x.name}}
-        <div class="attribute-controls">
+        <div v-if="!disabled" class="attribute-controls">
           <v-btn small fab color="grey" outline @click="edit(collection, x)">
             <v-icon>edit</v-icon>
           </v-btn>
@@ -162,7 +162,7 @@
 
                 <v-list-tile v-if="val.value" :key="name" @click="edited[key].push(val.value)">
                   {{val.name}}
-        
+
                 </v-list-tile>
 
                 <v-menu v-else-if="val.items" full-width offset-x max-height="500" :key="name" open-on-hover >
@@ -251,7 +251,7 @@ export default {
   components: {
     VueJsonPretty, Upload
   },
-  props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom','multiselect'],
+  props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom','multiselect','disabled'],
   data() {
     return {
       updateKey : 0,
