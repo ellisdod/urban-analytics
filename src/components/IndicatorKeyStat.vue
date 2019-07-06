@@ -22,7 +22,7 @@
 
 
       <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
-        <span class="display-1 py-0">{{selectedIndicator[figure[0]]}}</span>
+        <span class="display-1 py-0">{{selectedIndicator[figure[0]]||0}}</span>
         <span v-if="unit" class="subheading ml-1">{{unit}}</span>
         <div class="font-weight-light">{{year}}</div>
       </div>
@@ -39,6 +39,7 @@
         v-bind:tick-size="2"
         :min="dataYears[0]"
         :max="dataYears[dataYears.length-1]"
+        z-index="500"
         >
       </v-slider>
     </div>
@@ -63,7 +64,7 @@
 </div>
 
 <div class="text-xs-right" style="margin-right:-18px;clear:both;display:block;margin-bottom: -10px;">
-  <v-btn icon @click="toggleExpand()"><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
+  <v-btn icon><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
 </div>
 <div v-if="selected" class="pa-2">
   Lorem ipsum dolor sit amet, id principes honestatis sadipscing eum, malorum ceteros percipitur ea qui. Omnesque postulant eu quo, ei mei wisi vituperata repudiandae. No est meliore consulatu,e.
@@ -116,12 +117,12 @@ export default {
     clickHandler(){
       console.log('click')
     },
-    toggleExpand() {
-      this.expand = !this.expand
-      this.rotation = this.rotation === 0 ? 180 : 0
+    toggleRotate() {
+      if (!this.selected) this.rotation = this.rotation === 0 ? 180 : 0
     },
     updateIndicator() {
       this.log()
+      this.toggleRotate()
       if (!this.figure[0] || !this.year) return null
       this.$store.commit("UPDATE",{key:['navigator','indicator'],value:{figure:this.figure[0],name:this.name}})
       this.$store.commit("UPDATE",{key:'year',value:this.year})
@@ -163,7 +164,7 @@ export default {
       return this.$store.state.indicators.filter(x=>x.year===this.thisYear) || []
     },
     areaDataMatched () {
-      const areas = this.$store.getters.indicatorsForSelectedArea
+      return this.$store.getters.indicatorsForSelectedArea.filter(x=>this.dataYears.some(f=>x.year===f))
       if (!areas) return null
       const matched = areas.reduce((acc,x)=>{
         if (this.figure.some(f=>x[f])) acc.push(x)
@@ -191,9 +192,13 @@ export default {
       if (!this.dataYears || !this.selectedYear) {
         return {}
       }
-      const selectedIndicator =  this.areaDataMatched[this.dataYears.indexOf(this.selectedYear)]
-      console.log('selectedIndicator',selectedIndicator)
-      return selectedIndicator
+      let indicator =  this.areaDataMatched[this.dataYears.indexOf(this.selectedYear)]
+      console.log('selectedIndicator',indicator)
+      if (!indicator) {
+        indicator = {}
+        indicator[this.figure[0]] = 0
+      }
+      return indicator
     },
     dataYears () {
       const d = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
@@ -263,11 +268,18 @@ export default {
     selectedYear : function(newVal,oldVal) {
       this.validateYear(newVal)
       //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
+    },
+    areaDataLatest : function(newVal) {
+      this.selectedYear = newVal.year
     }
   },
   mounted (){
-    if (this.areaDataLatest) this.selectedYear = this.areaDataLatest.year
     this.$nextTick(()=>{
+      if (this.areaDataLatest) {
+        this.selectedYear = this.areaDataLatest.year
+      } else {
+        this.selectedYear = this.dataYears[this.dataYears.length -1]
+      }
       if (this.selected) this.updateIndicator()
     })
     //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])

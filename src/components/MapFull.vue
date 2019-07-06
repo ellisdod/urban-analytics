@@ -31,7 +31,6 @@ export default {
         left:0,
         borderRight:'1px solid #e3e3e3',
         backgroundColor: '#fff',
-        flexDirection: 'row-reverse'
       }
     }
   }

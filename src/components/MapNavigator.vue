@@ -1,9 +1,8 @@
 <template>
-  <div>
+  <div v-resize="centerMap">
     <table id="navigator-key">
       <tr id="navigator-header" >
         <td colspan="2">
-          <area-select titleclass="title"></area-select>
           <div class="subheading grey--text text--darken-2">
           {{$store.state.navigator.indicator.name}} - {{$store.state.year}}
           </div>
@@ -31,11 +30,12 @@
       </tr>
     </table>
 
-    <l-map
+    <l-map ref="map"
     :zoom="$store.state.navigator.zoom"
     :center="$store.state.navigator.center"
     :options="mapOptions"
     id="navigation-map"
+    @click="log()"
     >
 
 
@@ -62,7 +62,6 @@ import { LMap, LTileLayer, LMarker, LPopup, LTooltip, LPolygon, LGeoJson} from '
 //var vectorTileStyling = require('../../public/mapStyle.js');
 import API from '@/api.js'
 import chroma from 'chroma-js'
-import AreaSelect from 'components/AreaSelect.vue'
 
 //const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');
@@ -78,12 +77,10 @@ export default {
     LTooltip:LTooltip,
     LPolygon : LPolygon,
     LGeoJson : LGeoJson,
-    AreaSelect : AreaSelect
   },
   data () {
     return {
       zoom: 15,
-      center: L.latLng(31.801141899926307,35.18584083885216),
       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
       showParagraph: false,
       details:{
@@ -102,9 +99,11 @@ export default {
       areasGeoJsonOptions:{
         onEachFeature: (feature, layer) => {
           var self = this
-          //layer.bindPopup('<p><b>'+n.name+'</b></p><p>'+self.$store.state.navigator.indicator.name +': '+n[self.$store.state.navigator.indicator.figure]+'</p>');
+          const n = self.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === feature.properties.id)[0]
+          layer.bindPopup('<p><b>'+feature.properties.name+'</b></p><p>'+self.$store.state.navigator.indicator.name +': '+n[self.$store.state.navigator.indicator.figure]+'</p>');
           layer.on({
             click : function(e) {
+              console.log('nnnnn',n)
               const p = e.target.feature.properties
               self.$store.commit('UPDATE',{key:'neighbourhood',value:p.id});
               self.$store.commit('UPDATE',{key:['map','zoom'],value:15});
@@ -119,15 +118,17 @@ export default {
               })
             },
             mouseover : function(e) {
-              const n = self.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === e.target.feature.properties.id)[0]
-              self.details = {
+
+              /*self.details = {
                 neighbourhood : n.name,
                 value : n[self.$store.state.navigator.indicator.figure],
                 key : ''
-              }
+              }*/
+              e.target.openPopup()
             },
             mouseout : function(e) {
               self.details = self.detailsDefault
+              e.target.closePopup()
             }
           })
 
@@ -152,6 +153,8 @@ export default {
     }
   },
   methods: {
+    log() {
+    },
     getAreaStyle(id){
       const f = chroma.scale(['#eaeaea', this.$vuetify.theme.primary]);
       const area = this.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === id)[0]
@@ -180,8 +183,28 @@ export default {
     mouseoverArea(e) {
 
     },
+    centerMap() {
+      const lng = 35.1300 - ((window.innerWidth - 800) * 0.00016175)
+      console.log('navigation lng',lng)
+      this.$store.commit('UPDATE',{
+        key:['navigator','center'],
+        value: {
+          lon:lng,
+          lat:this.$store.state.navigator.center.lat
+        }
+      })
+    }
   },
   mounted(){
+    this.$refs.map.mapObject.on('click', function(e) {  console.log(e) })
+    this.$refs.map.mapObject.zoomControl.setPosition('bottomright')
+    console.log('map', this.$refs.map.mapObject.zoomControl) //setPosition('bottomright')
+    //800 = (35.1400 - 35.0753) / 400
+    //1200 = 35.0753
+    this.centerMap()
+
+
+
     //document.getElementsByClassName('leaflet-control-container')[1].style.display = 'none';
     //onsole.log('navmapdata',this.$store.state._col_areas.filter(x=>x.feature))
     /*
@@ -233,6 +256,8 @@ export default {
 #navigator-key {
   position: absolute;
   z-index:10;
+  left:75%;
+  top:95px;
 }
 
 

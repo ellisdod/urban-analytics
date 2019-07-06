@@ -1,8 +1,8 @@
 {
-  "name": "my-vue-app",
+  "name": "ejmap",
   "version": "1.0.0",
-  "description": "A Vue.js project",
-  "author": "Brandon Parise <bparise@gmail.com>",
+  "description": "Urban Analytics East Jerusalem",
+  "author": "International Peace and Coopoeration Center - IPCC",
   "private": true,
   "scripts": {
     "dev": "webpack-dev-server --progress --config build/webpack.config.dev.js",

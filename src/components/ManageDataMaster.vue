@@ -1,12 +1,36 @@
 <template>
   <div>
+    <div style="text-xs-right">
+    <div class="data-toolbar" style="float:right;display:inline-block;height:100px;margin-top:10px;z-index:100;">
+      <v-tooltip bottom open-delay="100">
+          <template v-slot:activator="{ on }">
+            <v-btn v-on="on"
+            color="grey" class="mb-2" flat @click="uploadDialog=true" :icon="iconise">
+             <v-icon class="">cloud_upload</v-icon>
+             <span class="hidden-sm-and-down ml-2">Upload</span>
+             </v-btn>
+          </template>
+          <span>Upload Data</span>
+      </v-tooltip>
+      <v-tooltip bottom open-delay="100">
+          <template v-slot:activator="{ on }">
+            <v-btn v-on="on"
+             color="grey" class="mb-2" flat @click="analysisDialog=true" :icon="iconise">
+            <v-icon class="">assessment</v-icon>
+              <span class="hidden-sm-and-down ml-2">Update Feature Analysis</span>
+            </v-btn>
+          </template>
+          <span>Update Feature Analysis</span>
+      </v-tooltip>
+
+    </div>
+  </div>
   <v-tabs
   v-model="activeTab"
   color="background"
   slider-color="primary"
   class="mt-2"
   >
-
 
 <v-tab v-for="(val,key,index) in tabs" :key="index" ripple @click="update(key)">{{val.text_en}}</v-tab>
 
@@ -23,18 +47,19 @@
 
       <v-layout row wrap>
 
-        <v-flex xs12 style="height:402px">
+        <v-flex xs12 style="height:402px" class="mb-2">
 
         <map-view
         v-if="$store.state._col_features"
         contextmenu=""
         style="position:relative;height:402px;"
+        class="ejmap-border"
         featuresCollection="features"
         dataType = "Point"
         zoomLevel="12"
         height="400px"
         :featureLayers="$store.state._col_layers_selected"
-        v-bind:class="{minimap:scrollLow, fullmap: !scrollLow}"
+        v-bind:class="{minimap:scrollLow&&$vuetify.breakpoint.mdAndUp, fullmap: !scrollLow}"
         v-bind:options="{legendBottom:scrollLow,areaSelect:true}"
         >
       </map-view>
@@ -219,21 +244,6 @@
 </v-tabs>
 
 
-<div class="data-toolbar">
-   <v-btn
-   color="grey" class="mb-2" flat @click="uploadDialog=true">
-    <v-icon class="mr-2">cloud_upload</v-icon>
-    Upload
-    </v-btn>
-
-    <v-btn
-     color="grey" class="mb-2" flat @click="analysisDialog=true">
-    <v-icon class="mr-2">assessment</v-icon>
-    Update Feature Analysis
-    </v-btn>
-</div>
-
-
 <v-dialog v-model="uploadDialog" max-width="600">
    <upload
    :layer="tabs[tab].uploadLayer"
@@ -281,6 +291,7 @@ export default {
     }
   },
   computed : {
+    iconise () { return this.$vuetify.breakpoint.smAndDown},
     tabs () {
     return {
         features : {
@@ -335,10 +346,7 @@ export default {
 </script>
 <style>
 .data-toolbar {
-  position:absolute;
-  right:12px;
-  top:60px;
-  margin-top:-50px;
+  margin-top:2px;
 }
 .vjs-tree .vjs-value__string {
   color: var(--v-primary-base)

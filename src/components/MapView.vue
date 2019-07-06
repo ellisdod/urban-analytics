@@ -107,8 +107,8 @@ v-if="featuresCollection==='areas'"
 
 
 <div class="legend-right" id="map-legend" v-if="showLegend" :style="legendStyle">
-  <area-select v-if="options&&options.areaSelect" titleclass="pb-0 pt-3 px-3 font-weight-medium" class="ejmap-border-bottom px-3"></area-select>
-  <div v-if="allLayers">
+  <area-select v-if="options&&options.areaSelect" titleclass="pb-0 pt-3 px-3 font-weight-medium" class="ejmap-border-bottom px-3" style="height:50px;"></area-select>
+  <div v-if="allLayers" style="flex:2; overflow: auto;">
   <v-expansion-panel expand v-model="layerPanels">
     <v-expansion-panel-content v-for="(item,key) in layers" :key="key">
       <template v-slot:header>
@@ -434,8 +434,8 @@ methods: {
         items = items.sort()
         //console.log('items',items)
 
-        //const s1 = ['#c51b7d','#fee08b','#3288bd']
-        let scale = ['#ff236c','#2377ff','#f4f141','#42f4b9','#f46441']
+        //const s1 = ['#c51b7d','#fee08b','#3288bd']['#ff236c','#2377ff','#42f4b9','#0d1a38','#f46441']
+        let scale = ['#ff267e', '#26ffa7', '#267eff','#000','#f46441']
         if (items.length > scale.length) {
           scale = chroma.scale(scale).mode('lch').colors(items.length)
         }
@@ -850,7 +850,10 @@ mounted(){
   width:20%;
   max-width:300px;
   min-width:200px;
-  color: var(--v-grey-darken2)
+  color: var(--v-grey-darken2);
+  display:flex;
+  flex-flow: column;
+  flex-direction:column;
 }
 #map-legend .v-list__tile {
   height:auto;

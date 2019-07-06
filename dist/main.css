@@ -11,6 +11,9 @@
   background:none;
   padding:0;
 }
+.area-select.v-text-field.v-text-field--solo .v-input__control {
+  min-height:0;
+}
 
 
 
@@ -54,7 +57,10 @@
   width:20%;
   max-width:300px;
   min-width:200px;
-  color: var(--v-grey-darken2)
+  color: var(--v-grey-darken2);
+  display:flex;
+  flex-flow: column;
+  flex-direction:column;
 }
 #map-legend .v-list__tile {
   height:auto;
@@ -110,6 +116,8 @@
 #navigator-key {
   position: absolute;
   z-index:10;
+  left:75%;
+  top:95px;
 }
 #navigation-map .leaflet-control-container .leaflet-top {
   bottom:0;
@@ -340,8 +348,10 @@ span.func-count {
   top:0;
 }
 #map-panel-navigator{
-  height:600px;
-  width:24%;
+  height:100%;
+  width:100%;
+  z-index:0;
+  top:0;
 }
 #info-panel{
   display:none;
@@ -404,10 +414,7 @@ span.func-count {
 
 
 .data-toolbar {
-  position:absolute;
-  right:12px;
-  top:60px;
-  margin-top:-50px;
+  margin-top:2px;
 }
 .vjs-tree .vjs-value__string {
   color: var(--v-primary-base)
