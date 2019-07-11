@@ -50,6 +50,7 @@ export default {
     .then((x,err)=>{
       if (err) console.log(err)
       this.processing = false
+      this.$store.dispatch('UPDATE_COLLECTION',{name:'indicators',layer:this.$store.state._col_areaLayers_selected})
     })
 
     }
@@ -67,8 +68,8 @@ computed : {
   }
 },
 mounted () {
-  this.layerSelected = this.layer || this.$store.state._col_areaLayers_selected
-  this.areaLayerSelected = this.areaLayer || this.$store.state._col_layers_selected
+  this.layerSelected = this.layer || this.$store.state._col_layers_selected
+  this.areaLayerSelected = this.areaLayer || this.$store.state._col_areaLayers_selected
 }
 }
 </script>

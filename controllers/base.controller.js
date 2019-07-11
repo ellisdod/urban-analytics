@@ -167,6 +167,7 @@ this.parseFile = function(file,format) {
     })
   })
 }
+
 this.indicator = (function() {
 
   //createIndicator
@@ -208,19 +209,6 @@ this.chainError = function(err,res) {
 
 
 
-const LayerController = function(collection) {
-
-    functions.forEach(func=>{
-      this[func.name] = function(req,res,next) {
-        new Controller(layers[collection])[func.name](req,res,next)
-        if (func.method === "post") geojson.load()
-      }
-    })
-
-}
-
-
-
 
 /*
 const buildingsController = function(model) {
@@ -257,13 +245,10 @@ res.status(200).send('Ok');
 //console.log('geojson keys', Object.keys(geojson))
 module.exports = {
   controller : Controller,
-  layers : new LayerController('layers'),
-  layerAttributes : new LayerController('layerAttributes'),
   layerCalcs : new Controller(layers.layerCalcs),
   indicatorAttributes : new Controller(layers.indicatorAttributes),
   indicatorBlocks: new Controller(layers.indicatorBlocks),
   indicatorSections: new Controller(layers.indicatorSections),
   areaLayers : new Controller(layers.areaLayers),
   areaAttributes : new Controller(layers.areaAttributes)
-
 }

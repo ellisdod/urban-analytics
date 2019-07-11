@@ -14,6 +14,7 @@ import colors from 'vuetify/es5/util/colors'
 import {theme} from './plugins/theme.js'
 import {featureAnalysis} from './plugins/featureAnalysis.js'
 import VueMasonry from 'vue-masonry-css'
+const dbconfig = require('./db.config')
 
 var flatten = require('flatten-obj')()
 
@@ -37,24 +38,14 @@ function getNested (p, o) {
   return n
 }
 
+const collections = Object.keys(dbconfig).reduce((acc,key)=>{
+  acc[`_col_${key}`] = dbconfig[key].storeByLayer ? {} : []
+  acc[`_col_${key}_selected`] = ''
+  return acc
+},{})
+
 const store = new Vuex.Store({
-  state : {
-    _col_layers : [],
-    _col_layers_selected:'',
-    _col_layerAttributes : [],
-    _col_layerAttributes_selected : '',
-    _col_areas : [],
-    _col_areas_selected : '',
-    _col_areaLayers : [],
-    _col_areaLayers_selected:'',
-    _col_features : {},
-    _col_features_selected : '',
-    _col_indicators : [],
-    _col_indicators_selected : '',
-    _col_indicatorSections : [],
-    _col_indicatorSections_selected : '',
-    _col_indicatorBlocks : [],
-    _col_indicatorBlocks_selected : '',
+  state : Object.assign({
     mode:null,
     neighbourhoodsTest:null,
     selectedFeatureLayers:[],
@@ -62,7 +53,7 @@ const store = new Vuex.Store({
     indicators: [],
     collections:{},
     cityIndicators: [],
-    neighbourhood: 2112,
+    neighbourhood: 2412,
     selectedFeature :'',
     areaLayer : '5cf510e19bfa58b6c509903b',
     year:2016,
@@ -73,7 +64,7 @@ const store = new Vuex.Store({
     map : {
       zoom:15,
       center: {lat: 31.827982118391024,lng: 35.22958321000619},
-      defaultCenter: {lat: 31.827982118391024,lng: 35.22958321000619}
+      defaultCenter: {lat: 31.78845754836993, lng: 35.2121981978}
     },
     navigator : {
       zoom:11.8,
@@ -92,7 +83,7 @@ const store = new Vuex.Store({
       selected: null,
     },
     layers : []
-  },
+  },collections),
   actions : {
     UPDATE_COLLECTION ({state, commit}, col) {
       //console.log('1. update collection',col)
@@ -102,11 +93,11 @@ const store = new Vuex.Store({
         layer : col.layer,
       }
 
-      if (params.name === 'features') {
+      if (dbconfig[params.name].storeByLayer) {
         params.layer = params.layer || state._col_layers_selected
         if (!params.layer) rej('no feature layer defined')
         console.log(params.layer)
-        const filtered = state._col_layers.filter(x=>x._id === params.layer)[0].filtered
+        const filtered = state['_col_'+dbconfig[params.name].layerCollection].filter(x=>x._id === params.layer)[0].filtered
         if (filtered) {
           const areaLayerCode = state._col_areaLayers.filter(x=>x._id === state._col_areaLayers_selected )[0].code
           params.query['feature.properties.'+areaLayerCode ] = state.neighbourhood
@@ -137,30 +128,30 @@ const store = new Vuex.Store({
               value: data[0]._id
             })
           }
+        }
       }
-    }
 
       return new Promise((res,rej)=>{
 
-          if (col.data) {
-            console.log('supplied data', col.data)
-            update(col.data)
-            return res(col.data)
+        if (col.data) {
+          console.log('supplied data', col.data)
+          update(col.data)
+          return res(col.data)
+        }
+        console.log('making api request',params.name,params.query,params.layer)
+        //update([])
+        api.find(params.name,params.query,'',{lean: true},params.layer).then((i,err)=>{
+          if (err) {
+            console.log('api error',err)
+            rej(err)
           }
-          console.log('making api request',params.name,params.query,params.layer)
-          //update([])
-          api.find(params.name,params.query,'',{lean: true},params.layer).then((i,err)=>{
-            if (err) {
-              console.log('api error',err)
-              rej(err)
-            }
-            //console.log('data found: ',params.name,i.data.map(x=>x._id),i.data )
-            update(i.data)
-            //console.log('2. updated collection: _col_' + params.name,i.data.length, i.data[0])
-            res(i.data)
-          }).catch(err=>{
-            if (err.response) console.log('api error: ' + params.name, err.response)
-          })
+          //console.log('data found: ',params.name,i.data.map(x=>x._id),i.data )
+          update(i.data)
+          //console.log('2. updated collection: _col_' + params.name,i.data.length, i.data[0])
+          res(i.data)
+        }).catch(err=>{
+          if (err.response) console.log('api error: ' + params.name, err.response)
+        })
       });
     },
     UPDATE_INDICATORS ({state,commit}) {
@@ -238,60 +229,60 @@ const store = new Vuex.Store({
   })*/
 
   UPDATE_FEATURES (state, obj) {
-      console.log('updating feature', obj.nestedKey, obj.key,obj.value)
-      Vue.set( state._col_features, obj.key, obj.value )
-      /*
-      if (obj.nestedKey) {
-        state._col_features[obj.key] = state._col_features[obj.key] || {}
-        const newObj = {}
-        newObj[obj.nestedKey] = obj.value
-        Object.assign(newObj, state._col_features[obj.key])
-        Vue.set( state._col_features, obj.key, newObj )
-      } else {
-        Vue.set( state._col_features, obj.key, obj.value )
-      }
-      */
-  },
-  UPDATE_FEATURE_PROPERTIES (state,obj) {
-    function getFirstCoordinates(feature){
-      if(Array.isArray(feature)) {
-        if (typeof feature[0] === 'number') return feature
-        else getFirstCoordinates(feature[0])
-      }
-      else {
-        getFirstCoordinates(feature.geometry.coordinates)
-      }
+    console.log('updating feature', obj.nestedKey, obj.key,obj.value)
+    Vue.set( state._col_features, obj.key, obj.value )
+    /*
+    if (obj.nestedKey) {
+    state._col_features[obj.key] = state._col_features[obj.key] || {}
+    const newObj = {}
+    newObj[obj.nestedKey] = obj.value
+    Object.assign(newObj, state._col_features[obj.key])
+    Vue.set( state._col_features, obj.key, newObj )
+  } else {
+  Vue.set( state._col_features, obj.key, obj.value )
+}
+*/
+},
+UPDATE_FEATURE_PROPERTIES (state,obj) {
+  function getFirstCoordinates(feature){
+    if(Array.isArray(feature)) {
+      if (typeof feature[0] === 'number') return feature
+      else getFirstCoordinates(feature[0])
     }
-     //const feature = Object.assign({},state._col_features[obj.layer][obj.feature.feature.properties._index])
-     //feature.feature.properties = obj.feature
-     state._col_features[obj.layer].splice(obj.feature._index,1,obj.feature)
-     let coords = getFirstCoordinates(obj.feature.feature.geometry.coordinates)
-     console.log('coords',coords)
-     state.map.center = {lat:coords[1],lng:coords[0]}
-  },
-  UPDATE (state, obj) {
-    //console.log(obj.value)
-    if (Array.isArray(obj.key)) {
-      console.log('updating store nested: ' + JSON.stringify(obj.key), obj.value)
-      //nested[obj.key.slice(-1)[0]] = obj.value
-      Vue.set(state[obj.key[0]], obj.key[1], obj.value);
-    } else {
-      //console.log('is array', Array.isArray(obj.value), obj.value )
-      const ids = (obj.value[0] && obj.value[0]._id) ? obj.value.map(x=>x._id) : ''
-      console.log('updating store value: ' + obj.key, obj.value, ids)
-      state[obj.key] = obj.value
-    }
-
-  },
-  UPDATE_AREA (state, code) {
-    const e = state.geo.areas.filter(x=>x.feature.properties.id === code)[0]
-    console.log(e);
-    state.neighbourhood = code
-    state.map.center = {
-      lon:e.feature.properties.Centroids_x,
-      lat:e.feature.properties.Centroids_y
+    else {
+      getFirstCoordinates(feature.geometry.coordinates)
     }
   }
+  //const feature = Object.assign({},state._col_features[obj.layer][obj.feature.feature.properties._index])
+  //feature.feature.properties = obj.feature
+  state._col_features[obj.layer].splice(obj.feature._index,1,obj.feature)
+  let coords = getFirstCoordinates(obj.feature.feature.geometry.coordinates)
+  console.log('coords',coords)
+  state.map.center = {lat:coords[1],lng:coords[0]}
+},
+UPDATE (state, obj) {
+  //console.log(obj.value)
+  if (Array.isArray(obj.key)) {
+    console.log('updating store nested: ' + JSON.stringify(obj.key), obj.value)
+    //nested[obj.key.slice(-1)[0]] = obj.value
+    Vue.set(state[obj.key[0]], obj.key[1], obj.value);
+  } else {
+    //console.log('is array', Array.isArray(obj.value), obj.value )
+    const ids = (obj.value[0] && obj.value[0]._id) ? obj.value.map(x=>x._id) : ''
+    console.log('updating store value: ' + obj.key, obj.value, ids)
+    state[obj.key] = obj.value
+  }
+
+},
+UPDATE_AREA (state, code) {
+  const e = state.geo.areas.filter(x=>x.feature.properties.id === code)[0]
+  console.log(e);
+  state.neighbourhood = code
+  state.map.center = {
+    lon:e.feature.properties.Centroids_x,
+    lat:e.feature.properties.Centroids_y
+  }
+}
 },
 getters : {
   areaSelect: (state, getters) => {
@@ -349,7 +340,8 @@ getters : {
     return d;
   },
   selectedFeature : state => {
-    return state._col_features.filter(x=>x.feature.properties._id === state.selectedFeature)[0]
+    if (!state._col_features[state._col_layers_selected]) return null
+    return state._col_features[state._col_layers_selected].filter(x=>x.feature.properties._id === state.selectedFeature)[0]
   },
   selectedAreas : state => {
     //console.log('areas',state._col_areas.filter(x=> x.layer === state._col_areaLayers_selected ))
@@ -364,10 +356,6 @@ getters : {
       acc[x.feature.properties.areaCode] = x.feature.properties.name
       return acc
     },{})
-  },
-  geojson : state => {
-    if (!state._col_features) return []
-    return state._col_features.map(x=>x.feature)
   },
   selectedLayer : state => {
     if (!state._col_layers) return null;
@@ -393,7 +381,7 @@ getters : {
       ind[year].forEach(area=>{
         Object.keys(area).forEach(key=>{
           acc[key] = acc[key] || []
-          if (acc[key].indexOf(y)===-1) acc[key].push(y)
+          if (area[key] && acc[key].indexOf(y)===-1) acc[key].push(y)
         })
 
       })
@@ -457,6 +445,21 @@ getters : {
       return features.map(x=>x.feature)
 
     })
+  },
+  collectionSchema : state => {
+    return (collection,filter) => {
+      let schema = dbconfig[collection]
+      if (typeof schema.schema === 'string') {
+        let attributes = state[`_col_${schema.schema}`].filter(x=>x.layer === state[`_col_${filter}_selected`] ) // need to filter!
+
+        schema.schema = Array.from(attributes).reduce((acc,x)=> {
+            x._text = x._text || x.name
+            acc[x.name] = x
+            return acc
+          },{})
+      }
+      return schema || {}
+    }
   }
 }
 })

@@ -1,7 +1,7 @@
 <template>
   <div v-resize="centerMap">
-    <table id="navigator-key">
-      <tr id="navigator-header" >
+    <table id="navigator-key" v-bind:class="{mobile:$vuetify.breakpoint.xsOnly}">
+      <tr id="navigator-header" class="hidden-xs-only">
         <td colspan="2">
           <div class="subheading grey--text text--darken-2">
           {{$store.state.navigator.indicator.name}} - {{$store.state.year}}
@@ -201,7 +201,13 @@ export default {
     console.log('map', this.$refs.map.mapObject.zoomControl) //setPosition('bottomright')
     //800 = (35.1400 - 35.0753) / 400
     //1200 = 35.0753
-    this.centerMap()
+
+    if (this.$vuetify.breakpoint.xsOnly) {
+      this.$store.commit('UPDATE',{key:['navigator','zoom'],value:11})
+      this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.map.defaultCenter})
+    } else {
+      this.centerMap()
+    }
 
 
 
@@ -260,6 +266,10 @@ export default {
   top:95px;
 }
 
+#navigator-key.mobile {
+  left:16px !important;
+  top:60px !important;
+}
 
 #navigation-map .leaflet-control-container .leaflet-top {
   bottom:0;

@@ -53,7 +53,7 @@ function Schema(name,collection) {
   }
 
   this.addPropertiesFromLayerAttrs = function(layer,attributes,schemaPath) {
-    console.log('this.schema',this.schema)
+    //console.log('this.schema',this.schema)
     const schema = schemaPath ? arrayUtils.getNested(schemaPath,this.schema) : this.schema
     attributes.reduce((acc,i) => {
       if (i.layer.toString() !== layer._id.toString()) return acc
@@ -93,7 +93,7 @@ function Schema(name,collection) {
   }
 }
 
-geoSchema = function (name,collection) {
+const geoSchema = function (name,collection) {
   Schema.call(this,name,collection)
   this.schema = {
     feature:  {
@@ -139,6 +139,26 @@ const indicatorSchema = function (name,collection) {
 }
 }
 
+const surveySchema = function (name,collection) {
+  Schema.call(this,name,collection)
+  this.schema = {
+  date : {
+    type : Date,
+    required : true
+  },
+  feature : {
+    type : mongoose.Schema.Types.ObjectId,
+    required : true
+  },
+  layer : {
+    type : mongoose.Schema.Types.ObjectId,
+    required : true
+  }
+}
+}
+
+
+
 
 
 function setLayerModels () {
@@ -152,7 +172,7 @@ function setLayerModels () {
       for (var x=0;x<layers.length;x++){
         let schema = new geoSchema(layers[x]._id,'features')
         schema.addPropertiesFromLayerAttrs(layers[x],attributes,'feature.properties')
-        console.log('layer schema ' + layers[x]._id.toString(),schema.schema)
+        //console.log('layer schema ' + layers[x]._id.toString(),schema.schema)
         schema.addDataTypeVerifier(layers[x])
         schema.exportModel()
         //console.log('schema',schema.schema)
@@ -202,9 +222,38 @@ function setIndicatorModels () {
 }
 
 
+function setSurveyModels () {
+  console.log('creating survey models')
+  return new Promise((res,rej) => {
+    Promise.all(['surveyLayers','surveyLayerAttributes'].map(x => Models[x].find({})))
+    .then(arr=>{
+      const layers = arr[0];
+      const attributes = arr[1]
+      //if (layers.length===0) return null;
+      layers.forEach( layer => {
+        let schema = new surveySchema(layer._id,'surveyRecords')
+        schema.addPropertiesFromLayerAttrs(layer,attributes)
+        schema.exportModel()
+        //console.log('schema',schema.schema)
+        //console.log(Object.keys(exports))
+      })
+      let featureSchema = new geoSchema('surveyFeatures','surveyFeatures')
+      delete featureSchema.schema.feature.properties.year;
+      featureSchema.exportModel()
+      res()
+    })
+  })
+}
+
+
 exports.load = function() {
   return new Promise((res,rej) => {
-    Promise.all([setLayerModels(),setAreaModels(),setIndicatorModels()]).then(x=>{
+    Promise.all([
+      setLayerModels(),
+      setAreaModels(),
+      setIndicatorModels(),
+      setSurveyModels()
+    ]).then(x=>{
       Object.keys(dbConfig).forEach(x=>{
         if (dbConfig[x].schema==='spatial') {
           let schema = new Schema(x,x)

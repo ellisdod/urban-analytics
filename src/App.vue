@@ -2,7 +2,7 @@
   <v-app id="keep" app >
 
 <v-toolbar app light clipped-left flat color="#fff" class="ejmap-border-bottom">
-  <img src="../public/urban_analytics_logo.svg">
+  <img src="../public/ejmap-logo.svg" @click="log()">
 
   <v-toolbar-title>
   <div style="margin-bottom:-5px;">Urban Analytics</div>
@@ -128,6 +128,7 @@ import MapView from './components/MapView.vue'
 import MapNavigator from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
+const dbconfig = require('./db.config')
 
 
 export default {
@@ -194,19 +195,51 @@ export default {
     }
   },
   mounted () {
-  var layerIds;
-  Promise.all([
-    this.$store.dispatch('UPDATE_COLLECTION','areaLayers'),
-    this.$store.dispatch('UPDATE_COLLECTION','layers')
-    ])
+
+  let layerCols = Object.keys(dbconfig).reduce((acc,key)=> {
+    const col = dbconfig[key].layerCollection
+    if (col && acc.indexOf(col) < 0) acc.push(col)
+    return acc
+  } ,[])
+
+  Promise.all(
+    layerCols.map(key=>this.$store.dispatch('UPDATE_COLLECTION',key))
+  )
   .then(arr=>{
-    const areaLayer = arr[0][0]
-    layerIds = arr[1].reduce((acc,x)=> {
-      acc[x._id] = []
+
+    const layerColsObj = arr.reduce((acc,x,index)=>{
+      acc[layerCols[index]] = x
       return acc
     },{})
-    console.log('layerIds',layerIds)
-    const data = [
+
+    console.log('layerColsObj',layerColsObj)
+
+    return Promise.all(
+      Object.keys(dbconfig).reduce((acc,key)=>{
+      const layerCol = dbconfig[key].layerCollection
+      if (dbconfig[key].storeByLayer) {
+        const layerIds = layerColsObj[layerCol].reduce((obj,x)=> {
+          obj[x._id] = []
+          return obj
+        },{})
+        this.$store.commit('UPDATE',{key:'_col_'+key, value: layerIds})
+      } else if (layerCol) {
+        console.log('update by layer',key,layerCol, layerColsObj[layerCol][0]._id)
+        acc.push(this.$store.dispatch('UPDATE_COLLECTION',{
+          name:key,
+          layer:layerColsObj[layerCol][0]._id
+        }))
+      } else if (!layerColsObj[key]) {
+        console.log('this.$store.dispatch',key)
+        acc.push(this.$store.dispatch('UPDATE_COLLECTION',key))
+      } else {
+        console.log('did not dispatch',key)
+      }
+      return acc
+    },[])
+  )
+
+/*
     this.$store.dispatch('UPDATE_COLLECTION',{name:'areas',layer:areaLayer._id}),
     this.$store.dispatch('UPDATE_COLLECTION',{name:'indicators',layer:areaLayer._id}),
     this.$store.dispatch('UPDATE_COLLECTION','indicatorSections'),
@@ -216,13 +249,13 @@ export default {
     this.$store.dispatch('UPDATE_COLLECTION','areaAttributes'),
     this.$store.dispatch('UPDATE_COLLECTION','indicatorAttributes'),
     ]
+    */
 
-  return Promise.all(data)
   })
   .then(()=> {
     console.log('LOADING COMPLETE')
     this.loading = false
-    this.$store.commit('UPDATE',{key:'_col_features',value: layerIds})
+    //this.$store.commit('UPDATE',{key:'_col_features',value: layerIds})
   })
 
   }
