@@ -104,13 +104,223 @@ class="mt-2"
 
 </v-layout>
 </v-container>
+</v-tab-item>
+
+<!--
+
+<v-tab-item key="0a">
+<v-container fluid grid-list-xl v-if="tab==='features'">
+<div class="text-xs-right caption grey--text" style="margin-top:-20px;">
+<span>Layer id: {{$store.state[`_col_${tabs[tab].uploadLayerCol}_selected`]}}</span>
+</div>
+<v-layout row wrap>
+<v-flex sm3 xs-12>
+<editable-data-list collection="layers" listKey="data_type" v-bind:addbottom="true"></editable-data-list>
+</v-flex>
+<v-flex sm9 xs12>
+
+<v-layout row wrap>
+
+<v-flex xs12 style="height:402px" class="mb-2">
+
+<map-view
+v-if="$store.state._col_features"
+contextmenu=""
+style="position:relative;height:402px;"
+class="ejmap-border"
+featuresCollection="features"
+dataType = "Point"
+zoomLevel="12"
+height="400px"
+:featureLayers="$store.state._col_layers_selected"
+v-bind:class="{minimap:scrollLow&&$vuetify.breakpoint.mdAndUp, fullmap: !scrollLow}"
+v-bind:options="{legendBottom:scrollLow,areaSelect:true}"
+>
+</map-view>
+
+</v-flex>
+
+<v-flex xs12>
+<div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2">Layer Attributes</div>
+<editable-data-list v-if="$store.state._col_layers_selected" collection="layerAttributes" filter="layers" v-bind:datatable="true" cssclass="no-background" v-bind:addtop="true"></editable-data-list>
+</v-flex>
+<v-flex xs12>
+<div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2">Layer Calculations</div>
+<editable-data-list v-if="$store.state._col_layers_selected" collection="layerCalcs" filter="layers" v-bind:datatable="true" cssclass="no-background" v-bind:addtop="true"></editable-data-list>
+
+</v-flex>
+
+<v-flex xs12>
+
+
+<div class="subheading font-weight-light ejmap-border-bottom py-2 pt-5 pl-3">Features Table</div>
+
+<editable-data-list v-show="$store.state._col_layerAttributes_selected"
+collection="features"
+filter="layers"
+v-bind:datatable="true"
+v-bind:multiselect="true"
+nestedPath="feature.properties"
+cssclass="no-background"
+>
+</editable-data-list>
+
+
+</v-flex>
+</v-layout>
+
+
+</v-flex>
+
+</v-layout>
+</v-container>
 
 </v-tab-item>
 
+
+<v-tab-item  key="1a">
+<v-container fluid grid-list-xl v-if="tab==='areas'">
+<v-layout row wrap>
+<v-flex sm3>
+<editable-data-list v-bind:addbottom="true" collection="areaLayers"></editable-data-list>
+</v-flex>
+<v-flex xs9>
+<v-layout row wrap>
+<v-flex xs12>
+<map-view
+v-if="$store.state._col_areas"
+contextmenu=""
+style="position:relative;height:402px;width;100%;"
+v-bind:areas="true"
+featuresCollection="areas"
+dataType = "MultiPolygon"
+zoomLevel="12"
+height="400px"
+>
+</map-view>
+</v-flex>
+
+<v-flex sm5 xs12>
+<div class="py-2 subheading font-weight-light">Attributes</div>
+<v-card flat>
+<editable-data-list
+v-if="$store.state._col_areaLayers_selected"
+collection="areaAttributes"
+v-bind:datatable="true"
+>
+</editable-data-list>
+</v-card>
+</v-flex>
+<v-flex sm7 xs12>
+<div class="py-2 subheading font-weight-light">Areas</div>
+<v-card flat>
+<editable-data-list v-show="$store.state._col_layerAttributes_selected"
+collection="areas"
+filter="areaLayers"
+v-bind:datatable="true"
+v-bind:multiselect="true"
+nestedPath="feature.properties"
+cssclass="no-background"
+>
+</editable-data-list>
+
+</v-card>
+</v-flex>
+
+</v-layout>
+</v-flex>
+
+</v-layout>
+</v-container>
+
+</v-tab-item>
+
+<v-tab-item  key="2a">
+<v-container fluid grid-list-xl v-if="tab==='indicatorAttributes'">
+<v-layout row wrap>
+<v-flex sm3>
+<editable-data-list v-bind:addbottom="true" collection="areaLayers"></editable-data-list>
+</v-flex>
+<v-flex xs9>
+<v-layout row wrap>
+<v-flex sm7 xs12>
+<map-view
+v-if="$store.state._col_areas"
+contextmenu=""
+style="position:relative;height:402px;width;100%;"
+v-bind:areas="true"
+featuresCollection="areas"
+dataType = "MultiPolygon"
+zoomLevel="12"
+height="400px"
+>
+</map-view>
+
+</v-flex>
+<v-flex sm5 xs12>
+<div class="py-2 subheading font-weight-light">Attached Attributes</div>
+<v-card>
+<editable-data-list v-bind:addbottom="true" v-if="$store.state._col_areaLayers_selected" collection="indicatorAttributes" filter="areaLayers" v-bind:datatable="true"></editable-data-list>
+</v-card>
+</v-flex>
+
+<v-flex xs12>
+<div v-if="$store.state.selectedFeature" class="py-5">
+<div class="py-2 subheading font-weight-light  ejmap-border-bottom">Indicators </div>
+<v-tabs slider-color="primary" color="background">
+<v-tab v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index" ripple>
+{{ indicator.year }}
+</v-tab>
+<v-tab-item v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index">
+<v-card flat>
+<vue-json-pretty
+class="pa-3 mb-2 code caption"
+:data="indicator">
+</vue-json-pretty>
+</v-card>
+</v-tab-item>
+</v-tabs>
+</div>
+</v-flex>
+
+<v-flex xs12>
+
+</v-flex>
+
+</v-layout>
+</v-flex>
+
+</v-layout>
+</v-container>
+
+</v-tab-item>
+
+<v-tab-item  key="3a">
+
+<v-container fluid grid-list-xl v-if="tab==='indicatorSections'">
+<v-layout row wrap>
+<v-flex sm3 xs-12>
+<editable-data-list v-bind:addbottom="true" collection="indicatorSections"></editable-data-list>
+</v-flex>
+<v-flex sm9 xs12>
+<v-card>
+<editable-data-list v-bind:addbottom="true" v-if="$store.state._col_indicatorSections_selected" collection="indicatorBlocks" filter="indicatorSections" v-bind:datatable="true"></editable-data-list>
+</v-card>
+</v-flex>
+
+</v-layout>
+</v-container>
+
+</v-tab-item>
+
+-->
+
 </v-tabs>
 
+
 <v-dialog v-model="uploadDialog" max-width="600">
-  <upload :layer="tabs[tab].uploadLayer"
+  <upload
+  :layer="tabs[tab].uploadLayer"
   :layerCollection="tabs[tab].uploadLayerCol"
   v-on:close="uploadDialog=false"></upload>
 </v-dialog>
@@ -121,7 +331,6 @@ class="mt-2"
   v-on:close="analysisDialog=false"
   ></analysis>
 </v-dialog>
-
 </div>
 </template>
 <script>
@@ -153,7 +362,6 @@ export default {
         width:'20%',
         height:'200px'
       },
-
     }
   },
   computed : {
@@ -164,7 +372,7 @@ export default {
       return this.$vuetify.breakpoint.smAndDown
     },
     tabs () {
-      return  {
+      return {
         features : {
           text_en : 'Features',
           uploadLayer : this.$store.state['_col_layers_selected'],
@@ -294,7 +502,6 @@ export default {
         },
       }
     }
-
   },
   methods: {
     update(tab){

@@ -1,6 +1,6 @@
 <template>
 
-  <v-card hover ripple raised v-bind:class="[{selected : selected},'indicator-hover']">
+  <v-card hover :ripple="$vuetify.breakpoint.smAndUp" raised v-bind:class="[{selected : selected && $vuetify.breakpoint.smAndUp},'indicator-hover']">
 
     <div v-if="type === 'List' && selectedIndicator">
       <v-list>
@@ -226,9 +226,16 @@ export default {
       }
     },
     chartWidthClass(){
-      let baseStyle = {position:'relative',float:'right'}
-      const changeStyle = this.type === 'Chart' ? {width:'100%'} : {width:'70%', marginTop:'-60px'}
-      return Object.assign(baseStyle,changeStyle)
+      let style = {position:'relative',width:'95%'}
+      if (this.type !== 'Chart') {
+        style.marginTop = '-60px'
+      }
+      if (this.type !== 'Chart' && this.$vuetify.breakpoint.smAndUp) {
+        style.marginTop = '-60px'
+        style.width ='100%'
+        style.paddingLeft = '0'
+      }
+      return style
     },
     prepBarChartData() {
       //console.log(this.$store.getters.dataByYear)

@@ -104,7 +104,7 @@ controllers.then(controllers=>{
   //console.log('arealayers model',controllers.areaLayers.model)
 
   Object.keys(dbConfig).forEach(col => {
-    console.log(col +' find',controllers[col].find)
+    //console.log(col +' find',controllers[col].find)
     //console.log(controllers[col] instanceof base.controller)
     //console.log(controllers[col])
     if (!controllers[col]) return null

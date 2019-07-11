@@ -19,24 +19,25 @@ const turf = {
 function FeatureController (model) {
   Controller.controller.call(this,model)
 
-
   this.create = function (req, res, next) {
     console.log('inserting to layer:', req.fields.layer);
     //console.log(req.files.file);
     const self = this
     this.res = res
-    console.log('schema',model.schema)
+    //console.log('schema',model.schema)
 
     let tagAreas = []
     let areaLayers;
     let features;
+    //res.status(200).send('complete')
+    //return null
 
-    return new Promise((res,rej)=>{
+    return new Promise((resolve,reject)=>{
       fs.readFile(req.files.file.path, function(err, data) {
-        if (err) rej(err)
-        res(data)
+        if (err) reject(err)
+        resolve(data)
       })
-    },this.chainError)
+    })
     .then(data=>{
 
       features = JSON.parse(data);
@@ -50,9 +51,9 @@ function FeatureController (model) {
 
       //get list of spatial intersects for layer
       return layers.layers.find({_id:mongoose.Types.ObjectId(req.fields.layer)})
-    },this.chainError)
+    })
     .then(layers=>{
-      console.log('layers: ',layers)
+      //console.log('layers: ',layers)
       const queries = layers[0].spatial_intersect.reduce((acc,x)=>{
         if (x!=='') {
           acc.push({layer:mongoose.Types.ObjectId(x)})
@@ -60,37 +61,33 @@ function FeatureController (model) {
         return acc
       },[])
 
-      console.log('layers queries: ',queries)
+      //console.log('layers queries: ',queries)
       return geojson.areas.find().or(queries)
-    },this.chainError)
+    })
     //combine into groups and run tests
     .then(i=>{
-      console.log('tagAreas',i)
+      //console.log('tagAreas',i)
       tagAreas = i.reduce((acc,x)=>{
         acc[x.layer] = acc[x.layer] || []
         acc[x.layer].push(x)
         return acc
       },{})
-      console.log('tag Areas: ',tagAreas)
+      //console.log('tag Areas: ',tagAreas)
 
       const query = Object.keys(tagAreas).map(x=>{
         return {_id:x}
       })
       return query
-    },this.chainError)
+    })
     .then(i=>{
-      console.log('area layers queries: ',i)
+      //console.log('area layers queries: ',i)
       return layers.areaLayers.find().or(i)
-    },this.chainError)
+    })
     .then(i=>{
-      //console.log('area Layers: ',i)
-      areaLayers = i;
-
-      areaLayers.forEach(areaLayer=>{
+      this.areaLayers = i
+      this.areaLayers.forEach(areaLayer=>{
         features = self.spatialJoin(features,tagAreas[areaLayer._id],areaLayer.code)
       })
-      console.log('tagged feature',features[0])
-      //console.log('model',model)
 
       features = features.reduce((acc,j)=>{
         j.properties.data_type = j.geometry.type
@@ -100,23 +97,27 @@ function FeatureController (model) {
         })
         return acc
       },[])
-
+      console.log('inserting ' + features.length + ' records')
       return model.insertMany(features)
 
-    },this.chainError)
-    .then((x,err)=>{
-      if (err) {
-        res.status(500)
-        res.send('error', { error: err })
-      }
-      const records = model.count({layer:req.fields.layer})
+    })
+    .then(x=>{
+      return model.count({layer:req.fields.layer})
+    })
+    .then(records=>{
       if (records > 500) {
         layers.layers.findOneAndUpdate({_id:mongoose.Types.ObjectId(req.fields.layer)},{filtered:true})
       }
+
       console.log('total of ' + records + ' for layer ' + req.fields.layer )
-      console.log('applying layer functions for '+ areaLayers.length + 'area layers')
-      return Promise.all(areaLayers.map(areaLayer=>self.applyLayerFunctions(features,areaLayer)))
-    },this.chainError)
+      console.log(records)
+      console.log('applying layer functions for '+ this.areaLayers.length + 'area layers')
+      return Promise.all(this.areaLayers.map(areaLayer=>self.applyLayerFunctions(features,areaLayer)))
+    })
+    .then(x=>res.status(200).send(x))
+    .catch(err => {
+      this.chainError(err,res)
+    })
 
   }
 
@@ -159,7 +160,7 @@ function FeatureController (model) {
       //console.log(features[0].feature.properties)
       this.applyLayerFunctions(arr[0],arr[1][0])
     })
-    .then(x=>res.send(x))
+    .then(x=>res.status(200).send(x))
   }
 
 
@@ -210,15 +211,14 @@ this.computeAttributeFunctions = function(accumulator,attributes,feature,count){
         obj[key].count = obj[key].count || {}
         obj[key].total = obj[key].total || {}
         const p = property[i.name] || 'unknown'
-        obj[key].count[p] = obj[key].count[p] || 0
-        obj[key].count[p] ++
-        obj[key].total.count ++
+        obj[key].count[p] =  (obj[key].count[p] || 0) + 1
+        obj[key].total.count = (obj[key].total.count || 0) + 1
         if (geoKey) {
           const val = parseInt(property[geoKey]||'0')
           obj[key][geoKey] = obj[key][geoKey] || {}
           obj[key][geoKey][p] = obj[key][geoKey][p] || 0
           obj[key][geoKey][p] = obj[key][geoKey][p] + val
-          obj[key].total[geoKey] = obj[key].total[geoKey] + val
+          obj[key].total[geoKey] = (obj[key].total[geoKey] || 0) + val
         }
         break
       }
@@ -230,49 +230,77 @@ this.computeAttributeFunctions = function(accumulator,attributes,feature,count){
 
 
 this.computeLayerCalc = function (calc,ind) {
-  function round(num) {
-    return Math.round(num*1e1)/1e1
+  function roundObj(acc) {
+    if (typeof acc === 'number') return Math.round(acc*1e1)/1e1
+    else if (acc) return Object.keys(acc).reduce((obj,key)=>{
+      if (typeof obj[key] === 'number') {
+        obj[key] = Math.round(obj[key]*1e1)/1e1
+      } else if (obj[key] && typeof obj[key] === 'object') {
+        obj[key] = roundObj(obj[key])
+      }
+      return obj
+    },acc)
   }
 
   var mathIt = {
-    '+': function (x, y) { return round(x + y) },
-    '-': function (x, y) { return round(x - y) },
-    '/': function (x, y) { return round(x / y) },
-    '*':function (x, y) { return round(x * y) }
+    '+': function (x, y) { return x + y },
+    '-': function (x, y) { return x - y },
+    '/': function (x, y) { return x / y },
+    '*':function (x, y) { return x * y }
   }
 
   function mathObj(obj,val,op){
     return Object.keys(obj).reduce((acc,x)=>{
-      acc[x] = mathIt[op](obj[x],val)
+      if (typeof obj[x] === 'object') {
+          acc[x] = mathObj(obj[x],val,op)
+      } else {
+        acc[x] = mathIt[op](obj[x],val)
+      }
       return acc
-    })
-  }
-  console.log('calc',calc,ind)
-  if (calc.length === 1) {
-    return arrayUtils.getNested(calc[0],ind)
-  } else if (calc.length === 3) {
-    const a = typeof calc[0] === 'number' ? calc[0] : arrayUtils.getNested(calc[0],ind)
-    const b = typeof calc[2] === 'number' ? calc[2] : arrayUtils.getNested(calc[2],ind)
-    if (typeof a === 'number' && typeof b === 'number') {
-      console.log('numbers')
-      return mathIt[calc[1]](a,b)
-    } else if (typeof a === 'object' && typeof b === 'number') {
-      console.log('object/number')
-      return mathObj(a,b,calc[1])
-    } else if (typeof a === 'number' && typeof b === 'object'){
-      console.log('number/object')
-      return mathObj(b,a,calc[1])
-    }
+    },{})
   }
 
+  let result = calc.reduce((acc,x, index)=>{
+    //console.log('key', x)
+    x = x.length < 26 ? parseInt(x) : arrayUtils.getNested(x,ind)
+    //console.log('nested value', x)
+    if (index === 0) {
+      acc = x
+    } else if (index % 2 === 0) {
+      const operator = calc[index-1].slice(0,1)
+      if (typeof acc === 'number' && typeof x === 'number') {
+        acc = mathIt[ operator ](acc,x)
+      } else if (acc && typeof acc === 'object' && typeof x === 'number') { // null is object
+        //console.log('object/number')
+        acc = mathObj(acc,x,operator)
+      } else if (typeof acc === 'number' && x && typeof x === 'object'){
+        //console.log('number/object')
+        acc = mathObj(x,acc,operator)
+      } else if (acc && typeof acc === 'object' && x && typeof x === 'object'){
+        //console.log('number/object')
+
+        Object.keys(acc).forEach(key=>{
+             acc[key] = mathObj(x,acc[key],operator)
+        })
+
+     }
+    }
+    //console.log(index, acc)
+    return acc
+  },0)
+  console.log('rounded',roundObj(result))
+  return roundObj(result)
+
+
 }
+
 
 
 this.applyLayerFunctions = function(features,areaLayer) {
   const self = this
   const layerId = features[0].layer
-  console.log('layerId',layerId)
-  console.log('areaLayer',areaLayer)
+  //console.log('layerId',layerId)
+  //console.log('areaLayer',areaLayer)
   //console.log('indquery',indquery)
 
   let layerAttributes = layers.layerAttributes.find({layer:layerId},'',{lean: true})
@@ -288,8 +316,8 @@ this.applyLayerFunctions = function(features,areaLayer) {
     layerCalcs = arr[2]
     indicators = arr[3]
 
-    console.log('found ' + indicators.length + ' indicators with areaLayer: ' + areaLayer._id )
-    console.log('inds',indicators[0])
+    //console.log('found ' + indicators.length + ' indicators with areaLayer: ' + areaLayer._id )
+    //console.log('inds',indicators[0])
 
     //check matching layer attribute exists for areaLayer
     const match = layerAttributes.filter(x=>x.name === areaLayer.code)
@@ -309,22 +337,12 @@ this.applyLayerFunctions = function(features,areaLayer) {
   })
   .then(()=>{
 
+    //reset existing indicators for this layer to avoid adding to exisitng numbers
+    indicators.forEach(indicator=>{
+      indicator[layerId] = {}
+    })
+
     indicators = this.indicator.unflatten(indicators)
-
-    //delete existing indicators for this layer to avoid adding to exisitng numbers
-    Object.keys(indicators).forEach(year=>{
-      if(indicators[year][layerId]) {
-        delete indicators[year][layerId]
-      }
-    })
-
-    console.log('indObj keys',Object.keys(indicators))
-    console.log('feature properties', features[0].feature.properties)
-    //if (indicators === {}) return null
-    //console.log('areaLayer', areaLayer)
-    features.forEach(x=>{
-      //  if (x.feature.properties['JIIS_stat_area']) console.log(x.feature.properties)
-    })
 
     const indObj = features.reduce((acc,x)=>{
       const code = x.feature.properties[areaLayer.code]
@@ -335,7 +353,7 @@ this.applyLayerFunctions = function(features,areaLayer) {
       acc[year][code][layerId] = acc[year][code][layerId] || {}
       acc[year][code][layerId] = self.computeAttributeFunctions(acc[year][code][layerId], layerAttributes, x.feature)
       if (acc[year][code][layerId].Eng_name) {
-        console.log('calculated', acc[year][code][layerId])
+        //console.log('calculated', acc[year][code][layerId])
       }
       return acc
     },indicators)
@@ -351,7 +369,7 @@ this.applyLayerFunctions = function(features,areaLayer) {
         if (id) {
           updateCount++
           insertDoc = this.createUpdateReq({'_id':id}, layerId, indObj[year][code][layerId])
-          console.log(insertDoc.updateOne.update)
+          //console.log(insertDoc.updateOne.update)
         } else {
           //console.log('insert',indObj[year][code])
           //indObj[year][code]._id = mongoose.mongo.ObjectId()
@@ -372,11 +390,7 @@ this.applyLayerFunctions = function(features,areaLayer) {
     return geojson.indicators.bulkWrite(ops)
   },this.chainError)
   .then((x,err) =>{
-    if (err) {
-      this.res.status(500).send({ error: err })
-      return Promise.reject()
-    }
-    console.log('first stage success!')
+    console.log('attribute functions completed')
     const query = {}
     query[layerId] = { $exists : true }
     return geojson.indicators.find(query,'',{lean: true})
@@ -386,19 +400,19 @@ this.applyLayerFunctions = function(features,areaLayer) {
     const ops = []
     inds.forEach((x,i)=>{
       layerCalcs.forEach(calc=>{
-        console.log(i, inds[i])
+        //console.log(i, inds[i])
         inds[i][layerId] = inds[i][layerId] || {} // null values exist for areas without features
         inds[i][layerId][calc.name] = self.computeLayerCalc(calc.func,x)
       })
-      //console.log('computed', inds[i][layerId])
+      console.log('computed indicator', inds[i][layerId])
       ops.push( this.createUpdateReq({'_id':inds[i]._id}, layerId, inds[i][layerId]) )
       //console.log('completed ' + ops.length)
-
     })
+
     if (ops.length > 0 ) {
       return geojson.indicators.bulkWrite(ops)
     } else {
-      return true
+      return Promise.resolve()
     }
   },this.chainError)
 
@@ -410,7 +424,7 @@ this.spatialJoin = function (features, areas, code) {
   if (features.type !== 'FeatureCollection') {
     features = this.makeFeatureCollection(features)
   }
-  console.log('first feature',features.features[0])
+  //console.log('first feature',features.features[0])
   const shapeType = features.features[0].geometry.type
   if (shapeType === 'Point') {
     return turf.tag(features, areas, 'id', code).features
@@ -418,10 +432,10 @@ this.spatialJoin = function (features, areas, code) {
     //console.log(centroid)
     //console.log(typeof centroid)
     const centroids = features.features.map(x=>turf.centroid(x))
-    console.log('first centroid',centroids[0])
+    console.log('centroids',centroids.length)
     const tagged = turf.tag( { type :"FeatureCollection", features :centroids}, areas, 'id', code)
-    console.log('tagged',tagged.features[0])
-    console.log('total tagged',tagged.features.filter(x=>x.properties.JIIS_stat_area).length )
+    console.log('tagged',tagged.length)
+    //console.log('total tagged',tagged.features.filter(x=>x.properties.JIIS_stat_area).length )
     return features.features.map((x,i)=>{
       x.properties[code] = tagged.features[i].properties[code]
       return x
@@ -433,11 +447,15 @@ this.spatialJoin = function (features, areas, code) {
 }
 
 const FeatureControllerWrapper = function() {
+  //this.cache = {}
   functions.forEach(func=>{
     this[func.name] = function(req,res,next) {
-      console.log('model name:', req.params.collection)
-      console.log('model', geojson[req.params.collection])
-      new FeatureController(geojson[req.params.collection])[func.name](req,res,next)
+      //if (this.cache[func.name]) return res.status(500).send('already fired')
+      //this.cache[func.name] = true
+      console.log('model name: ' + req.params.collection + ' func: ' + func.name)
+      //console.log(this)
+      //console.log('model', geojson[req.params.collection])
+      return new FeatureController(geojson[req.params.collection])[func.name](req,res,next)
     }
   })
 
@@ -463,7 +481,7 @@ const AreaController = function(model) {
         })
 
         //console.log('features',features[0]);
-        return this.model.insertMany(features).then((x,err)=>{
+        return model.insertMany(features).then((x,err)=>{
           if (err) res.status(500).send(err)
           res.status(200).send('success')
         });
@@ -597,9 +615,35 @@ const AreaController = function(model) {
 
 
 
+const LayerController = function(collection) {
+
+    functions.forEach(func=>{
+      this[func.name] = function(req,res,next) {
+        new Controller.controller(layers[collection])[func.name](req,res,next)
+        if (func.method === "post") {
+          console.log('reloading geojson model')
+          geojson.load()
+        }
+      }
+    })
+
+}
+
+
+
 module.exports = new Promise((res,rej)=>{
 
   geojson.load().then(()=> {
+    Controller.layers = new LayerController('layers')
+    Controller.layerAttributes = new LayerController('layerAttributes')
+    Controller.features = new FeatureControllerWrapper()
+    Controller.areas = new AreaController(geojson.areas)
+    Controller.indicators = new IndicatorController(geojson.indicators)
+    Controller.surveyLayers = new LayerController('surveyLayers')
+    Controller.surveyLayerAttributes = new LayerController('surveyLayerAttributes')
+    Controller.surveyFeatures = new AreaController(geojson.surveyFeatures)
+    Controller.surveyRecords = new Controller.controller(geojson.surveyRecords)
+    res(Controller)
 
     /*const ops=[{
     updateOne : {
@@ -618,10 +662,6 @@ console.log('complete',err,x)
 */
 //console.log('ROADS MODEL',geojson['5d1287403341c2415eb58f48'].schema)
 
-Controller.features = new FeatureControllerWrapper()
-Controller.areas = new AreaController(geojson.areas)
-Controller.indicators = new IndicatorController(geojson.indicators)
-res(Controller)
 })
 
 })

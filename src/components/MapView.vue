@@ -107,8 +107,8 @@ v-if="featuresCollection==='areas'"
 
 
 <div class="legend-right" id="map-legend" v-if="showLegend" :style="legendStyle">
-  <area-select v-if="options&&options.areaSelect" titleclass="pb-0 pt-3 px-3 font-weight-medium" class="ejmap-border-bottom px-3" style="height:50px;"></area-select>
-  <div v-if="allLayers" style="flex:2; overflow: auto;">
+  <area-select v-if="options&&options.areaSelect" titleclass="pb-0 pt-3 px-3 font-weight-medium" class="ejmap-border-bottom px-3" style="height:50px; flex: 0;"></area-select>
+  <div v-if="allLayers" style="flex:2; overflow-y: auto; max-height:85vh">
   <v-expansion-panel expand v-model="layerPanels">
     <v-expansion-panel-content v-for="(item,key) in layers" :key="key">
       <template v-slot:header>
@@ -145,6 +145,27 @@ v-if="featuresCollection==='areas'"
   </v-card>
 </div>
 
+<v-dialog v-model="dialog" max-width="700px">
+  <v-tabs>
+    <v-tab v-for="(item,index) in editItems" :key="index">
+      Record {{index + 1}}
+    </v-tab>
+    <v-tab>
+      New
+    </v-tab>
+    <v-tab-item v-for="(item,index) in editItems" :key="index">
+      <editor
+      collection="surveyRecords" filter="surveyLayers" :editItem="item" v-on:close="close()" v-on:update="updateCollection(true)">
+      </editor>
+    </v-tab-item>
+    <v-tab-item>
+      <editor
+      collection="surveyRecords" filter="surveyLayers" v-on:close="close()" v-on:update="updateCollection(true)">
+      </editor>
+    </v-tab-item>
+  </v-tabs>
+</v-dialog>
+
 </div>
 
 </template>
@@ -159,6 +180,7 @@ import chroma from 'chroma-js'
 import arrays from '@/plugins/arrayUtils.js'
 import MapLegend from './MapLegend.vue'
 import AreaSelect from './AreaSelect.vue'
+import Editor from './Editor.vue'
 
 //const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');
@@ -166,6 +188,7 @@ import AreaSelect from './AreaSelect.vue'
 import axios from 'axios'
 import surveyQuestionsJson from './../assets/building_survey.json'
 import L from 'leaflet'
+const dbconfig = require('@/db.config')
 
 export default {
   name: 'MapView',
@@ -181,12 +204,15 @@ export default {
     LGeoJson : LGeoJson,
     MapLegend : MapLegend,
     AreaSelect : AreaSelect,
+    Editor : Editor
   },
   $_veeValidate: {
     validator: 'new'
   },
   data () {
     return {
+      dialog : false,
+      editItems : [],
       layerPanels : [],
       loadingValue : null,
       loading : false,
@@ -204,10 +230,9 @@ export default {
       showParagraph: false,
       mapOptions: {
         zoomSnap: 0.5,
+        scrollWheelZoom :false
       },
-      layers: {
-
-      },
+      layers: {},
       geoJsonAreaOptions:{
         onEachFeature: (feature, layer) => {
           var self = this
@@ -217,7 +242,7 @@ export default {
               const p = e.target.feature.properties
               self.$store.commit('UPDATE',{key:'neighbourhood',value:p.areaCode});
               self.$store.commit("UPDATE",{key:'selectedFeature',value:p._id})
-
+              self.openEditor(p._id)
               //console.log('changed',this.$store.state.neighbourhood);
               //console.log(e.target._map.getCenter());
               self.$store.commit('UPDATE',{
@@ -295,6 +320,7 @@ export default {
 
       layer.on({
         click : function(e) {
+          self.openEditor(e.target.feature.properties._id)
           console.log(e.target)
         },
         mouseover : function(e) {
@@ -324,7 +350,7 @@ computed: {
     return Object.assign(
       {
         height: this.options && this.options.legendBottom ? '200px' : 'auto',
-        maxHeight: this.options && this.options.legendBottom ? '200px':'400px',
+        maxHeight: this.options && this.options.legendBottom ? '200px':'auto',
         overflowY:'auto',
         overflowX: 'visible!important'
       }, style || {})
@@ -405,6 +431,9 @@ computed: {
 
 },
 methods: {
+  close() {
+    this.dialog = false
+  },
   updateLegend (layerKey) {
 
       const layer = this.layers[layerKey]
@@ -459,7 +488,7 @@ methods: {
   },
   updateLayers(key,e) {
     key = typeof key === 'number' ? Object.keys(this.layers)[key] : key
-    this.$set(this.layers[key], 'on', e)
+    if (this.layers[key]) this.$set(this.layers[key], 'on', e)
     //Object.assign(this.layers[key],{on:e})
     if (e) {
       this.checkForUpdate()
@@ -503,6 +532,7 @@ methods: {
         layer.bindPopup('<p>'+p.type+'</p><p>'+p.students+'</p>');
         layer.on({
           click : function(e) {
+            self.openEditor(e.target.feature.properties._id)
             self.$store.commit("UPDATE",{key:'selectedFeature',value:e.target.feature.properties._id})
             console.log(e)
           },
@@ -699,17 +729,17 @@ log(text) {
 //console.log(text, this.layers.join(','), this.featuresList.join(','))
 },
 checkForUpdate() {
-  const featurecol = this.$store.state._col_features
+  const featurecol = this.$store.state['_col_'+this.featuresCollection]
   if (!this.layers) return null
   let promises = Object.keys(this.layers).reduce((arr,key)=>{
     if (!this.layers[key].on) return arr
     arr.push(new Promise((res,rej)=> {
       const returnObj = {}
       const filtered = this.layers[key].filtered
-      let featuresNo = featurecol[key].length
+      let featuresNo = featurecol[key] ? featurecol[key].length : 0;
       if (!this.loading && (featuresNo === 0 || filtered ) ) {
         this.loading = true
-        this.$store.dispatch('UPDATE_COLLECTION', {layer:key, name:'features'} )
+        this.$store.dispatch('UPDATE_COLLECTION', {layer:key, name: this.featuresCollection} )
         .then((x,err)=>{
           if (err) console.log('update error', err)
           console.log('dispatch return', x)
@@ -728,7 +758,7 @@ checkForUpdate() {
     return arr
   },[])
   Promise.all(promises).then((arr)=>{
-    console.log('promises complete', arr, this.$store.state._col_features)
+    console.log('promises complete', arr, this.$store.state['_col_'+this.featuresCollection])
     arr.forEach(x=>{
       const key = Object.keys(x)[0]
       this.$set(this.layers[key],'features',x[key].map(x=>x.feature))
@@ -738,13 +768,10 @@ checkForUpdate() {
   })
 },
 setLayers() {
+  const schema = dbconfig[this.featuresCollection]
+  let layers = this.$store.state['_col_'+schema.layerCollection]
+  let attrs = typeof schema.layerAttributes === 'string' ?  this.$store.state['_col_'+schema.layerAttributes] : schema.layerAttributes || []
 
-  let layers = this.$store.state._col_layers
-  let attrs = this.$store.state._col_layerAttributes
-
-  if (!this.allLayers) {
-    //layers = layers.filter(x=> this.featureLayers === x._id)
-  }
   layers.forEach(x=>{
     const layer = Object.assign({features:'',legend:''},x)
     layer.attributes = attrs.reduce((obj,i)=>{
@@ -760,7 +787,12 @@ setLayers() {
   })
   console.log('layers',this.layers)
 
-  }
+},
+openEditor (featureId) {
+  this.dialog = true
+  if (this.featureCollection !== 'surveyFeatures') return null;
+  this.editItems = this.$store.state._col_surveyRecords.filter(x=>x.feature === featureId)
+}
 
 },
 created() {

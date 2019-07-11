@@ -1,4 +1,4 @@
-openEditor()<!-- HTML Template -->
+<!-- HTML Template -->
 
 <template>
   <div>
@@ -12,7 +12,7 @@ openEditor()<!-- HTML Template -->
           <v-btn v-if="multiselect" @click="deleteSelected(collection)" color="grey" class="mb-2" flat>
             Delete Selected
           </v-btn>
-          <v-btn @click="openEditor()" color="grey" class="mb-2" flat>
+          <v-btn @click="add(collection)" color="grey" class="mb-2" flat>
             <v-icon>add</v-icon>Add
           </v-btn>
         </div>
@@ -24,7 +24,7 @@ openEditor()<!-- HTML Template -->
         v-bind:class="cssclass"
         >
         <template v-slot:items="props">
-          <tr class="attribute-row" v-on:dblclick="openEditor(props.item)">
+          <tr class="attribute-row" v-on:dblclick="edit(collection, props.item, nestedPath)">
             <!--Array.isArray(getNested(nestedPath,props.item)[h.value])
             schema.schema[h.value]._options.filter(x=>x.name===h.value)[0].color
           -->
@@ -49,7 +49,7 @@ openEditor()<!-- HTML Template -->
 
           <div v-if="ind===featureHeaders.length-1" class="attribute-controls-wrapper">
             <div class="attribute-controls" style="top:-30px;">
-              <v-btn small fab color="grey" outline  @click="openEditor(props.item)">
+              <v-btn small fab color="grey" outline  @click="edit(collection, props.item, nestedPath)">
                 <v-icon>edit</v-icon>
               </v-btn>
               <v-btn small fab color="grey" outline @click="del(collection, props.item._id)">
@@ -61,7 +61,7 @@ openEditor()<!-- HTML Template -->
       </tr>
     </template>
   </v-data-table>
-  <v-btn v-if="addbottom" style="float:right" @click="openEditor()" color="grey" class="mb-2" flat>
+  <v-btn v-if="addbottom" style="float:right" @click="add(collection)" color="grey" class="mb-2" flat>
     <v-icon>add</v-icon>Add
   </v-btn>
 </div>
@@ -69,7 +69,7 @@ openEditor()<!-- HTML Template -->
 
 <!-- LIST -->
 <div v-else>
-  <v-btn v-if="addtop" style="margin-top:-40px;float:right" @click="openEditor()" color="grey" class="mb-2" flat>
+  <v-btn v-if="addtop" style="margin-top:-40px;float:right" @click="add(collection)" color="grey" class="mb-2" flat>
     <v-icon>add</v-icon>Add
   </v-btn>
   <v-list dense v-bind:class="cssclass">
@@ -85,7 +85,7 @@ openEditor()<!-- HTML Template -->
       <div v-if="x._id" class="attribute-controls-wrapper">
         {{x.text || x.text_en || x.name}}
         <div v-if="!disabled" class="attribute-controls">
-          <v-btn small fab color="grey" outline @click="openEditor(x)">
+          <v-btn small fab color="grey" outline @click="edit(collection, x)">
             <v-icon>edit</v-icon>
           </v-btn>
           <v-btn small fab color="grey" outline @click="del(collection, x._id)">
@@ -98,7 +98,7 @@ openEditor()<!-- HTML Template -->
     <div v-if="x.active" style="height:100%;"></div>
   </v-list-tile>
 </v-list>
-<v-btn v-if="addbottom" @click="openEditor()" color="grey" style="float:right" class="mb-2" flat>
+<v-btn v-if="addbottom" @click="add(collection)" color="grey" style="float:right" class="mb-2" flat>
   <v-icon>add</v-icon>Add
 </v-btn>
 </div>
@@ -113,10 +113,125 @@ openEditor()<!-- HTML Template -->
 -->
 </div>
 
-<v-dialog v-if="schema" v-model="dialog" max-width="700px">
-  <editor
-  :collection="collection" :filter="filter" :editItem="editItem" v-on:close="close()" v-on:update="updateCollection(true)">
-</editor>
+<v-dialog v-if="editedSchema" v-model="dialog" max-width="700px">
+  <v-card>
+    <v-card-title>
+      <span v-if="schema&&schema.name" class="headline">{{mode}} {{ schema.name.slice(0,schema.name.length-1) }}</span>
+    </v-card-title>
+    <v-tabs
+    v-model="activeTab"
+    color="#f3f3f3"
+    slider-color="grey"
+    grow
+    >
+    <v-tab ripple @click="">Single</v-tab>
+    <v-tab v-if="editedSchema.canPaste" ripple @click="">Multiple</v-tab>
+    <v-tab-item>
+      <v-card-text>
+        <v-container grid-list-md>
+          <v-layout wrap>
+            <v-flex v-for="(i,key) in editedSchema.schema" xs12>
+
+              <v-select v-if="i._options&&Array.isArray(i._options)" v-model="edited[key]" :label="i._text" :small-chips="i._multiple" :multiple="i._multiple"
+              v-bind:items="i._options.map(x=>x.name)">
+            </v-select>
+
+            <v-select v-else-if="typeof i._options==='function'&&!i._categorised"
+            v-model="edited[key]"
+            :label="i._text"
+            :small-chips="i._multiple"
+            :multiple="i._multiple"
+            v-bind:items="i._options($store,edited,collection)"
+            item-text="name"
+            item-value="_id">
+          </v-select>
+
+          <div v-else-if="i._categorised">
+            <v-combobox v-model="edited[key]" multiple small-chips> </v-combobox>
+            <v-menu full-width offset-y>
+
+              <v-btn
+              color="grey"
+              outline
+              slot="activator"
+              >
+              {{ key }}
+            </v-btn>
+            <v-list dense>
+              <template v-for="(val,name) in i._options($store,edited,collection)">
+
+                <v-list-tile v-if="val.value" :key="name" @click="edited[key].push(val.value)">
+                  {{val.name}}
+
+                </v-list-tile>
+
+                <v-menu v-else-if="val.items" full-width offset-x max-height="500" :key="name" open-on-hover >
+                  <v-list-tile slot="activator" @click="">
+                    <v-list-tile-title>{{val.name}}</v-list-tile-title>
+                  </v-list-tile>
+                  <v-list dense>
+                    <v-list-tile v-for="(j,ind) in val.items " @click="edited[key].push(name+'.'+j)">
+                      <v-list-tile-title>{{ j }}</v-list-tile-title>
+                    </v-list-tile>
+                  </v-list>
+                </v-menu>
+
+              </template>
+
+            </v-list>
+
+          </v-list>
+
+
+        </v-menu>
+      </div>
+
+      <v-switch v-else-if="i.type===Boolean" v-model="edited[key]" :label="i._text"></v-switch>
+      <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text"></v-text-field>
+      <v-text-field v-else v-model="edited[key]" :label="i._text" disabled></v-text-field>
+    </v-flex>
+  </v-layout>
+</v-container>
+</v-card-text>
+
+<v-card-actions>
+  <v-spacer></v-spacer>
+  <v-btn color="grey lighten-1" flat @click="close()">Cancel</v-btn>
+  <v-progress-circular v-if="saving" indeterminate mx-3>Saving...</v-progress-circular>
+  <v-btn v-else color="blue darken-1" flat @click="save(editedCollection, edited._id)">Save</v-btn>
+</v-card-actions>
+
+
+</v-tab-item>
+
+<v-tab-item>
+  <v-card-text>
+    <v-container grid-list-md>
+      <div class="title pb-2">Paste attributes</div>
+      Paste as rows of text, separated by commas or tabs: <br>
+      <v-text-field v-model="pasted" v-bind:hint="Object.keys(editedSchema.schema).join(', ')" textarea auto-grow rows="3"></v-text-field>
+
+      Preview
+      <vue-json-pretty
+      v-if="pastedComputed"
+      class="pa-3 my-2 code"
+      :data="pastedComputed">
+    </vue-json-pretty>
+
+  </v-container>
+</v-card-text>
+
+<v-card-actions>
+  <v-spacer></v-spacer>
+  <v-btn color="grey lighten-1" flat @click="close()">Cancel</v-btn>
+  <v-progress-circular v-if="saving" indeterminate mx-3>Saving...</v-progress-circular>
+  <v-btn v-else color="blue darken-1" flat @click="saveMany(editedCollection, edited.layer)">Save</v-btn>
+</v-card-actions>
+
+</v-tab-item>
+</v-tabs>
+
+</v-card>
 </v-dialog>
 </div>
 
@@ -125,20 +240,22 @@ openEditor()<!-- HTML Template -->
 <script>
 import VueJsonPretty from 'vue-json-pretty'
 import Upload from './Upload.vue'
-import Editor from './Editor.vue'
-import api from '@/api.js'
-const dbconfig = require('../db.config')
 
 //TODO use this https://github.com/websanova/vue-upload
 
+import api from '@/api.js'
+const dbconfig = require('../db.config')
+
+
 export default {
   components: {
-    VueJsonPretty, Upload, Editor
+    VueJsonPretty, Upload
   },
   props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom','multiselect','disabled'],
   data() {
     return {
       updateKey : 0,
+      activeTab : null,
       dialog: false,
       mode : null,
       saving : false,
@@ -151,7 +268,6 @@ export default {
       attributeTypes: ['String','Number','Boolean'],
       editedCollection : null,
       edited : {},
-      editItem : null,
       uploadDialog:false,
       featureEdit:[],
       datatableTab:null,
@@ -159,9 +275,6 @@ export default {
     }
   },
   computed : {
-    schema () {
-      return this.$store.getters.collectionSchema(this.collection,this.filter)
-    },
     menuItems () {
       //console.log('changed', this.$store.state.collections[this.mainCollection])
       //return this.$store.state.collections[this.mainCollection]
@@ -207,6 +320,7 @@ export default {
       }
     },
     filteredItems () {
+
     },
     firstItem () {
       const col = this.$store.state[`_col_${self.collection}`]
@@ -216,35 +330,94 @@ export default {
         return {}
       }
     },
-
-    tabledata () {
-      if(this.layer) return this.layer.attributes
+    schema () {
+      let schema = dbconfig[this.collection]
+      if (typeof schema.schema === 'string') {
+        console.log('attrs1',this.$store.state[`_col_${schema.schema}`])
+        let attributes = this.$store.state[`_col_${schema.schema}`].filter(x=>x.layer === this.$store.state[`_col_${this.filter}_selected`] ) // need to filter!
+        console.log('attrs2',attributes, attributes.length)
+        console.log('attrs3',this.schemaFromAttributes(Array.from(attributes)))
+        return {schema:this.schemaFromAttributes(Array.from(attributes))}
+      }
+      //console.log('schema',schema)
+      //console.log('schematype',typeof schema.schema)
+      return schema || {}
     },
-    featureHeaders() {
-      if (!this.schema.schema) return []
-      let base = this.multiselect ? [{value:'select',type:'select',_text:''}] : []
-      const x = Object.keys(this.schema.schema).reduce((acc,x)=>{
-        if (this.schema.schema[x]._text) acc.push({
-          value:x,
-          text:this.schema.schema[x]._text,
-          type:this.schema.schema[x].type
-        })
-        return acc
-      },base)
-      /*const x = this.$store.state.collections[this.collection].map(x=>{
-      return {value:x.name,text:x.name}
-    })*/
-    console.log('featureHeaders',x)
-    return x
-  },
+    editedSchema() {
+      return Object.assign({},this.schema)
+      /*
+      if (this.editedCollection === 'features') {
+      let tabledata = {
+      name :  this.$store.state.collections[this.collection][this.selected].name
+    }
+    let x = this.$store.state.collections['layerAttributes'].filter( x=> x.layer === this.selectedId )
 
+    tabledata.schema = x.reduce((acc, i) => {
+    acc[i.name] = i
+    return acc
+  },{})
+  console.log('editedschema',tabledata)
+  return tabledata
+} else {
+return dbconfig[this.editedCollection]
+}*/
+},
+schemaNames () {
+  //returns array of strings
+  if (!this.schema.name)return null
+  return [this.schema.name,this.relatedSchema.name].reduce((acc,x)=>{
+    if (x) {
+      //console.log('check', x, typeof x)
+      acc.push( x.slice(0,x.length - 1) )
+    }
+    return acc
+  },[])
+},
+tabledata () {
+  if(this.layer) return this.layer.attributes
+},
+featureHeaders() {
+  if (!this.schema.schema) return []
+  let base = this.multiselect ? [{value:'select',type:'select',_text:''}] : []
+  const x = Object.keys(this.schema.schema).reduce((acc,x)=>{
+    if (this.schema.schema[x]._text) acc.push({
+      value:x,
+      text:this.schema.schema[x]._text,
+      type:this.schema.schema[x].type
+    })
+    return acc
+  },base)
+  /*const x = this.$store.state.collections[this.collection].map(x=>{
+  return {value:x.name,text:x.name}
+})*/
+console.log('featureHeaders',x)
+return x
+},
+pastedComputed () {
+  let str = this.pasted
+  if (!str) return []
+  str = str.replace(/\t/g, ',')
+  console.log('replaced',str)
+  const schemaKeys = Object.keys(this.editedSchema.schema)
+  const rows = str.split('\n')
+  return rows.reduce((acc,x)=>{
+    const arr = x.split(',')
+    if (arr.length < 2) return acc
+    acc.push(
+      arr.reduce((obj,i,index) => {
+        const key = schemaKeys[index]
+        i = i.trim();
+        if (this.editedSchema.schema[key].type === Boolean) i = (i.toLowerCase()==='true')
+        obj[key] = i
+        return obj
+      },{})
+    )
+    return acc
+  },[])
+},
 
 },
 methods: {
-  openEditor(item) {
-    this.editItem = item
-    this.dialog = true
-  },
   addSelects(items,value) {
     if (!this.multiselect) return items
     return items.map((x,i)=>{
@@ -285,6 +458,27 @@ methods: {
     //Promise.all(promises).then(x=>{console.log('updated store')})
 
   },
+  templateFromSchema(schema) {
+    if (schema) return Object.keys(schema).reduce((acc,x)=>{
+      if(schema[x].type === Array){
+        acc[x] = []
+      } else if (schema[x].type === Boolean) {
+        acc[x] = false
+      } else {
+        acc[x] = ''
+      }
+      return acc
+    },{});
+  },
+  schemaFromAttributes(attrs) {
+    //console.log('selected layer', this.$store.state.selected.layers)
+    console.log('schema from attributes, attrs', attrs)
+    return attrs.reduce((acc,x)=> {
+      x._text = x._text || x.name
+      acc[x.name] = x
+      return acc
+    },{})
+  },
   selectFeature(item,value) {
     const layer = this.$store.state._col_layers_selected
     console.log(item, layer)
@@ -306,7 +500,41 @@ methods: {
     this.$nextTick(() => self.$forceUpdate())
     //this.$forceUpdate()
   },
+  add(collection) {
+    console.log(collection)
+    this.mode = 'Add'
+    this.editedCollection = collection
+    this.edited = this.templateFromSchema(dbconfig[collection].schema)
+    this.dialog = true
+    console.log('dialog data', collection,this.edited)
+  },
+  edit(collection,item,path) {
+    this.mode = 'Edit'
+    //let item = this.$store.state[`_col_${collection}`][index]
+    let schema = this.templateFromSchema(dbconfig[collection].schema)
+    const items = this.$store.state[`_col_${collection}`]
+    if (path) {
 
+      for(var x=0;x<items.length;x++){
+        if (item === this.getNested(path,items[x])) {
+          item._id = items[x]._id
+          this.editedIndex = x
+          break
+        }
+      }
+      //item = this.getNested(path,item)
+      schema = this.getNested(path,schema)
+      item._path = path
+
+    } else {
+      this.editedIndex = items.indexOf(item)
+    }
+    this.edited = Object.assign({}, schema, item)
+    this.editedCollection = collection
+    this.dialog = true
+    //console.log('dialog data', collection,index,path,item,this.edited)
+    console.log('this',this)
+  },
   del(collection,id) {
     this.loading = true
     confirm('Are you sure you want to delete this item?') && api.del(collection,id).then(x=>{
@@ -316,7 +544,49 @@ methods: {
     })
   },
   close() {
+    this.saving = false
     this.dialog = false
+  },
+  save(collection,id,path) {
+
+    this.saving = true;
+    this.close()
+    if (this.filter) {
+      this.edited.layer = this.filterId
+    }
+    const colparams = dbconfig[collection].params ? this.selectedId : ''
+    const params = { id: id ,path: this.edited._path }
+
+    console.log('saving', [collection, id, this.edited])
+
+    api.update(collection,params,this.edited,{},colparams).then(()=>{
+      this.updateCollection(true)
+      this.close()
+    }).catch(err=>{
+      alert(err)
+    })
+
+  },
+  saveMany(collection,layerid) {
+    this.saving = true;
+    console.log('filterId: ' + this.filterId + ' collection: ' + collection)
+
+    if (this.pastedComputed[0] && Object.keys(this.pastedComputed[0]).length > 1) {
+      this.pastedComputed = this.pastedComputed.map(x=>{
+        x.layer = this.filterId
+        return x
+      })
+      let formData = new FormData();
+      formData.append('data', JSON.stringify(this.pastedComputed))
+      console.log('making request...')
+      api.create(collection,'',formData).then(x=>{
+        console.log('uploaded')
+        this.updateCollection(true)
+        this.close()
+        this.pasted = ''
+      })
+    }
+
   },
   toggleSelectAll() {
     const data = this.addSelects(this.items, this.selectAll)

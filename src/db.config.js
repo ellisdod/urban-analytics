@@ -52,6 +52,18 @@ module.exports = {
             type : Boolean,
             _text:"Filtered by area",
          },
+         sourceUrl : {
+            type : String,
+            _text : "Source Link",
+         },
+         sourceLong : {
+            type : String,
+            _text : "Source - Full Text",
+         },
+         sourceShort : {
+            type : String,
+            _text : "Source - Short Text",
+         }
       },
    },
    layerAttributes : {
@@ -109,6 +121,10 @@ module.exports = {
          required : {
             type : Boolean,
             _text : "Required",
+         },
+         public : {
+           type : Boolean,
+           _text : "Public",
          },
          layer : {
             type : mongoose.Schema.Types.ObjectId,
@@ -351,7 +367,11 @@ module.exports = {
    features: {
       name:'Features',
       schema:'layerAttributes',
-      params : '/:collection'
+      params : '/:collection',
+      canUpload: true,
+      storeByLayer : true,
+      layerCollection: 'layers',
+      layerAttributes: 'layerAttributes'
    },
    indicators: {
       name:'Indicators',
@@ -359,7 +379,9 @@ module.exports = {
       schemaOpts : {
          strict: true
       },
-      params : '/:collection'
+      layerCollection : 'areaLayers',
+      params : '/:collection',
+      canUpload: true,
    },
    areaLayers : {
       name:'AreasLayers',
@@ -380,7 +402,9 @@ module.exports = {
    areas : {
       name:'Areas',
       schema:'areaAttributes',
-      params : '/:collection'
+      params : '/:collection',
+      canUpload: true,
+      layerCollection: 'areaLayers'
    },
    areaAttributes : {
       name:'AreaAttributes',
@@ -453,5 +477,91 @@ module.exports = {
             required : true,
          }
       },
-   }
+   },
+   surveyLayers : {
+      name: "SurveyLayers",
+      schema : {
+         name : {
+            type : String,
+            required : true,
+            unique : true,
+            _text : "Name",
+         },
+         data_type : {
+            type : String,
+            required : true,
+            _text : "Type",
+            _multiple: false,
+            _options : [
+               {
+                  name : 'Point',
+                  icon : 'scatter_plot'
+               },
+               {
+                  name : 'LineString',
+                  icon : 'timeline'
+               },
+               {
+                  name :'MultiPolygon',
+                  icon : 'bubble_chart'
+               }
+            ]
+         },
+      }
+   },
+   surveyLayerAttributes : {
+      name : "Attributes",
+      canPaste : true,
+      schema : {
+         name : {
+            type : String,
+            required : true,
+            _text : "Name"
+         },
+         type : {
+            type : String,
+            required : true,
+            _text : "Type",
+            _multiple: false,
+            _options : [
+               {
+                  name : 'String',
+               },
+               {
+                  name : 'Number',
+               },
+               {
+                  name : 'Boolean',
+               }
+            ]
+         },
+         required : {
+            type : Boolean,
+            _text : "Required",
+         },
+         layer : {
+            type : mongoose.Schema.Types.ObjectId,
+            required : true,
+         }
+      },
+   },
+   surveyRecords: {
+      name:'Survey Records',
+      schema:'surveyLayerAttributes',
+      params : '/:collection',
+      layerCollection:'surveyLayers',
+      storeByLayer:true,
+   },
+   surveyFeatures: {
+      name:'Survey Records',
+      schema:'surveyFeatures',
+      params : '/:collection',
+      canUpload: true,
+      storeByLayer : true,
+      layerCollection:'surveyLayers',
+      layerAttributes: [{
+            name:'Status',
+            type:'String',
+      }]
+   },
 }

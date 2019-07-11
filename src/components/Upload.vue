@@ -83,7 +83,6 @@ export default {
       file : "",
       neighbourhood: "",
       collection : "",
-      collections : ['features','areas','indicators'],
       layerSelected : "",
       indicatorFormats : ['geojson','json','csv'],
       indicatorFormat : null,
@@ -109,14 +108,14 @@ export default {
     },
     processForm () {
       this.processing = true
-      const layer = this.layerSelected || this.layer
-      const collectionParams = dbConfig[this.collection].params ? this.layer : ''
+  
+      const collectionParams = dbConfig[this.collection].params ? this.layerSelected : ''
       const collection = this.collection || alert('Collection required');
       const func = this.uploadFunction==="update" ? "updateMany" : "create"
 
       let formData = new FormData();
       formData.append('neighbourhood', this.neighbourhood);
-      formData.append('layer', layer);
+      formData.append('layer', this.layerSelected);
       formData.append('file', this.file);
       formData.append('format', this.indicatorFormat);
       formData.append('update', JSON.stringify(this.update))
@@ -128,7 +127,7 @@ export default {
         console.log('SUCCESS!!');
         return this.$store.dispatch('UPDATE_COLLECTION',{
           name : collection,
-          layer : layer,
+          layer : this.layerSelected,
          })
         })
        .then(()=>{
@@ -148,8 +147,6 @@ export default {
            return acc
          },''))
        });
-
-
   }
 },
 computed : {
@@ -162,6 +159,13 @@ computed : {
       }
     })
   },
+  collections () {
+    console.log('generating collections')
+    return Object.keys(dbConfig).reduce((acc,key)=>{
+      if (dbConfig[key].canUpload) acc.push(key)
+      return acc
+    },[])
+  }
 },
 mounted () {
   this.layerSelected = this.layer
