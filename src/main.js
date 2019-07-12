@@ -460,6 +460,13 @@ getters : {
       }
       return schema || {}
     }
+  },
+  getSelected : state => {
+    return (collection) => {
+      const id = state[`_col_${collection}_selected`]
+      const selected = state[`_col_${collection}`].filter( x => x._id === id )[0]
+      return selected || {}
+    }
   }
 }
 })

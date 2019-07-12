@@ -1,46 +1,63 @@
 <template>
   <div>
-    <div style="text-xs-right">
-      <div class="data-toolbar">
-        <v-tooltip bottom open-delay="100">
-          <template v-slot:activator="{ on }">
-            <v-btn v-on="on"
-            color="grey" class="mb-2" flat @click="uploadDialog=true" :icon="iconise">
-            <v-icon class="">cloud_upload</v-icon>
-            <span class="hidden-sm-and-down ml-2">Upload</span>
-          </v-btn>
-        </template>
-        <span>Upload Data</span>
-      </v-tooltip>
+
+<v-container fluid grid-list-xl class="px-3 pt-0" >
+
+  <div style="text-xs-right">
+    <div class="data-toolbar" v-bind:style="{top:$vuetify.breakpoint.xsOnly?'140px':0}">
       <v-tooltip bottom open-delay="100">
         <template v-slot:activator="{ on }">
           <v-btn v-on="on"
-          color="grey" class="mb-2" flat @click="analysisDialog=true" :icon="iconise">
-          <v-icon class="">assessment</v-icon>
-          <span class="hidden-sm-and-down ml-2">Update Feature Analysis</span>
+          color="grey" class="mb-2" flat @click="uploadDialog=true" :icon="iconise">
+          <v-icon class="">cloud_upload</v-icon>
+          <span class="hidden-sm-and-down ml-2">Upload</span>
         </v-btn>
       </template>
-      <span>Update Feature Analysis</span>
+      <span>Upload Data</span>
     </v-tooltip>
-  </div>
+    <v-tooltip bottom open-delay="100">
+      <template v-slot:activator="{ on }">
+        <v-btn v-on="on"
+        color="grey" class="mb-2" flat @click="analysisDialog=true" :icon="iconise">
+        <v-icon class="">assessment</v-icon>
+        <span class="hidden-sm-and-down ml-2">Update Feature Analysis</span>
+      </v-btn>
+    </template>
+    <span>Update Feature Analysis</span>
+  </v-tooltip>
 </div>
+</div>
+
+
 <v-tabs
 v-model="activeTab"
 color="background"
 slider-color="primary"
-class="mt-2"
+class="mt-2 mx-4"
+show-arrows
 >
 
-<v-tab v-for="(val,key,index) in tabs" :key="index" ripple @click="update(key)">{{val.text_en}}</v-tab>
+<v-tab
+v-for="(val,key,index) in tabs"
+:key="index" ripple @click="update(key)"
+>{{val.text_en}}</v-tab>
 
-<v-tab-item v-for="(val,key,index) in tabs" :key="index">
-  <v-container fluid grid-list-xl v-if="tab===key">
-    <div class="text-xs-right caption grey--text" style="margin-top:-20px;">
+<v-tab-item lazy v-for="(val,key,index) in tabs" :key="index" class="pt-4">
+    <layer-select
+    v-if="$vuetify.breakpoint.xsOnly"
+    :collection="val.filter.collection"
+    style="background-color:white;"
+    class="ejmap-border pa-2"
+
+    >
+    </layer-select>
+    <div class="text-xs-right caption grey--text" v-bind:style="{marginTop:($vuetify.breakpoint.xsOnly?'10px':'-20px')}">
       <span>Layer id: {{$store.state[`_col_${val.uploadLayerCol}_selected`]}}</span>
     </div>
     <v-layout row wrap>
       <v-flex sm3 xs12>
         <editable-data-list
+        v-if="$vuetify.breakpoint.smAndUp"
         :collection="val.filter.collection"
         :listKey="val.filter.listKey"
         v-bind:addbottom="true">
@@ -50,14 +67,14 @@ class="mt-2"
 
       <v-layout row wrap>
 
-        <v-flex xs12 v-if="val.map" style="height:402px" class="mb-2">
+        <v-flex xs12 v-if="val.map" v-bind:style="{height:$vuetify.breakpoint.xsOnly ? '602px':'402px'}" class="mb-2">
         <map-view
         :style="val.map.style || 'position:relative;height:402px;'"
         :featuresCollection="val.map.featuresCollection"
         :height="val.map.height || '400px'"
         :featureLayers="val.map.featureLayers"
         v-bind:class="val.map.classObj || {minimap:minimapOn, fullmap: !minimapOn, 'ejmap-border':true}"
-        v-bind:options="val.map.options || {legendBottom:scrollLow,areaSelect:true}">
+        v-bind:options="val.map.options || {legendBottom:scrollLow||$vuetify.breakpoint.xsOnly,areaSelect:true}">
        </map-view>
        </v-flex>
 
@@ -103,11 +120,11 @@ class="mt-2"
 </v-flex>
 
 </v-layout>
-</v-container>
 
 </v-tab-item>
 
 </v-tabs>
+</v-container>
 
 <v-dialog v-model="uploadDialog" max-width="600">
   <upload :layer="tabs[tab].uploadLayer"
@@ -131,12 +148,13 @@ import Analysis from './Analysis'
 import MapView from './MapView.vue'
 import AreaSelect from './AreaSelect.vue'
 import VueJsonPretty from 'vue-json-pretty'
+import LayerSelect from 'components/LayerSelect.vue'
 import api from '@/api.js'
 import axios from 'axios'
 
 export default {
   components: {
-    EditableDataList,MapView,Upload,VueJsonPretty,Analysis,AreaSelect
+    EditableDataList,MapView,Upload,VueJsonPretty,Analysis,AreaSelect,LayerSelect
   },
   data() {
     return {
@@ -270,11 +288,10 @@ export default {
           uploadLayerCol : 'surveyLayers',
           filter : {
             collection : 'surveyLayers',
-            listKey : 'data_type'
           },
           map : {
-            featuresCollection : 'surveyFeatures',
-            featureLayers : this.$store.state._col_surveyLayers_selected
+            featuresCollection : 'features',
+            featureLayers : this.$store.getters.getSelected('surveyLayers').featureLayer
           },
           tables : [
             {
@@ -333,6 +350,7 @@ export default {
   height:100px;
   margin-top:10px;
   z-index:2;
+  padding-right:20px;
 }
 .vjs-tree .vjs-value__string {
   color: var(--v-primary-base)

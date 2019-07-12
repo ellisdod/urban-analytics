@@ -51,6 +51,12 @@
       label="Format"
       v-model="indicatorFormat"
       ></v-select>
+      <v-checkbox
+      v-if="isSaving"
+      name="discardOutliers"
+      label="Discard features outside of layer"
+      v-model="discardOutliers"
+      ></v-checkbox>
       <!--<v-text-field v-if="isSaving" label="Location" v-model="neighbourhood"></v-text-field>-->
       <v-spacer></v-spacer>
       <v-btn color="grey lighten-1" dark depressed @click="close()">Cancel</v-btn>
@@ -86,6 +92,7 @@ export default {
       layerSelected : "",
       indicatorFormats : ['geojson','json','csv'],
       indicatorFormat : null,
+      discardOutliers : false,
       uploadFunction : "create",
       uploadFunctions: ["create","update"],
       update: {
@@ -108,7 +115,7 @@ export default {
     },
     processForm () {
       this.processing = true
-  
+
       const collectionParams = dbConfig[this.collection].params ? this.layerSelected : ''
       const collection = this.collection || alert('Collection required');
       const func = this.uploadFunction==="update" ? "updateMany" : "create"
@@ -119,6 +126,7 @@ export default {
       formData.append('file', this.file);
       formData.append('format', this.indicatorFormat);
       formData.append('update', JSON.stringify(this.update))
+      formData.append('discardOutliers', this.discardOutliers)
 
       api[func](collection, null, formData, {
           'Content-Type': 'multipart/form-data',
@@ -134,14 +142,14 @@ export default {
          this.$forceUpdate()
          this.close()
        })
-       .catch((err)=>{
+       .catch(err=>{
          this.processing = false
-         console.log(err.response)
+         console.log('err.response',err.response)
          if(!err.response) {
-           console.log(err)
+           alert(err)
            return null
          }
-         const errors = err.response.data.error.errors
+         const errors = err.response.data.errors
          alert(Object.keys(errors).reduce((acc,x)=>{
            acc = acc + '\n' + errors[x].name + ': ' + errors[x].message
            return acc

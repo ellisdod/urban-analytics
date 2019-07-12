@@ -434,9 +434,7 @@ mounted () {
 .vjs-tree {
   font-size: 0.95em;
 }
-.v-tabs__container {
-  margin-left:50px;
-}
+
 .data-toolbar {
   position:absolute;
   right:12px;

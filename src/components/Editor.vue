@@ -130,7 +130,7 @@ export default {
   components: {
     VueJsonPretty
   },
-  props : ['collection','filter','nestedPath','editItem'],
+  props : ['collection','filter','nestedPath','editItem','attributes'],
   data() {
     return {
       activeTab : null,
@@ -284,7 +284,9 @@ export default {
     }
   },
   mounted () {
-    //this.edited = this.templateFromSchema(dbconfig[this.collection].schema)
+    let schema = dbconfig[this.collection].schema
+    if (typeof schema === 'string') schema = this.attributes
+    if (this.mode === 'Add') this.edited = this.templateFromSchema(schema)
     //if (this.editItem) this.edit()
   }
 

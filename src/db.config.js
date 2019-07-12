@@ -230,8 +230,6 @@ module.exports = {
                return store.state._col_layers
             }
          },
-
-
       },
    },
    indicatorBlocks : {
@@ -487,26 +485,13 @@ module.exports = {
             unique : true,
             _text : "Name",
          },
-         data_type : {
-            type : String,
-            required : true,
-            _text : "Type",
-            _multiple: false,
-            _options : [
-               {
-                  name : 'Point',
-                  icon : 'scatter_plot'
-               },
-               {
-                  name : 'LineString',
-                  icon : 'timeline'
-               },
-               {
-                  name :'MultiPolygon',
-                  icon : 'bubble_chart'
-               }
-            ]
-         },
+         featureLayer : {
+            type : Array,
+            _text : "Feature Layers",
+            _options : function(store) {
+               return store.state._col_layers
+            }
+         }
       }
    },
    surveyLayerAttributes : {
@@ -551,17 +536,5 @@ module.exports = {
       params : '/:collection',
       layerCollection:'surveyLayers',
       storeByLayer:true,
-   },
-   surveyFeatures: {
-      name:'Survey Records',
-      schema:'surveyFeatures',
-      params : '/:collection',
-      canUpload: true,
-      storeByLayer : true,
-      layerCollection:'surveyLayers',
-      layerAttributes: [{
-            name:'Status',
-            type:'String',
-      }]
-   },
+   }
 }
