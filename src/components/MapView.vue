@@ -160,7 +160,7 @@ v-if="featuresCollection==='areas'"
     </v-tab-item>
     <v-tab-item>
       <editor
-      collection="surveyRecords" filter="surveyLayers" v-on:close="close()" v-on:update="updateCollection(true)">
+      collection="surveyRecords" filter="surveyLayers" :attributes="attributes" v-on:close="close()" v-on:update="updateCollection(true)">
       </editor>
     </v-tab-item>
   </v-tabs>
@@ -212,6 +212,7 @@ export default {
   data () {
     return {
       dialog : false,
+      itemTemplate : {},
       editItems : [],
       layerPanels : [],
       loadingValue : null,
@@ -333,6 +334,10 @@ export default {
 
 },
 computed: {
+  attributes () {
+    if (!this.featureLayers) return null
+    return this.layers[this.featureLayers[0]] ? this.layers[this.featureLayers[0]].attributes : null
+  },
   showLegend () {
     return this.hideLegend || this.featuresCollection === 'areas' ? false : true
   },
@@ -421,16 +426,19 @@ computed: {
     // remove features without area code
     let data = this.$store.getters.selectedAreas
     if (!data) return null
-    return data.reduce((acc,x)=>{
-      x.feature.properties._id = x._id
-      acc.push( x.feature)
-      return acc
-    },[])
+    return this.embedIds(data)
   },
 
 
 },
 methods: {
+  embedIds(features) {
+    return features.reduce((acc,x)=>{
+      x.feature.properties._id = x._id
+      acc.push( x.feature)
+      return acc
+    },[])
+  },
   close() {
     this.dialog = false
   },
@@ -761,7 +769,7 @@ checkForUpdate() {
     console.log('promises complete', arr, this.$store.state['_col_'+this.featuresCollection])
     arr.forEach(x=>{
       const key = Object.keys(x)[0]
-      this.$set(this.layers[key],'features',x[key].map(x=>x.feature))
+      this.$set(this.layers[key],'features',this.embedIds(x[key]))
       this.updateLegend(key)
     })
     this.update()

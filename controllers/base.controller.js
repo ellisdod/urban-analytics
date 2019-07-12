@@ -201,7 +201,7 @@ this.indicator = (function() {
 
 this.chainError = function(err,res) {
    if (res) res.status(500).send(err)
-   return Promise.reject(err)
+   //return Promise.reject(err)
 }
 
 }

@@ -9,6 +9,8 @@ const geojson = require('../models/geojson.model')
 const functions = require('../src/api.functions')
 const arrayUtils = require('../src/plugins/arrayUtils.js')
 
+mongoose.Promise = global.Promise;
+
 const turf = {
   length :require('@turf/length').default,
   area : require('@turf/area').default,
@@ -99,7 +101,6 @@ function FeatureController (model) {
       },[])
       console.log('inserting ' + features.length + ' records')
       return model.insertMany(features)
-
     })
     .then(x=>{
       return model.count({layer:req.fields.layer})
@@ -116,6 +117,7 @@ function FeatureController (model) {
     })
     .then(x=>res.status(200).send(x))
     .catch(err => {
+      console.log('caught error')
       this.chainError(err,res)
     })
 
@@ -446,7 +448,7 @@ this.spatialJoin = function (features, areas, code) {
 }
 }
 
-const FeatureControllerWrapper = function() {
+const GeoJsonWrapper = function(controller) {
   //this.cache = {}
   functions.forEach(func=>{
     this[func.name] = function(req,res,next) {
@@ -455,7 +457,8 @@ const FeatureControllerWrapper = function() {
       console.log('model name: ' + req.params.collection + ' func: ' + func.name)
       //console.log(this)
       //console.log('model', geojson[req.params.collection])
-      return new FeatureController(geojson[req.params.collection])[func.name](req,res,next)
+      return new controller(geojson[req.params.collection])[func.name](req,res,next)
+      //if (type === 'surveyRecords') return new Controller.controller(geojson[req.params.collection])[func.name](req,res,next)
     }
   })
 
@@ -636,13 +639,12 @@ module.exports = new Promise((res,rej)=>{
   geojson.load().then(()=> {
     Controller.layers = new LayerController('layers')
     Controller.layerAttributes = new LayerController('layerAttributes')
-    Controller.features = new FeatureControllerWrapper()
+    Controller.features = new GeoJsonWrapper(FeatureController)
     Controller.areas = new AreaController(geojson.areas)
     Controller.indicators = new IndicatorController(geojson.indicators)
     Controller.surveyLayers = new LayerController('surveyLayers')
     Controller.surveyLayerAttributes = new LayerController('surveyLayerAttributes')
-    Controller.surveyFeatures = new AreaController(geojson.surveyFeatures)
-    Controller.surveyRecords = new Controller.controller(geojson.surveyRecords)
+    Controller.surveyRecords = new GeoJsonWrapper(Controller.controller)
     res(Controller)
 
     /*const ops=[{

@@ -74,9 +74,11 @@ function Schema(name,collection) {
         validator: function(v) {
 
           return v.toLowerCase() === layer.data_type.toLowerCase() ||
-                 v.toLowerCase() === 'multi'+layer.data_type.toLowerCase();
+                 'multi'+v.toLowerCase() === layer.data_type.toLowerCase();
         },
-        message: props => `${props.value} does not match layer data type`
+        message: props => `${props.value} does not match layer data type:
+                           \n Layer: ${layer.data_type.toLowerCase()}
+                           \n Feature: ${v.toLowerCase()}`
       }
     }
   }
@@ -237,9 +239,6 @@ function setSurveyModels () {
         //console.log('schema',schema.schema)
         //console.log(Object.keys(exports))
       })
-      let featureSchema = new geoSchema('surveyFeatures','surveyFeatures')
-      delete featureSchema.schema.feature.properties.year;
-      featureSchema.exportModel()
       res()
     })
   })

@@ -297,9 +297,6 @@ div.v-slider__track-fill {
 .vjs-tree {
   font-size: 0.95em;
 }
-.v-tabs__container {
-  margin-left:50px;
-}
 .data-toolbar {
   position:absolute;
   right:12px;
@@ -437,6 +434,7 @@ span.func-count {
   height:100px;
   margin-top:10px;
   z-index:2;
+  padding-right:20px;
 }
 .vjs-tree .vjs-value__string {
   color: var(--v-primary-base)
