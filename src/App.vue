@@ -128,6 +128,7 @@ import MapView from './components/MapView.vue'
 import MapNavigator from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
+const planMonitor = require('./plugins/planMonitor.js')
 const dbconfig = require('./db.config')
 
 
@@ -195,6 +196,8 @@ export default {
     }
   },
   mounted () {
+
+    planMonitor.getPlanData('101-0554477')
 
   let layerCols = Object.keys(dbconfig).reduce((acc,key)=> {
     const col = dbconfig[key].layerCollection
