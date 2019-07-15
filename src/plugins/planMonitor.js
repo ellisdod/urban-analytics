@@ -1,21 +1,23 @@
 import axios from 'axios'
 
+
 export function getPlanData(plan_id) {
-  const url = `<html><body><form action="http://mavat.moin.gov.il/MavatPS/Forms/SV4.aspx?tid=4" method="post" name="redirect_form">
-   <input type="hidden" name="PL_ID" value="${plan_id}">
-   </form><script language="javascript">document.redirect_form.submit();</script></body></html>`
-   axios.post('http://mavat.moin.gov.il/MavatPS/Forms/SV4.aspx?tid=4',{
-    PL_ID: 'plan_id'
-  })
-   .then(resp=>{
-     console.log('plandata',resp)
-   })
-   .catch(err=>{
-     console.log(err)
-   })
+  plan_id = plan_id || 'TOpflW7W09+v72bfNTNNuVIQg7HrM9yHNs5qCwtxESOQg3YZB16Gw5GTRQjuKeTStGGVEIMWRuT2l7QcUI7c44fDhzuoJNrc2mLvX+5Tgy0='
+
+     const html = `<html><body><form action="http://mavat.moin.gov.il/MavatPS/Forms/SV4.aspx?tid=4" method="post" name="redirect_form" target="my_iframe">
+                   <input type="hidden" name="PL_ID" value="${plan_id}"></form>
+                   <iframe name="my_iframe" src="not_submitted_yet.aspx"></iframe>
+                   </body></html>`
+     var win = window.open("", "Title", "resizable=yes,width=780,height=200,top="+(screen.height-400)+",left="+(screen.width-840));
+     win.document.body.innerHTML = html;
+     win.document.querySelector("form").submit()
+
+     //<script language="javascript">document.redirect_form.submit();</script>
+     //toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,
+
 }
 
-export function main(plans,blocks) {
+/*exports.main = function(plans,blocks) {
 
   blocks.forEach(block => {
     const newPlans = []
@@ -29,3 +31,4 @@ export function main(plans,blocks) {
   })
 
 }
+*/
