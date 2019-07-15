@@ -128,7 +128,6 @@ import MapView from './components/MapView.vue'
 import MapNavigator from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
-const planMonitor = require('./plugins/planMonitor')
 const dbconfig = require('./db.config')
 
 
