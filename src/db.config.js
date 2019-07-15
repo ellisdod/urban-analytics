@@ -536,5 +536,23 @@ module.exports = {
       params : '/:collection',
       layerCollection:'surveyLayers',
       storeByLayer:true,
+   },
+   blocks: {
+      name:'Blocks',
+      schema : {
+         number : {
+            type : Number
+         }
+      },
+      schemaOpts : {
+         strict: false
+      },
+   },
+   plans: {
+      name:'Plans',
+      schema : {},
+      schemaOpts : {
+         strict: false
+      }
    }
 }
