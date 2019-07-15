@@ -142,9 +142,6 @@ app.listen(process.env.PORT || 8081, () => {
 });
 
 
-const planMonitor = require('./public/planMonitor.js')
-planMonitor.getPlanData()
-
 
 /*
 collections.forEach(x=>{
