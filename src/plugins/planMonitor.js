@@ -16,7 +16,7 @@ export function getPlanData(mavat_id) {
 function myfunc(x) {
      return x
 }
-//https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec?mavat_id=TOpflW7W09%2Bv72bfNTNNuVIQg7HrM9yHNs5qCwtxESOQg3YZB16Gw5GTRQjuKeTStGGVEIMWRuT2l7QcUI7c44fDhzuoJNrc2mLvX%2B5Tgy0%3D
+//https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec?mavat_id=TOpflW7W09%2Bv72bfNTNNuVIQg7HrM9yHNs5qCwtxESOQg3YZB16Gw5GTRQjuKeTStGGVEIMWRuT2l7QcUI7c44fDhzuoJNrc2mLvX%2B5Tgy0%3D&callback=myfunc
 //api.create('plans',response)
 /*exports.main = function(plans,blocks) {
 
