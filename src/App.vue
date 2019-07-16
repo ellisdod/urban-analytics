@@ -128,6 +128,7 @@ import MapView from './components/MapView.vue'
 import MapNavigator from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
+import api from './api.js'
 const planMonitor = require('./plugins/planMonitor')
 const dbconfig = require('./db.config')
 
@@ -173,7 +174,8 @@ export default {
   methods: {
     log(){
       console.log('store',this.$store.state)
-      planMonitor.getPlanData()
+      api.update('plans',{})
+
     },
     toggleLogin() {
       if(  this.activeUser ) this.logout()

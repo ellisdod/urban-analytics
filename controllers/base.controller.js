@@ -43,7 +43,7 @@ this.distinct = function (req, res, next) {
 
 this.update = function (req, res, next) {
 
-  const params = JSON.parse(req.params.params)
+  const params = req.params.params ? JSON.parse(req.params.params) : {}
   let query = {_id: params.id || new mongoose.mongo.ObjectID()}
 
   const body = {}
