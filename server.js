@@ -25,6 +25,7 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 function requireAuth(req, res, next) {
   // require every request to have an authorization header
   if (!req.headers.authorization) {
+    console.log('headers of rejected request', req.headers)
     return next(new Error('Authorization header is required'))
   }
   let parts = req.headers.authorization.trim().split(' ')
