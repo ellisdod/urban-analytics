@@ -69,14 +69,12 @@ this.updateMany = function (req,res,next) {
   console.log('UPDATING MANY:', req.fields, req.params)
   let jsonParsed;
   let filter
-  const update = req.fields.update ? JSON.parse(req.fields.update) : JSON.parse(req.params.params)
+  const update = JSON.parse(req.fields.update)
 
   return new Promise((resolve,reject)=>{
      if (req.files.file) return this.parseFile(req.files.file.path, req.fields.format)
-     else {
-       console.log('req.body',req.body)
-       resolve(JSON.parse(req.body))
-     }
+     else if (req.fields.file) resolve(JSON.parse(req.fields.file))
+     else reject('no data found')
   })
   .then(jsonParsed=>{
     console.log('jsonParsed',jsonParsed)
@@ -102,6 +100,9 @@ this.updateMany = function (req,res,next) {
       if (err) return next(err);
       res.send(x);
     })
+  })
+  .catch(err => {
+    this.chainError(err,res)
   })
 }
 
