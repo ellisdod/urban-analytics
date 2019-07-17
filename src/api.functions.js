@@ -29,12 +29,6 @@ module.exports = [
       method: 'post'
     },
     {
-      params: '',
-      name: 'update',
-      auth: true,
-      method: 'post'
-    },
-    {
       params: '/:areaLayerId',
       name: 'updateAnalysis',
       auth: true,
@@ -42,7 +36,7 @@ module.exports = [
       restrict: ['features']
     },
     {
-      params: '',
+      params: '/:params',
       name: 'updateMany',
       auth: true,
       method: 'post',
