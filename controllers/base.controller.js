@@ -89,13 +89,13 @@ this.updateMany = function (req,res,next) {
         return null
       }
       acc.push(this.createUpdateReq(filter, update.key, item,{upsert:true}))
-
+      return acc
     },[])
 
     //const ops = jsonParsed.map(x=>createUpdateReq(filter, update.key, x))
     //console.log('update',JSON.stringify(update) )filter, updateKey, data, opts
     //console.log(req.fields.update.key,req.fields.update.matchExisting)
-    //console.log('ops', ops[0])
+    console.log('ops', ops[0])
     model.bulkWrite(ops, function(err,x){
       if (err) return next(err);
       res.send(x);
