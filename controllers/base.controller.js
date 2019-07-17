@@ -81,9 +81,9 @@ this.updateMany = function (req,res,next) {
     const ops = jsonParsed.reduce((acc,item)=>{
 
       if (typeof update.matchExisting === 'string' && typeof update.matchUpload === 'string') {
-        filter = arrayUtils.arraysToObjects([update.matchExisting],[[ item[update.matchUpload] ]])
+        filter = arrayUtils.rowsToObjects([update.matchExisting],[[ item[update.matchUpload] ]])
       } else if (Array.isArray(update.matchExisting) && Array.isArray(update.matchUpload)) {
-        filter = arrayUtils.arraysToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ])
+        filter = arrayUtils.rowsToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ])
       } else {
         res.status(500).send("match values need to be either strings or arrays")
         return null
