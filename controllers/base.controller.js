@@ -69,7 +69,7 @@ this.updateMany = function (req,res,next) {
   console.log('UPDATING MANY:', req.fields, req.params)
   let jsonParsed;
   let filter
-  const update = req.fields ? JSON.parse(req.fields.update) : JSON.parse(req.params.params)
+  const update = req.fields ? JSON.parse(req.fields.update) : JSON.parse(req.params)
 
   return new Promise((resolve,reject)=>{
      if (req.files) return this.parseFile(req.files.file.path, req.fields.format)
