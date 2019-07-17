@@ -73,7 +73,10 @@ this.updateMany = function (req,res,next) {
 
   return new Promise((resolve,reject)=>{
      if (req.files.file) return this.parseFile(req.files.file.path, req.fields.format)
-     else resolve(JSON.parse(req.body))
+     else {
+       console.log('req.body',req.body)
+       resolve(JSON.parse(req.body))
+     }
   })
   .then(jsonParsed=>{
     console.log('jsonParsed',jsonParsed)
