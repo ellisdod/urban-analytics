@@ -89,6 +89,12 @@ module.exports = {
                },
                {
                   name : 'Boolean',
+               },
+               {
+                  name : 'Array',
+               },
+               {
+                  name : 'Date',
                }
             ]
          },
@@ -536,13 +542,14 @@ module.exports = {
       params : '/:collection',
       layerCollection:'surveyLayers',
       storeByLayer:true,
-   },
+   },/*
    blocks: {
       name:'Blocks',
+      canUpload: true,
       schema : {
-         number : {
-            type : Number
-         }
+         feature: mongoose.Schema.Types.Feature,
+         number : Number,
+         last_checked : Date,
       },
       schemaOpts : {
          strict: false
@@ -550,9 +557,19 @@ module.exports = {
    },
    plans: {
       name:'Plans',
-      schema : {},
+      schema : {
+         quantities : Array,
+         timeline : Array,
+         mavat_code : String,
+         details_link : String,
+         housing_units : Number,
+         number: String,
+         plan_id: Number,
+         status_he : String,
+         status_en : String
+      },
       schemaOpts : {
          strict: false
       }
-   }
+   }*/
 }

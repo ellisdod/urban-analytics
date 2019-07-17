@@ -48,7 +48,6 @@ v-for="(val,key,index) in tabs"
     :collection="val.filter.collection"
     style="background-color:white;"
     class="ejmap-border pa-2"
-
     >
     </layer-select>
     <div class="text-xs-right caption grey--text" v-bind:style="{marginTop:($vuetify.breakpoint.xsOnly?'10px':'-20px')}">
