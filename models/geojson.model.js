@@ -5,7 +5,7 @@ const Models = require('./models.model')
 const dbConfig = require('../src/db.config')
 const arrayUtils = require('../src/plugins/arrayUtils')
 
-
+/*
 var featureSchema = new mongoose.Schema({
   point: mongoose.Schema.Types.Point,
   multipoint: mongoose.Schema.Types.MultiPoint,
@@ -18,7 +18,7 @@ var featureSchema = new mongoose.Schema({
   feature: mongoose.Schema.Types.Feature,
   featurecollection: mongoose.Schema.Types.FeatureCollection
 }, {typeKey: '$type'});
-
+*/
 
 function stringToType(string){
   switch(string) {
@@ -32,6 +32,8 @@ function stringToType(string){
     return Date
     case 'Array':
     return Array
+    case 'Boolean':
+    return Boolean
     default:
     throw new mongoose.Error(`Schema Type ${string} not valid`)
   }
@@ -160,9 +162,6 @@ const surveySchema = function (name,collection) {
 }
 
 
-
-
-
 function setLayerModels () {
   console.log('creating layer models')
   return new Promise((res,rej) => {
@@ -243,7 +242,6 @@ function setSurveyModels () {
     })
   })
 }
-
 
 exports.load = function() {
   return new Promise((res,rej) => {

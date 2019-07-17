@@ -448,7 +448,7 @@ getters : {
   },
   collectionSchema : state => {
     return (collection,filter) => {
-      let schema = dbconfig[collection]
+      let schema = Object.assign({},dbconfig[collection])
       if (typeof schema.schema === 'string') {
         let attributes = state[`_col_${schema.schema}`].filter(x=>x.layer === state[`_col_${filter}_selected`] ) // need to filter!
 
@@ -458,6 +458,7 @@ getters : {
             return acc
           },{})
       }
+      console.log('collectionSchema',schema, state[`_col_${filter}_selected`])
       return schema || {}
     }
   },

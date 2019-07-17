@@ -67,17 +67,23 @@ this.update = function (req, res, next) {
 
 this.updateMany = function (req,res,next) {
   let jsonParsed;
-  const update = JSON.parse(req.fields.update)
-  this.parseFile(req.files.file.path, req.fields.format)
+  let filter
+  const update = req.fields ? JSON.parse(req.fields.update) : JSON.parse(req.params.update)
+
+  return new Promise((resolve,reject)=>{
+     if (req.files) return this.parseFile(req.files.file.path, req.fields.format)
+     else resolve(req.body)
+  })
   .then(jsonParsed=>{
-    ops = jsonParsed.reduce((acc,item)=>{
+    const ops = jsonParsed.reduce((acc,item)=>{
 
       if (typeof update.matchExisting === 'string' && typeof update.matchUpload === 'string') {
         filter = Utils.arraysToObjects([update.matchExisting],[[ item[update.matchUpload] ]])
       } else if (Array.isArray(update.matchExisting) && Array.isArray(update.matchUpload)) {
         filter = Utils.arraysToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ])
       } else {
-        next("match values need to be either strings or arrays")
+        res.status(500).send("match values need to be either strings or arrays")
+        return null
       }
       acc.push(this.createUpdateReq(filter, update.key, item,{upsert:true}))
 
@@ -200,8 +206,9 @@ this.indicator = (function() {
 })();
 
 this.chainError = function(err,res) {
+   console.log('caught error',err)
    if (res) res.status(500).send(err)
-   //return Promise.reject(err)
+   return Promise.reject(err)
 }
 
 }
@@ -250,7 +257,5 @@ module.exports = {
   indicatorBlocks: new Controller(layers.indicatorBlocks),
   indicatorSections: new Controller(layers.indicatorSections),
   areaLayers : new Controller(layers.areaLayers),
-  areaAttributes : new Controller(layers.areaAttributes),
-  blocks : new Controller(layers.blocks),
-  plans : new Controller(layers.plans)
+  areaAttributes : new Controller(layers.areaAttributes)
 }

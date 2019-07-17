@@ -117,7 +117,6 @@ function FeatureController (model) {
     })
     .then(x=>res.status(200).send(x))
     .catch(err => {
-      console.log('caught error')
       this.chainError(err,res)
     })
 
@@ -139,15 +138,15 @@ function FeatureController (model) {
 
   this.updateAnalysis = function(req, res, next) {
     console.log('params',req.params)
-    const areaLayer = layers.areaLayers.find({ _id :req.params.areaLayerId},'',{lean: true})
-    const areas = geojson.areas.find({ layer :req.params.areaLayerId},'',{lean: true})
-    const features = model.find({layer:req.params.collection},'',{lean: true})
+    let features = model.find({layer:req.params.collection},'',{lean: true})
+    let areaLayer = layers.areaLayers.find({ _id :req.params.areaLayerId},'',{lean: true})
+    let areas = geojson.areas.find({ layer :req.params.areaLayerId},'',{lean: true})
 
     Promise.all([features,areaLayer,areas])
     .then(arr=>{
-      const features = arr[0]
-      const areaLayer = arr[1][0]
-      const areas = arr[2]
+      features = arr[0]
+      areaLayer = arr[1][0]
+      areas = arr[2]
       if (features.length===0) res.status(500).send('No features found for selected layer')
       console.log('analysing ' + features.length + ' features...')
 
@@ -155,14 +154,23 @@ function FeatureController (model) {
 
       console.log('joined',joined[0])
 
+      const ops = []
       for(var x=0;x<features.length;x++){
         features[x].feature.properties = joined[x].properties
+        ops.push( this.createUpdateReq({_id:features[x]._id},null,features[x]) )
       }
+
+      return model.bulkWrite(ops)
+    })
+    .then(()=>{
       console.log('completed spatial join')
       //console.log(features[0].feature.properties)
-      this.applyLayerFunctions(arr[0],arr[1][0])
+      return this.applyLayerFunctions(features,areaLayer)
     })
-    .then(x=>res.status(200).send(x))
+    .then(x=>res.status(200).send(x),this.chainError)
+    .catch(err => {
+      this.chainError(err,res)
+    })
   }
 
 
@@ -332,12 +340,12 @@ this.applyLayerFunctions = function(features,areaLayer) {
       }
       layerAttributes.push(attribute)
       return layers.layerAttributes.findOneAndUpdate({}, attribute, {upsert:true})
-    } else {
-      return Promise.resolve()
     }
+    return null
 
   })
-  .then(()=>{
+  .then(x=>{
+     if (x) geojson.reload()
 
     //reset existing indicators for this layer to avoid adding to exisitng numbers
     indicators.forEach(indicator=>{
