@@ -81,9 +81,9 @@ this.updateMany = function (req,res,next) {
     const ops = jsonParsed.reduce((acc,item)=>{
 
       if (typeof update.matchExisting === 'string' && typeof update.matchUpload === 'string') {
-        filter = arrayUtils.rowsToObjects([update.matchExisting],[[ item[update.matchUpload] ]])
+        filter = arrayUtils.rowsToObjects([update.matchExisting],[[ item[update.matchUpload] ]])[0]
       } else if (Array.isArray(update.matchExisting) && Array.isArray(update.matchUpload)) {
-        filter = arrayUtils.rowsToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ])
+        filter = { $and: arrayUtils.rowsToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ]) }
       } else {
         res.status(500).send("match values need to be either strings or arrays")
         return null
@@ -95,11 +95,11 @@ this.updateMany = function (req,res,next) {
     //const ops = jsonParsed.map(x=>createUpdateReq(filter, update.key, x))
     //console.log('update',JSON.stringify(update) )filter, updateKey, data, opts
     //console.log(req.fields.update.key,req.fields.update.matchExisting)
-    console.log('ops', ops[0])
-    model.bulkWrite(ops, function(err,x){
-      if (err) return next(err);
-      res.send(x);
-    })
+    console.log('ops', JSON.stringify(ops[0]))
+    return model.bulkWrite(ops)
+  })
+  .then(x=>{
+    res.status(200).send(x);
   })
   .catch(err => {
     this.chainError(err,res)
