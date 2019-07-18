@@ -192,7 +192,7 @@ const dbconfig = require('@/db.config')
 
 export default {
   name: 'MapView',
-  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom'],
+  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -797,6 +797,7 @@ setLayers() {
 
 },
 openEditor (featureId) {
+  if (!this.editable) return null
   this.dialog = true
   if (this.featureCollection !== 'surveyFeatures') return null;
   this.editItems = this.$store.state._col_surveyRecords.filter(x=>x.feature === featureId)
