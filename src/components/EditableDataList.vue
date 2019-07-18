@@ -5,23 +5,32 @@ openEditor()<!-- HTML Template -->
     <div>
       <!-- DATA TABLE -->
       <div v-if="datatable" >
-        <div style="margin-top:-43px;float:right;">
-          <v-checkbox v-if="multiselect" v-model="selectAll" label="Select All" @change="toggleSelectAll()" color="grey" flat class="mt-2 mr-3"  style="float:left;">
+        <!--<div style="margin-top:-43px;float:right;">-->
+        <v-toolbar flat color="rgba(0,0,0,0)">
+          <v-toolbar-title class="grey--text text--darken-2 font-weight-light">{{title}}</v-toolbar-title>
+           <v-spacer></v-spacer>
+           <v-text-field v-if="searchable" label="Search" v-model="search" class="mt-2 mr-3">
+           </v-text-field>
+
+          <v-toolbar-items class="hidden-xs-only">
+          <v-checkbox v-if="multiselect" v-model="selectAll" label="Select All" @change="toggleSelectAll()" color="grey" flat class="mt-3 mr-3">
             <v-icon>add</v-icon>Add
           </v-checkbox>
-          <v-btn v-if="multiselect" @click="deleteSelected(collection)" color="grey" class="mb-2" flat>
+          <v-btn v-if="multiselect" @click="deleteSelected(collection)" color="grey"flat>
             Delete Selected
           </v-btn>
-          <v-btn @click="openEditor()" color="grey" class="mb-2" flat>
+          <v-btn @click="openEditor()" color="grey" flat>
             <v-icon>add</v-icon>Add
           </v-btn>
-        </div>
+          </v-toolbar-items>
+        </v-toolbar>
 
         <v-data-table
         :headers="featureHeaders"
         :items="items"
         :rows-per-page-items="[10,20,50,100,-1]"
         v-bind:class="cssclass"
+        :search = "search"
         >
         <template v-slot:items="props">
           <tr class="attribute-row" v-on:dblclick="openEditor(props.item)">
@@ -135,9 +144,10 @@ export default {
   components: {
     VueJsonPretty, Upload, Editor
   },
-  props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom','multiselect','disabled'],
+  props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom','multiselect','disabled','searchable','title'],
   data() {
     return {
+      search : '',
       updateKey : 0,
       dialog: false,
       mode : null,
@@ -201,8 +211,7 @@ export default {
         return collectionData
       }
     },
-    filteredItems () {
-    },
+
     firstItem () {
       const col = this.$store.state[`_col_${self.collection}`]
       if (col) {

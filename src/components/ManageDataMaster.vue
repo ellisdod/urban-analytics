@@ -80,14 +80,16 @@ v-for="(val,key,index) in tabs"
         <template v-for="(item,index) in val.tables">
 
     <v-flex v-if="item.type==='datalist' && item.collection" :key="index" xs12>
-      <div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2">{{item.heading}}</div>
+      <div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2"></div>
       <editable-data-list
       v-if="item.type==='datalist' && item.collection"
       :collection="item.collection"
       :filter="item.filter"
+      :title="item.heading"
       v-bind:datatable="item.datatable===false ? false : true"
       :multiselect="item.multiselect"
       :nestedPath="item.nestedPath"
+      :searchable="item.searchable"
       :childClass="item.childClass"
       :addtop="!item.addbottom"
       :addbottom="item.addbottom"
@@ -213,7 +215,8 @@ export default {
               multiselect :true,
               collection:'features',
               filter:'layers',
-              nestedPath:'feature.properties'
+              nestedPath:'feature.properties',
+              searchable:true,
             }
           ]
         },
@@ -240,7 +243,8 @@ export default {
               collection:'areas',
               filter:'areaLayers',
               multiselect :true,
-              nestedPath:'feature.properties'
+              nestedPath:'feature.properties',
+              searchable:true,
             }
           ]
         },
@@ -274,10 +278,9 @@ export default {
           tables : [
             {
               type: 'datalist',
-              heading: '',
+              heading: 'Blocks',
               collection:'indicatorBlocks',
               filter:'indicatorSections',
-              addbottom:true
             }
           ]
         },
@@ -304,7 +307,8 @@ export default {
               heading: 'Survey Results',
               multiselect :true,
               collection:'surveyRecords',
-              filter:'surveyLayers'
+              filter:'surveyLayers',
+              searchable:true,
             }
           ]
         },

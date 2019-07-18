@@ -153,7 +153,7 @@ this.createUpdateReq = function (filter, updateKey, data, opts) {
       update : {$set:updateObj}
     }
   }
-  req.updateOne = Object.assign({},req.updateOne,opts)
+  Object.assign(req.updateOne,opts)
   return req
 }
 
