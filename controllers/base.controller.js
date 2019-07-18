@@ -73,17 +73,20 @@ this.updateMany = function (req,res,next) {
 
   return new Promise((resolve,reject)=>{
      if (req.files.file) return this.parseFile(req.files.file.path, req.fields.format)
-     else if (req.fields.file) resolve(JSON.parse(req.fields.file))
+     else if (req.fields.file) {
+       console.log('attempting to parse json payload')
+       resolve(JSON.parse(req.fields.file))
+     }
      else reject('no data found')
   })
   .then(jsonParsed=>{
-    //console.log('jsonParsed',jsonParsed)
+    console.log('parsed data sample',jsonParsed[0])
     const ops = jsonParsed.reduce((acc,item)=>{
 
       if (typeof update.matchExisting === 'string' && typeof update.matchUpload === 'string') {
         filter = arrayUtils.rowsToObjects([update.matchExisting],[[ item[update.matchUpload] ]])
       } else if (Array.isArray(update.matchExisting) && Array.isArray(update.matchUpload)) {
-        filter = { $and: arrayUtils.rowsToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ]) }
+        filter = arrayUtils.rowsToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ])
       } else {
         res.status(500).send("match values need to be either strings or arrays")
         return null
