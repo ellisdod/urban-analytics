@@ -88,7 +88,7 @@ this.updateMany = function (req,res,next) {
         res.status(500).send("match values need to be either strings or arrays")
         return null
       }
-      acc.push(this.createUpdateReq(filter, update.key, item,{upsert:true}))
+      acc.push( this.createUpdateReq(filter, update.key, item,{upsert:true}) )
       return acc
     },[])
 
