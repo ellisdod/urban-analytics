@@ -81,13 +81,15 @@ this.updateMany = function (req,res,next) {
     const ops = jsonParsed.reduce((acc,item)=>{
 
       if (typeof update.matchExisting === 'string' && typeof update.matchUpload === 'string') {
-        filter = arrayUtils.rowsToObjects([update.matchExisting],[[ item[update.matchUpload] ]])[0]
+        filter = arrayUtils.rowsToObjects([update.matchExisting],[[ item[update.matchUpload] ]])
       } else if (Array.isArray(update.matchExisting) && Array.isArray(update.matchUpload)) {
         filter = { $and: arrayUtils.rowsToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ]) }
       } else {
         res.status(500).send("match values need to be either strings or arrays")
         return null
       }
+      if (req.fields.layer) filter.push({layer:mongoose.Types.ObjectId(req.fields.layer) })
+      filter =  { $and: filter }
       acc.push( this.createUpdateReq(filter, update.key, item,{upsert:true}) )
       return acc
     },[])
