@@ -1,0 +1,70 @@
+//document.getElementById('ctl00_ContentPlaceHolder1_txtFromBlock').value = '30610'
+//document.getElementById('ctl00_ContentPlaceHolder1_txtToBlock').value = '30610'
+//document.getElementById('ctl00_ContentPlaceHolder1_btnFilter').click()
+
+
+function Scraper () {
+
+   this.PLANS_LAYER_ID = '5d2f0b46fe977fdb42180cd2'
+   this.BASE_URL = 'https://ejmap-dev.herokuapp.com'
+   this.nestedPath = 'feature.properties'
+   this.scrapeData = []
+
+   this.scrapeTable = function () {
+    let rows = document.getElementsByClassName('clsTableRowNormal')
+    
+    for (var x=0;x<rows.length;x++) {
+        const c = rows[x].children
+        this.scrapeData.push({
+            mavat_code: c[0].innerText,
+            number: c[4].firstChild.innerText
+        })
+    }
+    return this.scrapeData.length
+        
+   }
+
+   this.addFeatureKeys = function (data) {
+
+    return data.map(x=> Object.keys(x).reduce(function(acc,key){
+        acc[this.nestedPath+key] = x[key]
+        return acc
+      },{})
+    )
+     
+   }
+
+   this.postData = function () {
+
+    var query = JSON.stringify({
+      matchExisting : 'feature.properties.number',
+      matchUpload : 'feature.properties.number',
+    })
+    let data = this.addFeatureKeys(this.scrapeData)
+    let formData = new FormData()
+    formData.append('update', JSON.stringify(query))
+    formData.append('file', JSON.stringify(data))
+    formData.append('layer', PLANS_LAYER_ID)
+
+    let options = {
+      'method': 'POST',
+      'mode':'no-cors',
+      'headers':{
+          'Content-Type':'multipart/form-data'
+      },
+      'body': formData
+    }
+
+    fetch( this.BASE_URL +'/features/'+this.PLANS_LAYER_ID+'/updateMany/'+ encodeURIComponent(query)
+,options)
+
+   }
+
+
+}
+
+
+scraper = new Scraper()
+scraper.scrapeTable()
+scraper.postData()
+
