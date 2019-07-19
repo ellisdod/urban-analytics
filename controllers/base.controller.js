@@ -88,6 +88,7 @@ this.updateMany = function (req,res,next) {
       } else if (Array.isArray(update.matchExisting) && Array.isArray(update.matchUpload)) {
         filter = arrayUtils.rowsToObjects(update.matchExisting,[ update.matchUpload.map(i=>item[i]) ])
       } else {
+        console.log("match values need to be either strings or arrays")
         res.status(500).send("match values need to be either strings or arrays")
         return null
       }
