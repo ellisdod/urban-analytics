@@ -35,6 +35,7 @@
     "express-formidable": "1.2.0",
     "flatten-obj": "3.1.1",
     "formidable": "1.2.1",
+    "heroku-logger": "0.3.3",
     "html-loader": "0.5.5",
     "jwt-decode": "2.2.0",
     "leaflet": "1.4.0",

@@ -4,6 +4,7 @@ const dynamicModels = require('./models/geojson.model')
 const HTMLParser = require('node-html-parser');
 const rp = require('request-promise-native')
 const Cookie = require('tough-cookie').Cookie
+const logger = require('heroku-logger')
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
@@ -55,6 +56,7 @@ exports.mavatScraper = (function () {
 
     this.scrapeTable = function () {
       let rows = this.root.querySelectorAll('.clsTableRowNormal')
+      logger.info('rows',rows.length)
       console.log('rows',rows.length)
       for (var x=0;x<rows.length;x++) {
         const c = rows[x].querySelectorAll('td')
@@ -146,6 +148,7 @@ var init = function() {
   })
   .then(res=>{
     console.log('got cookies!')
+    logger.info('got cookies!')
     console.log(res.headers['set-cookie'], typeof res.headers['set-cookie'], res.headers['set-cookie'] instanceof Array )
 
 
