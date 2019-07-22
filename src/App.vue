@@ -129,7 +129,6 @@ import MapNavigator from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
 import api from './api.js'
-const planMonitor = require('./plugins/planMonitor')
 const dbconfig = require('./db.config')
 
 
@@ -174,7 +173,20 @@ export default {
   methods: {
     log(){
       console.log('store',this.$store.state)
-      api.update('plans',{})
+
+      const client = axios.create({
+        baseURL: 'http://localhost:8081/',
+        json: true
+      })
+
+      client({
+         method: 'POST',
+          url: '/planmonitor',
+        }).then(resp=>{
+          console.log(resp)
+        })
+
+      //api.update('plans',{})
 
     },
     toggleLogin() {

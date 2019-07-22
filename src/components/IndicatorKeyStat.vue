@@ -26,7 +26,6 @@
         <span v-if="unit" class="subheading ml-1">{{unit}}</span>
         <div class="font-weight-light">{{year}}</div>
       </div>
-      <div class="caption">{{description}}</div>
 
       <div v-if="dataYears" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
         <v-slider
@@ -67,7 +66,7 @@
   <v-btn icon><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
 </div>
 <div v-if="selected" class="pa-2">
-  Lorem ipsum dolor sit amet, id principes honestatis sadipscing eum, malorum ceteros percipitur ea qui. Omnesque postulant eu quo, ei mei wisi vituperata repudiandae. No est meliore consulatu,e.
+  {{description}}
   <br><br>
   <div class="grey--text text--darken-2">
     Source: JIIS {{ year || $store.state.year }}
