@@ -135,7 +135,12 @@ controllers.then(controllers=>{
 function planMonitorFeed (req, res, next) {
   console.log('getting plan data')
   planMonitor.mavatScraper.init()
-  res.status(200).send('ok')
+  .then(x=>{
+      console.log('logdata',x)
+      res.status(200).send(x)
+
+  })
+
 }
 
 app.post('/planmonitor',planMonitorFeed)

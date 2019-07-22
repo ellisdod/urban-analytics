@@ -126,7 +126,7 @@ var init = function() {
   console.log('initialising...', Object.keys(dynamicModels))
   //console.log(dynamicModels[BLOCKS_LAYER_ID])
   //console.log(dynamicModels[BLOCKS_LAYER_ID].find({},'',{lean:true}))
-  dynamicModels[BLOCKS_LAYER_ID].find({layer:BLOCKS_LAYER_ID},'',{lean: true})
+  return dynamicModels[BLOCKS_LAYER_ID].find({layer:BLOCKS_LAYER_ID},'',{lean: true})
   .then(data=>{
     console.log('received ' + data.length + ' blocks')
     blocks = data.slice(0,1)
@@ -163,44 +163,52 @@ var init = function() {
   .then(html => {
     console.log('got session identifiers!')
     const form = getSessionIdentifiers(html)
+    let logdata = []
 
     if (!form['__VIEWSTATE']) return null
-    syncLoop(blocks.length, function(loop){
-      const i = loop.iteration();
-      const blockId = '30610' //blocks[i].feature.properties.number
-      console.log(i + '. fetching plans for block: ' + blockId )
+    return new Promise((res,rej)=>{
+      syncLoop(blocks.length, function(loop){
+        const i = loop.iteration();
+        const blockId = '30610' //blocks[i].feature.properties.number
+        console.log(i + '. fetching plans for block: ' + blockId )
 
-      Object.assign(form,{
-        ctl00$ContentPlaceHolder1$txtFromBlock:blockId,
-        ctl00$ContentPlaceHolder1$txtToBlock:blockId,
-      })
+        Object.assign(form,{
+          ctl00$ContentPlaceHolder1$txtFromBlock:blockId,
+          ctl00$ContentPlaceHolder1$txtToBlock:blockId,
+        })
 
-      rp({
-        uri : url,
-        method:'POST',
-        body:form,
-        json: true,
-        followAllRedirects: true, //by default turned off for POST requests
-        jar: cookiejar
-      }, function(err,resp,body){
+        rp({
+          uri : url,
+          method:'POST',
+          body:form,
+          json: true,
+          followAllRedirects: true, //by default turned off for POST requests
+          jar: cookiejar
+        }, function(err,resp,body){
 
-        console.log('got plans page!')
-        //console.log(html)
-        setTimeout(()=>{
-          const scraper = new Scraper(body,blockId)
-          scraper.scrapeTable()
-          scraper.addFeatureKeys()
-          console.log(scraper.scrapeData)
-          //scraper.postData()
-          loop.next();
-        },getRandomInt(4000,6000))
+          console.log('got plans page!')
+          //console.log(html)
+          setTimeout(()=>{
+            const scraper = new Scraper(body,blockId)
+            scraper.scrapeTable()
+            scraper.addFeatureKeys()
+            logdata = scraper.scrapeData
+            //scraper.postData()
+            loop.next();
+          },getRandomInt(4000,6000))
 
-      })
+        })
 
-    }, function(){
-      console.log('finished - took ' + (new Date() - today)/60 + 'minutes' )
-    });
+      }, function(){
+        console.log('finished - took ' + (new Date() - today)/60 + 'minutes' )
+        res(logdata)
+      });
+    })
 
+  })
+  .then(x=>{
+     console.log('logdata',x)
+     return x
   })
   .catch(err=>{
     console.log('error',err)
