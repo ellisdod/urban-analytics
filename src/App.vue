@@ -175,7 +175,7 @@ export default {
       console.log('store',this.$store.state)
 
       const client = axios.create({
-        baseURL: 'http://localhost:8081/',
+        baseURL: window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin,
         json: true
       })
 
