@@ -183,7 +183,7 @@ export default {
          method: 'POST',
           url: '/planmonitor',
         }).then(resp=>{
-          console.log(resp)
+          console.log('logdata',resp)
         })
 
       //api.update('plans',{})
