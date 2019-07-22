@@ -3,13 +3,14 @@ const formidable = require('formidable');
 const fs = require('fs');
 const Papa = require('papaparse');
 const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
 //const indicatorsModel = require('../models/indicators.model')
 const layers = require('../models/models.model')
 const geojson = require('../models/geojson.model')
 const functions = require('../src/api.functions')
 const arrayUtils = require('../src/plugins/arrayUtils.js')
 
-mongoose.Promise = global.Promise;
+
 
 const turf = {
   length :require('@turf/length').default,

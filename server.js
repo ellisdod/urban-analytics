@@ -4,6 +4,11 @@ const OktaJwtVerifier = require('@okta/jwt-verifier')
 const mongoose = require('mongoose');
 const path = require('path');
 const formidableMiddleware = require('express-formidable')
+const controllers = require('./controllers/features.controller')
+//const controllers = require('./controllers/base.controller')
+const func = require('./src/api.functions.js')
+const dbConfig = require('./src/db.config')
+const planMonitor = require('./planMonitor')
 
 var history = require('connect-history-api-fallback');
 require('dotenv').config();
@@ -89,10 +94,7 @@ if (process.env.NODE_ENV === 'production') {
   })
 }
 
-const controllers = require('./controllers/features.controller')
-//const controllers = require('./controllers/base.controller')
-const func = require('./src/api.functions.js')
-const dbConfig = require('./src/db.config')
+
 
 const middlewareKey = {
   formidable : formidableMiddleware()
@@ -128,6 +130,15 @@ controllers.then(controllers=>{
   })
 
 })
+
+
+function planMonitorFeed (req, res, next) {
+  console.log('getting plan data')
+  planMonitor.mavatScraper.init()
+  res.status(200).send('ok')
+}
+
+app.post('/planmonitor',planMonitorFeed)
 
 
 

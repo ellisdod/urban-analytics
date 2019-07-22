@@ -40,9 +40,8 @@ var syncLoop = function(iterations, process, exit){
 }
 
 
-   var Scraper = function (blockId) {
+   var Scraper = function () {
    
-   this.blockId = blockId
    this.nestedPath = 'feature.properties.'
    this.scrapeData = []
 
@@ -53,8 +52,7 @@ var syncLoop = function(iterations, process, exit){
         const c = rows[x].children
         this.scrapeData.push({
             mavat_code: c[0].innerText,
-            number: c[4].firstChild.innerText,
-            block_number: this.blockId
+            number: c[4].firstChild.innerText
         })
     }
     return this.scrapeData.length
@@ -113,7 +111,7 @@ var getPlansByBlock = function(blockId) {
   
   setTimeout(()=>{
     
-    const scraper = new Scraper(blockId)
+    const scraper = new Scraper(config)
     scraper.scrapeTable()
     scraper.postData()
     window.history.back()
@@ -131,26 +129,18 @@ var init = function() {
    var toDate = new Date(today.setDate(today.getDate()-7));
    var query = JSON.stringify({$or: [{'feature.properties.last_checked':{ '$lte': toDate }},{'feature.properties.last_checked': null}]})
 
-   fetch( BASE_URL +'/features/'+BLOCKS_LAYER_ID+'/find/'+ encodeURIComponent(query))
-   .then(blocks=>{
-      console.log('received ' + blocks.length + ' blocks')
-
-      blocks = blocks.slice(0,2)
-  
-      syncLoop(blocks.length, function(loop){
-        const i = loop.iteration();
-        console.log(i + '. fetching plans for block: ' + blocks[i].number )
-        getPlansByBlock(blocks[i].number)
-        loop.next();
-      }, function(){
-       console.log('finished - took ' + (new Date() - today)/60 + 'minutes' )
-      });
-      
+   fetch( BASE_URL +'/features/'+BLOCKS_LAYER_ID+'/updateMany/'+ encodeURIComponent(query)
+   ,options)
+    .then(()=>{
+      console.log('sent ' + data.length + ' plans')
     })
  
 }
 
 return {
+  syncLoop : syncLoop,
+  Scraper : Scraper,
+  getPlansByBlock : getPlansByBlock,
   init:init
 }
   
@@ -159,6 +149,3 @@ return {
 
 
 mavatScraper.init()
-
-
-
