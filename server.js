@@ -148,7 +148,7 @@ function testFeed (req, res, next) {
   res.status(200).send('')
 }
 
-app.post('/planmonitor',testFeed)
+app.post('/planmonitor',planMonitorFeed)
 app.post('/test',testFeed)
 
 
@@ -172,8 +172,8 @@ cron.schedule('*/10 * * * *', scrapePlans);
 function scrapePlans() {
   request({
     method: 'POST',
-    uri : 'https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec?key=asdfkjf8934jklaweruioer89234',
-    body : {},
+    uri : 'https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec',
+    body : {key:'asdfkjf8934jklaweruioer89234'},
     json: true
   }, function(err,x) {
     console.log('scrapePlans')

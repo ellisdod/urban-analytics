@@ -8,7 +8,11 @@ const logger = require('heroku-logger')
 const mongoose = require('mongoose');
 const querystring = require('querystring');
 const fs = require('fs');
+const jsZip = require("jszip");
+var Stream = require('stream').Stream;
 mongoose.Promise = global.Promise;
+var toJSON = require('shp2json');
+
 
 
 /*
@@ -147,14 +151,36 @@ var downloadFile = function() {
     });
 
     request(baseurl + downloadurl,{
-      jar: request_cookiejar
+      jar: request_cookiejar,
+      encoding: null // <- this one is important !
+    }, function (err, resp, body) {
+      if(err ||  resp.statusCode !== 200) {
+          console.log('failed to download file', err)// handle error
+          return;
+      }
+      jsZip.loadAsync(body).then(function (zip) {
+        // remove irrelevent files
+         var newZip = jsZip();
+         Object.keys(zip.files).forEach(filename => {
+            if (filename.indexOf('MVT_GVUL') === -1) zip.remove(filename)
+         })
+
+          const inStream = zip.generateNodeStream({type:'nodebuffer',streamFiles:true})
+
+          const outStream = new Stream;
+          outStream.writable = true;
+          var data = '';
+          outStream.write = function (buf) {
+              data += buf;
+          };
+          outStream.end = function () {
+            console.log('json data', JSON.parse(data));
+          }
+
+          toJSON(inStream).pipe(outStream) //fs.createWriteStream('mavat_file.json')
+        })
+      })
     })
-    .pipe(fs.createWriteStream('mavat_shapefile.zip'))
-      .on('close', function () {
-       console.log('File written!');
-       return
-     });
-  })
   .then(html => {
 
     console.log(html)
@@ -357,8 +383,8 @@ function getSessionIdentifiers(html) {
     'ctl00$ContentPlaceHolder1$txtGoals':'',
     'ctl00$ContentPlaceHolder1$txtFilterFromApprovedDate':'',
     'ctl00$ContentPlaceHolder1$txtFilterToApprovedDate':'',
-    'ctl00$ContentPlaceHolder1$txtFromMeetingDate':'01/01/2010',
-    'ctl00$ContentPlaceHolder1$txtToMeetingDate':'',
+    'ctl00$ContentPlaceHolder1$txtFromMeetingDate':'01/01/2000',
+    'ctl00$ContentPlaceHolder1$txtToMeetingDate':'01/01/2010',
     'ctl00$ContentPlaceHolder1$btnFilter.x':'42',
     'ctl00$ContentPlaceHolder1$btnFilter.y':'3',
     'ctl00$ContentPlaceHolder1$SubEntityID':'-1',

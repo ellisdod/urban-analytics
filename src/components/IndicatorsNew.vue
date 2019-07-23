@@ -78,7 +78,11 @@
 
 </v-layout>
 </v-container>
-<map-navigator v-if="$store.getters.indicatorsForSelectedYear" id="map-panel-navigator" v-bind:class="{mobile:$vuetify.breakpoint.xsOnly}"></map-navigator>
+<map-navigator
+   v-if="$store.getters.indicatorsForSelectedYear"
+   id="map-panel-navigator"
+   v-bind:class="{mobile:$vuetify.breakpoint.xsOnly}">
+ </map-navigator>
 <div style="position:fixed;background:none;top:0;width:74%;height:100%;z-index:1;" class="hidden-xs-only"></div>
 
 </div>
