@@ -107,7 +107,16 @@ v-if="featuresCollection==='areas'"
 
 
 <div class="legend-right" id="map-legend" v-if="showLegend" :style="legendStyle">
-  <area-select v-if="options&&options.areaSelect" titleclass="pb-0 pt-3 px-3 font-weight-medium" class="ejmap-border-bottom px-3" style="height:50px; flex: 0;"></area-select>
+  <div>
+
+  <area-select
+     v-if="options&&options.areaSelect"
+     titleclass="pb-0 pt-3 px-3 font-weight-medium"
+     class="ejmap-border-bottom px-3 pt-1"
+     style="flex: 0;">
+  </area-select>
+</div>
+
   <div v-if="allLayers" style="flex:2; overflow-y: auto; max-height:85vh">
   <v-expansion-panel expand v-model="layerPanels">
     <v-expansion-panel-content v-for="(item,key) in layers" :key="key">
@@ -131,7 +140,7 @@ v-if="featuresCollection==='areas'"
   </div>
 
   <v-card v-else class="pt-0">
-<v-card-text class="pt-0">
+  <v-card-text class="pt-0">
   <map-legend
     v-for="(item,key) in layers"
     v-if="item.on"
@@ -188,6 +197,7 @@ import Editor from './Editor.vue'
 import axios from 'axios'
 import surveyQuestionsJson from './../assets/building_survey.json'
 import L from 'leaflet'
+const arrayUtils = require('@/plugins/arrayUtils')
 const dbconfig = require('@/db.config')
 
 export default {
@@ -411,13 +421,7 @@ computed: {
     return this.translate(surveyQuestionsJson, 'label', this.language);
   },
   scale () {
-    const sorted = this.$store.getters.indicatorsForSelectedYear.map( x =>
-      x[this.$store.state.map.indicator.figure]
-    ).sort((a,b)=> a-b);
-    return {
-      min : sorted[0],
-      max :sorted[sorted.length-1] - sorted[0]
-    }
+    return arrayUtils.sortNumbers(this.$store.getters.indicatorsForSelectedYear, this.$store.state.map.indicator.figure)
   },
   zoom () {
     return parseInt(this.zoomLevel) || this.$store.state.map.zoom ||14
@@ -467,8 +471,7 @@ methods: {
           return acc
         },[])
 
-        items = items.filter(x=>x!==null)
-        items = items.sort()
+        items = items.filter(x=>x!==null).sort()
         //console.log('items',items)
 
         //const s1 = ['#c51b7d','#fee08b','#3288bd']['#ff236c','#2377ff','#42f4b9','#0d1a38','#f46441']
@@ -490,7 +493,6 @@ methods: {
         legend.type = Boolean
       }
       this.$set(this.layers[layerKey],'legend',legend)
-
       //console.log('legend',legend, key)
       //this.log()
   },
@@ -512,7 +514,7 @@ methods: {
     console.log(this.layers)
   },
   getGeoJsonOptions (key) {
-    console.log('getgeojsonopts',key)
+    console.log('getgeojsonopts',key,this.layers[key])
     if (this.featuresCollection === 'areas') return this.geoJsonAreaOptions
     const type = this.layers[key].data_type
     let opts = ''
@@ -589,7 +591,7 @@ methods: {
     if (!this.showLegend || !legend) return style
 
     if (this.showLegend && legend.type === Number) {
-      style[colorKey] =  legend.chroma( (val - legend.items.min)/legend.items.constant ).hex()
+      style[colorKey] =  legend.chroma( 1 - ((val - legend.items.min)/legend.items.constant)  ).hex()
     } else if (this.showLegend) {
       style[colorKey] = legend.items[val]
     }
@@ -746,6 +748,7 @@ checkForUpdate() {
       const filtered = this.layers[key].filtered
       let featuresNo = featurecol[key] ? featurecol[key].length : 0;
       if (!this.loading && (featuresNo === 0 || filtered ) ) {
+        this.$set(this.layers[key],'legend',{})
         this.loading = true
         this.$store.dispatch('UPDATE_COLLECTION', {layer:key, name: this.featuresCollection} )
         .then((x,err)=>{
@@ -753,6 +756,7 @@ checkForUpdate() {
           console.log('dispatch return', x)
           this.loading = false
           returnObj[key] = x
+          this.updateLegend(key)
           return res(returnObj)
           //let features = this.$store.state._col_features[this.featureLayers[index]][newValue].map(x=>x.feature)
           //console.log('adding features to map:',  features)

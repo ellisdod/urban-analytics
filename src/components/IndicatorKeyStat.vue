@@ -16,7 +16,7 @@
     </div>
 
     <!-- WITH CHART -->
-    <div v-else-if="selectedIndicator" class="pa-2" style="position:relative;" @click="updateIndicator()">
+    <div v-else-if="type === 'Figure' && selectedIndicator" class="pa-2" style="position:relative;" @click="updateIndicator()">
 
       <div class="subheading font-weight-light" style="width:40%;">{{name}}</div>
 
