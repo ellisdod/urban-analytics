@@ -72,7 +72,7 @@ const Controller = function(model) {
     const update = JSON.parse(req.fields.update)
 
     return new Promise((resolve,reject)=>{
-      if (req.files.file) return this.parseFile(req.files.file.path, req.fields.format)
+      if (req.files && req.files.file) return this.parseFile(req.files.file.path, req.fields.format)
       else if (req.fields.file) {
         console.log('attempting to parse json payload')
         resolve(JSON.parse(req.fields.file))
@@ -104,7 +104,7 @@ const Controller = function(model) {
       return model.bulkWrite(ops)
     })
     .then(x=>{
-      res.status(200).send(x);
+      if (res) res.status(200).send(x);
     })
     .catch(err => {
       this.chainError(err,res)

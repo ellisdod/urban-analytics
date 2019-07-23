@@ -36,7 +36,7 @@ module.exports = [
       restrict: ['features']
     },
     {
-      params: '/:params',
+      params: '',
       name: 'updateMany',
       auth: true,
       method: 'post',

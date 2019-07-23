@@ -134,16 +134,21 @@ controllers.then(controllers=>{
 
 function planMonitorFeed (req, res, next) {
   console.log('getting plan data')
-  planMonitor.mavatScraper.init()
+  planMonitor.mavatScraper.downloadFile()
   .then(x=>{
       console.log('logdata',x)
       res.status(200).send(x)
 
   })
+}
 
+function testFeed (req, res, next) {
+  console.log('test req headers',req.headers)
+  res.status(200).send(req.headers)
 }
 
 app.post('/planmonitor',planMonitorFeed)
+app.post('/test',testFeed)
 
 
 
@@ -159,6 +164,16 @@ app.listen(process.env.PORT || 8081, () => {
 });
 
 
+var cron = require('node-cron');
+
+cron.schedule('*/10 * * * *', () => {
+  request({
+    method: 'POST',
+    uri : 'https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec?key=asdfkjf8934jklaweruioer89234'
+  }, function(err,x) {
+    console.log('cronjob', x)
+  })
+});
 
 /*
 collections.forEach(x=>{
