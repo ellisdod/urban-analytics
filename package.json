@@ -43,6 +43,7 @@
     "lodash": "4.17.11",
     "mongoose": "5.5.2",
     "mongoose-geojson-schema": "2.1.3",
+    "node-cron": "2.0.3",
     "node-html-parser": "1.1.16",
     "node-sass": "4.11.0",
     "papaparse": "4.6.3",

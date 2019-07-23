@@ -1,11 +1,13 @@
 const request = require('request');
-const controllers = require('./controllers/features.controller')
+const controllers = require('./controllers/base.controller')
 const dynamicModels = require('./models/geojson.model')
 const HTMLParser = require('node-html-parser');
 const rp = require('request-promise-native')
 const Cookie = require('tough-cookie').Cookie
 const logger = require('heroku-logger')
 const mongoose = require('mongoose');
+const querystring = require('querystring');
+const fs = require('fs');
 mongoose.Promise = global.Promise;
 
 
@@ -45,27 +47,32 @@ if (!plans[plan.plan_id]) newPlans.push(plan)
 exports.mavatScraper = (function () {
 
   const PLANS_LAYER_ID = '5d2f0b46fe977fdb42180cd2',
-  BLOCKS_LAYER_ID = '5d2f372b72079bde94245735';
+  BLOCKS_LAYER_ID = '5d2f372b72079bde94245735',
+  BASE_URL = 'http://ejmap-dev.herokuapp';
+
+  var cookiejar = rp.jar();
 
   var Scraper = function (html,blockId) {
 
-    this.root = HTMLParser.parse(html)
+    this.root = HTMLParser.parse(html).removeWhitespace()
     this.blockId = blockId
     this.nestedPath = 'feature.properties.'
     this.scrapeData = []
 
     this.scrapeTable = function () {
       let rows = this.root.querySelectorAll('.clsTableRowNormal')
-      logger.info('rows',rows.length)
-      console.log('rows',rows.length)
+      //console.log('rows',rows.length)
       for (var x=0;x<rows.length;x++) {
-        const c = rows[x].querySelectorAll('td')
+
+        const c = rows[x].childNodes
+
         this.scrapeData.push({
           mavat_code: c[0].text,
-          number: c[4].firstChild.text,
+          number: c[4].text,
           block_number: this.blockId
         })
       }
+      //console.log('this.scrapedata',this.scrapeData)
       return this.scrapeData.length
 
     }
@@ -73,30 +80,29 @@ exports.mavatScraper = (function () {
     this.addFeatureKeys = function () {
       var self = this
       this.scrapeData = this.scrapeData.map(x=> {
-        Object.keys(x).reduce(function(acc,key){
-        acc[self.nestedPath+key] = x[key]
-        return acc
-      },{})
+        return Object.keys(x).reduce(function(acc,key){
+          acc[self.nestedPath+key] = x[key]
+          return acc
+        },{})
     })
 
   }
 
-  this.postData = function (data) {
-
-    let req = {
-      fields : {
-        layer : PLANS_LAYER_ID,
-        file: JSON.stringify(data),
-        update: JSON.stringify({
-          matchExisting : 'feature.properties.number',
-          matchUpload : 'feature.properties.number',
-        })
-      }
+  this.postData = function () {
+    if (this.scrapeData.length === 0 ) return null
+    const req = {
+      fields: {
+         update: JSON.stringify({
+           matchExisting : 'feature.properties.number',
+           matchUpload : 'feature.properties.number',
+         }),
+         file: JSON.stringify(this.scrapeData)
+       }
     }
-
-    dynamicModels[PLANS_LAYER_ID].updateMany(req)
-    .then(()=>{
-      console.log('sent ' + data.length + ' plans')
+    new controllers.controller(dynamicModels[PLANS_LAYER_ID]).updateMany(req)
+    .then(x=>{
+      console.log('sent ' + this.scrapeData.length + ' plans')
+      console.log(this.scrapeData)
     })
     .catch((err)=>{
       console.log(err)
@@ -107,6 +113,53 @@ exports.mavatScraper = (function () {
 
 }
 
+var downloadFile = function() {
+  var _include_headers = function(body, response, resolveWithFullResponse) {
+    return {'headers': response.headers, 'data': body};
+  };
+  const entityDocID = '6000050340101',
+  entityDocNumber = 'EC1C88B42724DB44ACF1C48338871CF132F32EBC0248E70FB9A1C03AEBE7809A';
+  const downloadurl = 'Attachment.aspx?edid=' + entityDocID + '&edn=' + entityDocNumber + '&opener=AttachmentError.aspx'
+  const baseurl = 'http://mavat.moin.gov.il/MavatPS/Forms/'
+  return rp({
+    uri:  baseurl + downloadurl,
+    method : 'GET',
+  })
+  .then(html =>{
+    const challenge = parseChallengeHTML(html)
+    console.log(challenge)
+    if (!challenge) rej()
+
+    return rp({
+      uri: baseurl + downloadurl,
+      method : 'GET',
+      headers : challenge,
+      transform: _include_headers
+    })
+  })
+  .then(res=>{
+    console.log('got cookies!')
+
+    var request_cookiejar = request.jar();
+
+    res.headers['set-cookie'].forEach(x=>{
+      request_cookiejar.setCookie(request.cookie(x).toString(), baseurl)
+    });
+
+    request(baseurl + downloadurl,{
+      jar: request_cookiejar
+    })
+    .pipe(fs.createWriteStream('mavat_shapefile.zip'))
+      .on('close', function () {
+       console.log('File written!');
+       return
+     });
+  })
+  .then(html => {
+
+    console.log(html)
+  })
+}
 
 var getRandomInt = function(min,max) {
   return min + Math.floor(Math.random() * Math.floor(max-min));
@@ -117,7 +170,7 @@ var init = function() {
   var toDate = new Date(today.setDate(today.getDate()-7));
   var blocksQuery = {$or: [{'feature.properties.last_checked':{ '$lte': toDate }},{'feature.properties.last_checked': null}]}
   var blocks = []
-  var cookiejar = rp.jar();
+  var testUrl =  'http://localhost:8081'
   var base = 'http://mavat.moin.gov.il'
   var url = base + '/MavatPS/Forms/SV3.aspx?tid=3';
   var _include_headers = function(body, response, resolveWithFullResponse) {
@@ -129,7 +182,7 @@ var init = function() {
   return dynamicModels[BLOCKS_LAYER_ID].find({layer:BLOCKS_LAYER_ID},'',{lean: true})
   .then(data=>{
     console.log('received ' + data.length + ' blocks')
-    blocks = data.slice(0,1)
+    blocks = data
 
     return rp(url)
   })
@@ -148,12 +201,10 @@ var init = function() {
   })
   .then(res=>{
     console.log('got cookies!')
-    logger.info('got cookies!')
-    console.log(res.headers['set-cookie'], typeof res.headers['set-cookie'], res.headers['set-cookie'] instanceof Array )
-
 
     res.headers['set-cookie'].forEach(x=>{
-      cookiejar.setCookie(request.cookie(x).toString(), base)
+      cookiejar.setCookie(request.cookie(x).toString(), url)
+      cookiejar.setCookie(request.cookie(x).toString(), testUrl)
     });
 
     return rp(url,{
@@ -162,14 +213,14 @@ var init = function() {
   })
   .then(html => {
     console.log('got session identifiers!')
-    const form = getSessionIdentifiers(html)
+    let form = getSessionIdentifiers(html)
     let logdata = []
 
     if (!form['__VIEWSTATE']) return null
     return new Promise((res,rej)=>{
       syncLoop(blocks.length, function(loop){
         const i = loop.iteration();
-        const blockId = '30610' //blocks[i].feature.properties.number
+        const blockId = blocks[i].feature.properties.number
         console.log(i + '. fetching plans for block: ' + blockId )
 
         Object.assign(form,{
@@ -177,31 +228,37 @@ var init = function() {
           ctl00$ContentPlaceHolder1$txtToBlock:blockId,
         })
 
+        const postData = querystring.stringify(form)
+        //console.log(form)
         rp({
           uri : url,
           method:'POST',
-          body:form,
-          json: true,
+          body:postData,
           followAllRedirects: true, //by default turned off for POST requests
-          jar: cookiejar
+          jar: cookiejar,
+          headers: {
+            'Content-Type':'application/x-www-form-urlencoded',
+            'Content-Length': postData.length
+          }
         }, function(err,resp,body){
 
           console.log('got plans page!')
+          //console.log(body)
           //console.log(html)
           setTimeout(()=>{
             const scraper = new Scraper(body,blockId)
             scraper.scrapeTable()
             scraper.addFeatureKeys()
-            logdata = scraper.scrapeData
-            //scraper.postData()
+            scraper.postData()
+            //logdata = scraper.scrapeData
             loop.next();
           },getRandomInt(4000,6000))
 
         })
 
       }, function(){
-        console.log('finished - took ' + (new Date() - today)/60 + 'minutes' )
-        res(logdata)
+        console.log('finished - took ' + (new Date() - today)/60000000 + 'minutes' )
+        res()
       });
     })
 
@@ -219,7 +276,8 @@ var init = function() {
 }
 
 return {
-  init:init
+  init:init,
+  downloadFile : downloadFile
 }
 
 
@@ -283,6 +341,7 @@ function getSessionIdentifiers(html) {
     '__VIEWSTATE': root.querySelector('#__VIEWSTATE').attributes.value,
     '__VIEWSTATEENCRYPTED':root.querySelector('#__VIEWSTATEENCRYPTED').attributes.value,
     '__EVENTVALIDATION':root.querySelector('#__EVENTVALIDATION').attributes.value,
+    //'__VIEWSTATEGENERATOR':root.querySelector('#__VIEWSTATEGENERATOR').attributes.value,
     'ctl00$ContentPlaceHolder1$txtNumb':'',
     'ctl00$ContentPlaceHolder1$cboEntities':'-1',
     'ctl00$ContentPlaceHolder1$cboSubEntities':'-1',
