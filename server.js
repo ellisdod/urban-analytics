@@ -9,6 +9,7 @@ const controllers = require('./controllers/features.controller')
 const func = require('./src/api.functions.js')
 const dbConfig = require('./src/db.config')
 const planMonitor = require('./planMonitor')
+const request = require('request')
 
 var history = require('connect-history-api-fallback');
 require('dotenv').config();
@@ -143,11 +144,11 @@ function planMonitorFeed (req, res, next) {
 }
 
 function testFeed (req, res, next) {
-  console.log('test req headers',req.headers)
-  res.status(200).send(req.headers)
+  scrapePlans()
+  res.status(200).send('')
 }
 
-app.post('/planmonitor',planMonitorFeed)
+app.post('/planmonitor',testFeed)
 app.post('/test',testFeed)
 
 
@@ -166,14 +167,18 @@ app.listen(process.env.PORT || 8081, () => {
 
 var cron = require('node-cron');
 
-cron.schedule('*/10 * * * *', () => {
+cron.schedule('*/10 * * * *', scrapePlans);
+
+function scrapePlans() {
   request({
     method: 'POST',
-    uri : 'https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec?key=asdfkjf8934jklaweruioer89234'
+    uri : 'https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec?key=asdfkjf8934jklaweruioer89234',
+    body : {},
+    json: true
   }, function(err,x) {
-    console.log('cronjob', x)
+    console.log('scrapePlans')
   })
-});
+}
 
 /*
 collections.forEach(x=>{
