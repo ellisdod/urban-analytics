@@ -140,7 +140,6 @@ export default {
   data: () => ({
     loading:true,
     miniNav: true,
-    activeUser: null,
     authenticated: false,
     drawerIndicators : false,
     layersPanel:true,
@@ -158,6 +157,9 @@ export default {
         { icon: 'settings', text: 'Manage Data', route: 'manage' }
       ]
       return this.activeUser ? actions.concat(loggedInActions): actions;
+    },
+    activeUser () {
+      return this.$store.state.activeUser.email ? this.$store.state.activeUser : null
     }
   },
   props: {
@@ -172,7 +174,7 @@ export default {
   },
   methods: {
     log(){
-      console.log('store',this.$store.state)
+      console.log('store',this.$store.getters,this.$store.state)
 
       const client = axios.create({
         baseURL: window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin,
@@ -197,7 +199,12 @@ export default {
       this.$auth.loginRedirect()
     },
     async refreshActiveUser () {
-      this.activeUser = await this.$auth.getUser()
+
+      this.$auth.getUser().then(x=>{
+        this.$store.commit('UPDATE_USER',x)
+      })
+
+      //this.activeUser = await this.$auth.getUser()
     },
     async logout () {
       await this.$auth.logout()
@@ -211,6 +218,7 @@ export default {
     }
   },
   mounted () {
+
 
 
   let layerCols = Object.keys(dbconfig).reduce((acc,key)=> {
@@ -281,6 +289,10 @@ export default {
 </script>
 
 <style>
+
+.application {
+  font-family: Roboto, Tajawal, sans-serif !important;
+}
 
 #keep .v-navigation-drawer__border {
   display: none

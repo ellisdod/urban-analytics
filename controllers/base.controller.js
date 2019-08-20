@@ -16,7 +16,7 @@ const Controller = function(model) {
   "use strict"
 
   //model = model
-  console.log(this)
+  //console.log(this)
 
 
   this.find = function (req, res, next) {
@@ -46,19 +46,12 @@ const Controller = function(model) {
     const params = req.params.params ? JSON.parse(req.params.params) : {}
     let query = {_id: params.id || new mongoose.mongo.ObjectID()}
 
-    const body = {}
-    if (params.path) {
-      delete req.body._id
-      delete req.body._path
-      body[params.path] = req.body
-    } else {
-      body['$set'] = req.body
-    }
+    delete req.body._id
 
-    console.log('UPDATING:', query._id, body, params)
+    console.log('UPDATING:', query._id, req.body, params)
     console.log('model',model)
 
-    model.findOneAndUpdate(query, body, {upsert:true}, function (err, Building) {
+    model.findOneAndUpdate(query, req.body, {upsert:true}, function (err, Building) {
       if (err) return next(err);
       const message = req.params.id ? 'Updated!' : 'Inserted!';
       res.send(message);
@@ -127,8 +120,13 @@ const Controller = function(model) {
     let filter;
     if (Array.isArray(req.body)) {
       filter = { _id : { $in:req.body.map(x=>mongoose.Types.ObjectId(x)) } }
-    } else {
+    } else if (typeof req.body === 'object'){
       filter = req.body
+      Object.keys(filter).forEach(key =>{
+        if (filter[key].indexOf('ObjectId')===0 ) filter[key] = mongoose.Types.ObjectId(filter[key].split(':')[1])
+      })
+    } else {
+      res.status(500).send('invalid filter');
     }
     model.deleteMany(filter, function (err, x) {
       if (err) {
@@ -140,7 +138,6 @@ const Controller = function(model) {
   }
 
   this.del = function (req, res, next) {
-    //console.log('DELETING')
     model.findOneAndDelete({ _id :req.params.id}, function (err, x) {
       if (err) return next(err);
       res.send(x);
@@ -263,6 +260,7 @@ res.status(200).send('Ok');
 //console.log('geojson keys', Object.keys(geojson))
 module.exports = {
   controller : Controller,
+  styles : new Controller(layers.styles),
   layerCalcs : new Controller(layers.layerCalcs),
   indicatorAttributes : new Controller(layers.indicatorAttributes),
   indicatorBlocks: new Controller(layers.indicatorBlocks),

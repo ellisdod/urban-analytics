@@ -1,5 +1,5 @@
 <template>
-  <div v-resize="centerMap">
+  <v-card flat style="background:rgba(0,0,0,0.02);border:none;">
     <table id="navigator-key" v-bind:class="{mobile:$vuetify.breakpoint.xsOnly}">
       <tr id="navigator-header" class="hidden-xs-only">
         <td colspan="2">
@@ -17,7 +17,7 @@
       <tr>
       </tr>
       <tr>
-        <td class="key-gradient">
+        <td class="key-gradient ejmap-border">
         </td>
         <td class="key-figures">
           <div class="key-max">
@@ -37,9 +37,6 @@
     id="navigation-map"
     @click="log()"
     >
-
-
-
     <l-geo-json
     v-for="(item, i) in $store.state._col_areas.filter(x=>x.feature)"
     :key="item._id"
@@ -48,13 +45,14 @@
     v-bind:options-style="getAreaStyle(item.feature.properties.id)"
     >
   </l-geo-json>
+
 </l-map>
 
 
 </v-menu>
 </div>
 
-</div>
+</v-card>
 </template>
 
 <script>
@@ -62,6 +60,9 @@ import { LMap, LTileLayer, LMarker, LPopup, LTooltip, LPolygon, LGeoJson} from '
 //var vectorTileStyling = require('../../public/mapStyle.js');
 import API from '@/api.js'
 import chroma from 'chroma-js'
+//import L from 'leaflet'
+import L from 'leaflet'
+import mapbox from 'mapbox-gl-leaflet'
 
 //const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');
@@ -198,7 +199,46 @@ export default {
   mounted(){
     this.$refs.map.mapObject.on('click', function(e) {  console.log(e) })
     this.$refs.map.mapObject.zoomControl.setPosition('bottomright')
-    console.log('map', this.$refs.map.mapObject.zoomControl) //setPosition('bottomright')
+
+
+    this.$refs.map.mapObject.eachLayer(function(l){
+        console.log('maplayer2',l)
+        //l.sendToBack()
+      })
+
+
+
+    this.$nextTick(()=>{
+      const map = this.$refs.map.mapObject
+      //const tileLayer = map._layers[tileLayerId]
+      //console.log('tilelayer',tileLayer)
+      console.log('panes',map.getPanes())
+      map.createPane('leaflet-top-pane', map.getPanes().mapPane)
+      var topPane = map.getPane('leaflet-top-pane')
+      topPane.style.zIndex=1000;
+      topPane.style.pointerEvents = 'none';
+      map.getPanes().popupPane.style.zIndex=1010;
+      //topPane.appendChild(tileLayer.getPane());
+      L.mapboxGL({
+            attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+            accessToken: 'not-needed',
+            pane:'leaflet-top-pane',
+            style: 'https://api.maptiler.com/maps/2785ad5b-ec8f-4c26-b65b-0fd7a95f2a2e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
+          }).addTo(this.$refs.map.mapObject)
+
+      //console.log('maplayers',this.$refs.map.mapObject._layers)
+    })
+
+
+
+
+    /*for (var key in layers) {
+      console.log('maplayer',layers[key])
+    }
+    console.log(Array.isArray(layers))
+*/
+
+    //console.log('map', this.$refs.map.mapObject.zoomControl) //setPosition('bottomright')
     //800 = (35.1400 - 35.0753) / 400
     //1200 = 35.0753
 
@@ -206,7 +246,7 @@ export default {
       this.$store.commit('UPDATE',{key:['navigator','zoom'],value:11})
       this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.map.defaultCenter})
     } else {
-      this.centerMap()
+      //this.centerMap()
     }
 
 
@@ -261,9 +301,9 @@ export default {
 
 #navigator-key {
   position: absolute;
-  z-index:10;
-  left:75%;
-  top:95px;
+  z-index:2;
+  left:20px;
+  top:20px;
 }
 
 #navigator-key.mobile {
@@ -282,7 +322,7 @@ export default {
   white-space: nowrap;
 }
 .key-gradient {
-  width:6px;
+  width:8px;
   height:150px;
   background-image: linear-gradient(var(--v-primary-base), #eaeaea);
 }

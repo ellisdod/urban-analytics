@@ -3,12 +3,13 @@
     <v-select
       :items="$store.state[`_col_${collection}`]"
       v-model="selected"
-      item-text="text_en"
+      item-text="name"
       item-value="_id"
       class="area-select"
-      solo
       flat
-      dense
+      box
+      :label="label"
+      append-icon="icon"
     >
     </v-select>
 
@@ -17,7 +18,7 @@
 <script>
 
 export default {
-  props : ['collection'],
+  props : ['collection','label','icon'],
   data () {
     return {
       selected : '',

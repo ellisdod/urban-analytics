@@ -25,6 +25,29 @@
     </template>
     <span>Update Feature Analysis</span>
   </v-tooltip>
+
+  <v-menu offset-y min-width="300px" dark>
+
+    <template v-slot:activator="{ on }">
+      <v-btn icon v-on="on">
+        <v-icon color="grey">more_vert</v-icon>
+      </v-btn>
+    </template>
+
+    <v-list dense dark>
+      <v-list-tile @click="deleteAllDialog=true">
+        <v-list-tile-action>
+          <v-icon>delete</v-icon>
+        </v-list-tile-action>
+        <v-list-tile-content>
+          <v-list-tile-title>Delete All</v-list-tile-title>
+        </v-list-tile-content>
+      </v-list-tile>
+    </v-list>
+
+  </v-menu>
+
+
 </div>
 </div>
 
@@ -33,7 +56,7 @@
 v-model="activeTab"
 color="background"
 slider-color="primary"
-class="mt-2 mx-4"
+class="mt-2 mx-4 manage-data"
 show-arrows
 >
 
@@ -72,8 +95,10 @@ v-for="(val,key,index) in tabs"
         :featuresCollection="val.map.featuresCollection"
         :height="val.map.height || '400px'"
         :featureLayers="val.map.featureLayers"
+        :editable="val.map.editable"
         v-bind:class="val.map.classObj || {minimap:minimapOn, fullmap: !minimapOn, 'ejmap-border':true}"
-        v-bind:options="val.map.options || {legendBottom:scrollLow||$vuetify.breakpoint.xsOnly,areaSelect:true}">
+        v-bind:options="val.map.options || {areaSelect:true}"
+        :legendBottom="scrollLow||$vuetify.breakpoint.xsOnly">
        </map-view>
        </v-flex>
 
@@ -100,7 +125,7 @@ v-for="(val,key,index) in tabs"
 
   <v-flex v-else-if="item.type==='json' && $store.state.selectedFeature" class="py-5" :key="index" xs12>
     <div class="py-2 subheading font-weight-light  ejmap-border-bottom">Indicators </div>
-    <v-tabs slider-color="primary" color="background">
+    <v-tabs slider-color="primary" color="background" show-arrows>
       <v-tab v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index" ripple>
         {{ indicator.year }}
       </v-tab>
@@ -134,10 +159,15 @@ v-for="(val,key,index) in tabs"
 </v-dialog>
 <v-dialog v-model="analysisDialog" max-width="600">
   <analysis
-  :layer="$store.state['_col_layers_selected']"
+  :layerCollection="tabs[tab].uploadLayerCol"
   :areaLayer="$store.state['_col_areaLayers_selected']"
   v-on:close="analysisDialog=false"
   ></analysis>
+</v-dialog>
+<v-dialog v-model="deleteAllDialog" max-width="600">
+ <delete-all
+ v-on:close="deleteAllDialog=false"
+ ></delete-all>
 </v-dialog>
 
 </div>
@@ -147,6 +177,7 @@ import EditableDataList from 'components/EditableDataList.vue'
 import Upload from './Upload.vue'
 import Analysis from './Analysis'
 import MapView from './MapView.vue'
+import DeleteAll from './DeleteAll.vue'
 import AreaSelect from './AreaSelect.vue'
 import VueJsonPretty from 'vue-json-pretty'
 import LayerSelect from 'components/LayerSelect.vue'
@@ -155,10 +186,11 @@ import axios from 'axios'
 
 export default {
   components: {
-    EditableDataList,MapView,Upload,VueJsonPretty,Analysis,AreaSelect,LayerSelect
+    EditableDataList,MapView,Upload,VueJsonPretty,Analysis,AreaSelect,LayerSelect,DeleteAll
   },
   data() {
     return {
+      deleteAllDialog : false,
       uploadDialog : false,
       analysisDialog: false,
       activeTab : null,
@@ -171,7 +203,7 @@ export default {
         left:'20px',
         width:'20%',
         height:'200px'
-      },
+      }
 
     }
   },
@@ -216,6 +248,13 @@ export default {
               collection:'features',
               filter:'layers',
               nestedPath:'feature.properties',
+              searchable:true,
+            },
+            {
+              type: 'datalist',
+              heading: 'Style',
+              collection:'styles',
+              filter:'layers',
               searchable:true,
             }
           ]
@@ -293,7 +332,8 @@ export default {
           },
           map : {
             featuresCollection : 'features',
-            featureLayers : this.$store.getters.getSelected('surveyLayers').featureLayer
+            featureLayers : this.$store.getters.getSelected('surveyLayers').featureLayer,
+            editable : true,
           },
           tables : [
             {
@@ -308,7 +348,7 @@ export default {
               multiselect :true,
               collection:'surveyRecords',
               filter:'surveyLayers',
-              searchable:true,
+              nestedPath:'properties'
             }
           ]
         },
@@ -318,7 +358,7 @@ export default {
   },
   methods: {
     update(tab){
-      console.log('activetab',this.activeTab)
+      //console.log('activetab',this.activeTab)
       const self = this
       this.tab = tab
       this.$store.commit('UPDATE',{key:'tab',value:tab})
@@ -346,6 +386,11 @@ export default {
 }
 </script>
 <style>
+
+.manage-data .v-tabs__container {
+  border-bottom: 1px solid var(--v-borderColor-base);
+}
+
 .data-toolbar {
   margin-top:2px;
   float:right;

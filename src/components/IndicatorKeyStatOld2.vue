@@ -1,6 +1,6 @@
 <template>
 
-  <v-card style="background:none" flat v-bind:class="[{selected : selected && $vuetify.breakpoint.smAndUp},'indicator-hover']" @click="updateIndicator()">
+  <v-card hover :ripple="$vuetify.breakpoint.smAndUp" raised v-bind:class="[{selected : selected && $vuetify.breakpoint.smAndUp},'indicator-hover']">
 
     <div v-if="type === 'List' && selectedIndicator">
       <v-list>
@@ -16,103 +16,68 @@
     </div>
 
     <!-- WITH CHART -->
-    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" class="pa-3" style="position:relative;background:white;">
+    <div v-else-if="type === 'Figure' && selectedIndicator" class="pa-2" style="position:relative;" @click="updateIndicator()">
 
-      <v-flex order-xs1 xs4 sm4 md3>
-
-        <div class="subheading font-weight-light">{{name}}</div>
+      <div class="subheading font-weight-light" style="width:40%;">{{name}}</div>
 
 
-        <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap; height:55px;">
-          <span class="display-1 py-0">{{selectedIndicator[figure[0]]||0}}</span>
-          <span v-if="unit" class="subheading ml-1">{{unit}}</span>
-        </div>
+      <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
+        <span class="display-1 py-0">{{selectedIndicator[figure[0]]||0}}</span>
+        <span v-if="unit" class="subheading ml-1">{{unit}}</span>
         <div class="font-weight-light">{{year}}</div>
+      </div>
 
-      </v-flex>
-
-      <v-flex order-xs3 order-sm2 xs10 xs-offset2 sm8 sm-offset-4 md5 pt-3 v-bind:class="{'mb-5':selected && $vuetify.breakpoint.smOnly, 'my-3':selected && $vuetify.breakpoint.xsOnly}">
-
-        <div v-bind:style="chartWidthClass">
-
-          <bar-vertical v-if="type==='Figure'"
-          v-bind:chart-data="prepBarChartData"
-          class="bar-chart-minimal mt-4"
-          v-bind:click-handler="true"
-          v-bind:x-labels="false"
-          v-bind:y-labels="false">
-        </bar-vertical>
-
+      <div v-if="dataYears" class="px-1" style="position: absolute; top: -10px; right:15px; width:50%;">
+        <v-slider
+        track-color="transparent"
+        always-dirty
+        inverse-label
+        :tick-labels="makeSliderLabels(dataYears)"
+        v-model="selectedYear"
+        ticks="always"
+        v-bind:tick-size="2"
+        :min="dataYears[0]"
+        :max="dataYears[dataYears.length-1]"
+        z-index="500"
+        >
+      </v-slider>
     </div>
 
-  </v-flex>
+    <div v-bind:style="chartWidthClass">
 
-  <v-flex order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4 v-bind:class="{'hidden-sm-and-down':!selected}">
+      <bar-vertical v-if="type==='Figure'"
+      style="margin-top:0px;"
+      v-bind:chart-data="prepBarChartData"
+      class="bar-chart-minimal"
+      v-bind:click-handler="true"
+      v-bind:x-labels="false"
+      v-bind:y-labels="false">
+    </bar-vertical>
 
-    <v-sparkline
-    :value="timeChartData"
-    :color="chartColor"
-    height="70"
-    smooth
-    stroke-linecap="square"
-    line-width="8"
-    width="700"
-    >
-  </v-sparkline>
+    <bar-vertical v-else-if="type==='Chart' && selectedIndicator"
+    style="height:300px; margin-bottom:-30px;"
+    v-bind:x-labels="true"
+    v-bind:y-labels="true"
+    v-bind:chart-data="generateChartDataSets">
+   </bar-vertical>
 
-  <v-slider
-  style="width:100%;margin-top:0px;margin-bottom:-30px;"
-  track-color="transparent"
-  always-dirty
-  inverse-label
-  :tick-labels="makeSliderLabels(dataYears)"
-  v-model="selectedYear"
-  ticks="always"
-  v-bind:tick-size="2"
-  :min="dataYears[0]"
-  :max="dataYears[dataYears.length-1]"
-  z-index="500"
-  >
-</v-slider>
+ </timeline>
 
-</v-flex>
-</v-layout>
-
-<div v-else-if="type==='Chart'" class="pa-3" style="background:white;">
-<div class="subheading font-weight-light">{{name}}</div>
-<bar-vertical
-style="height:300px; margin-bottom:-40px;"
-v-bind:x-labels="true"
-v-bind:y-labels="true"
-v-bind:chart-data="generateChartDataSets">
-</bar-vertical>
-</div>
-
-
-
-<!--<v-flex xs12 class="text-xs-right" style="margin-top:-40px;height:0;">
-<v-btn icon><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
-</v-flex>-->
-<div v-if="selected" class="pa-3" style="background-color:rgba(0,0,0,0.03)">
-
-  <v-flex xs12 class="grey--text text--darken-1">
-    <div><span>Source:</span><a :href="layer.sourceUrl">{{layer.sourceShort}}</a></div>
-    <div><span>Notes:</span>{{description}}</div>
-  </v-flex>
-
-
-
-  <v-tooltip bottom open-delay="100">
-      <template v-slot:activator="{ on }">
-        <v-btn style="position:absolute;bottom:5px;right:5px;" icon @click="exportToCsv"  v-on="on">
-          <v-icon color="grey">get_app</v-icon>
-        </v-btn>
-      </template>
-      <span>Download data</span>
-  </v-tooltip>
 
 </div>
 
+<div class="text-xs-right" style="margin-right:-18px;clear:both;display:block;margin-bottom: -10px;">
+  <v-btn icon><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
+</div>
+<div v-if="selected" class="pa-2">
+  {{description}}
+  <br><br>
+  <div class="grey--text text--darken-2">
+    Source: JIIS {{ year || $store.state.year }}
+  </div>
+</div>
+
+</div>
 
 
 </v-card>
@@ -148,6 +113,11 @@ export default {
       //console.log('labels',labels,years)
       return labels
     },
+    log() {
+      console.log('data',this)
+      console.log('store',this.$store.state)
+      //console.log(this.$store.getters.selectedFeature)
+    },
     clickHandler(){
       //console.log('click')
     },
@@ -155,8 +125,9 @@ export default {
       if (!this.selected) this.rotation = this.rotation === 0 ? 180 : 0
     },
     updateIndicator() {
-      this.$emit('childClick')
-      if (!this.figure[0] || !this.year || this.figure[1]) return null
+      this.log()
+      this.toggleRotate()
+      if (!this.figure[0] || !this.year) return null
       this.$store.commit("UPDATE",{key:['navigator','indicator'],value:{figure:this.figure[0],name:this.name}})
       this.$store.commit("UPDATE",{key:'year',value:this.year})
     },
@@ -178,82 +149,9 @@ export default {
         }
       }
       return true
-    },
-    exportToCsv() {
-        var processRow = function (row) {
-            var finalVal = '';
-            for (var j = 0; j < row.length; j++) {
-                var innerValue = row[j] === null ? '' : row[j].toString();
-                if (row[j] instanceof Date) {
-                    innerValue = row[j].toLocaleString();
-                };
-                var result = innerValue.replace(/"/g, '""');
-                if (result.search(/("|,|\n)/g) >= 0)
-                    result = '"' + result + '"';
-                if (j > 0)
-                    finalVal += ',';
-                finalVal += result;
-            }
-            return finalVal + '\n';
-        };
-
-        const figure = this.figure[0]
-        const title = this.unit ? `${this.name} (${this.unit})` : this.name
-        let indicators = this.$store.getters.allIndicatorsByAreaYear
-        let rows = [
-          [title],
-          ['Source', this.layer.sourceLong || '' ],
-          ['Link', this.layer.sourceUrl || '' ],
-          ['-'],
-          ['Name','Code',...this.dataYears],
-        ]
-        //console.log(figure)
-
-        rows = Object.keys(indicators).reduce((arr,areaCode)=>{
-          const areaName = this.$store.getters.areaNames[areaCode]
-          const row = [areaName, areaCode]
-          this.dataYears.forEach(year=>{
-            const val = indicators[areaCode][year][figure] || ''
-            row.push(val)
-          })
-          arr.push(row)
-          return arr
-        },rows)
-
-        const filename = this.name.toLowerCase().replace(/[\s\.]/g,'_') + '.csv'
-
-        var csvFile = '';
-        for (var i = 0; i < rows.length; i++) {
-            csvFile += processRow(rows[i]);
-        }
-
-        var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-        if (navigator.msSaveBlob) { // IE 10+
-            navigator.msSaveBlob(blob, filename);
-        } else {
-            var link = document.createElement("a");
-            if (link.download !== undefined) { // feature detection
-                // Browsers that support HTML5 download attribute
-                var url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", filename);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        }
     }
   },
   computed : {
-    chartColor () {
-      return this.selected ? this.$vuetify.theme.primary : colors.grey.lighten2
-    },
-    layer () {
-      const layerId = this.figure[0].split('.')[0]
-      const layer = this.$store.state._col_layers.filter(x=>x._id===layerId)[0]
-      return layer || {}
-    },
     rotateStyle () {
       return {transform: 'rotate('+this.rotation+'deg)'}
     },
@@ -308,7 +206,7 @@ export default {
     dataYears () {
       const d = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
       //console.log('datayears',d,this.$store.getters.allIndicatorKeyYears,this.$store.getters.allIndicatorsByYear)
-      return d
+    return d
     },
     generateChartDataSets() {
       if (this.type !== 'Chart' || !this.selectedIndicator) {
@@ -327,7 +225,7 @@ export default {
             fill:false,
           }
         ],
-        labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
+        labels:this.figure
       }
     },
     chartWidthClass(){
@@ -377,14 +275,6 @@ export default {
         }]
       }
     },
-    timeChartData () {
-      const figure = this.figure[0]
-      const indicators = this.$store.getters.indicatorsForSelectedArea
-      const filtered = indicators.filter(x=>this.dataYears.indexOf(x.year)>-1)
-
-      return filtered.map(x=>x[figure])
-    }
-
   },
   watch : {
     selectedYear : function(newVal,oldVal) {
@@ -435,26 +325,12 @@ export default {
 div.selected>div {
   background-color:var(--v-grey-lighten4);
 }
-.selected .display-1  {
-  color:var(--v-primary-base);
-}
-.v-slider span {
-  color: var(--v-grey-lighten1);
-  font-size: 10px;
+.selected span  {
+  color:var(--v-primary-base)!important;
 }
 .selected .v-slider__thumb {
   background-color:var(--v-primary-base)!important;
 }
-
-.indicator-hover {
-  margin-left:3px;
-}
-
-.indicator-hover:hover {
-  border-left: 4px solid var(--v-primary-base) !important;
-  margin-left:0px;
-}
-
 .indicator-hover:hover, .indicator-hover:hover>div {
   cursor:pointer;
   background-color:var(--v-grey-lighten4);
@@ -464,48 +340,16 @@ div.selected>div {
   border-color: var(--v-grey-lighten2) !important;
 }
 
-.bar-chart-minimal {
-  height:100px;
-}
-.bar-chart-minimal-small {
-  height:80px;
-}
-
 div.v-slider__thumb{
   background-color: #bcbcbc !important;
 }
 div.v-slider__track-fill {
-  background-color: var(--v-grey-lighten3) !important;
+  background-color: var(--v-grey-lighten2) !important;
 }
-.v-slider__thumb-container div.v-slider__thumb:hover {
-  width: 6px;
+.v-slider__thumb:hover {
+  width: 24px;
   height: 24px;
-  left: -4px;
+  left: -12px;
 }
-.v-slider__thumb-container div.v-slider__thumb {
-    width: 6px;
-    height: 20px;
-    left: -4px;
-    border-radius:0;
-}
-
-.v-slider__ticks-container .v-slider__ticks.v-slider__ticks--always-show {
-  border-width: 1px !important;
-left: 50%;
-transform: translateY(2px) !important;
-height: 5px;
-width: 1px;
-border-left: none;
-padding-top:3px;
-}
-
-.v-slider .v-slider__track__container {
-  border: 1px solid #e3e3e3;
-}
-
-.v-slider .v-slider__track__container, .v-slider .v-slider__track, .v-slider .v-slider__track-fill {
-  height:6px;
-}
-
 
 </style>

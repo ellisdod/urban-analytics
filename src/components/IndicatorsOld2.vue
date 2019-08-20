@@ -32,7 +32,7 @@
   <editable-data-list v-bind:disabled="true" style="background:none" collection="indicatorSections"></editable-data-list>
 </v-navigation-drawer>
 <div style="flex:2;overflow-y:auto;">
-  <v-container fluid pa-0 pb-5>
+  <v-container fluid pa-0>
 
     <v-layout row wrap fill-height pb5 pa-0 >
 
@@ -43,51 +43,24 @@
             <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  {{section.text_en}} </div> <area-select class="title font-weight-light"></area-select>
           </div>
 
-           <!-- INDICATORS -->
-           <indicator-card
-            v-for="(item,index) in figures"
-            @childClick="updateSelected(item._id)"
-            style="margin-bottom:20px;"
-            :key="index"
-            :item="item"
-            :selected="selected===item._id"
-            class="">
-          </indicator-card>
-
-          <div v-if="charts">
-            <div class="title mb-4 pt-1 pb-3 ejmap-border-bottom"></div>
-            <v-flex xs12 sm6>
-            <indicator-card
-             v-for="(item,index) in charts"
-             @childClick="updateSelected(item._id)"
-             style="margin-bottom:20px;"
-             :key="index"
-             :item="item"
-             :selected="selected===item._id"
-             class="">
-           </indicator-card>
-           </v-flex>
-          </map-view>
-
-          </div>
-
-          <div v-if="map">
-            <div class="subheading mt-5 pt-4 pb-2 ejmap-border-top">
-              <span class="mr-3">Map</span><span class="font-weight-light">{{map.text}}</span>
+          <masonry :cols="{default:2,800:1}" :gutter="20">
+            <div sm6 xs12>
+              <bar-vertical
+              style="height:300px; margin-bottom:-30px;"
+              v-bind:x-labels="true"
+              v-bind:y-labels="true"
+              v-bind:chart-data="timeChartData">
+             </bar-vertical>
             </div>
-            <map-view
-            contextmenu=""
-            style="position:relative;"
-            featuresCollection="features"
-            zoomLevel="12"
-            height="400px"
-            :featureLayers="map.figure"
-            v-bind:areas="true"
-            class="ejmap-border"
-            >
-          </map-view>
 
-          </div>
+            <div sm6 xs12 v-for="(item,index) in items" :key="item._id" @click="updateSelected(index)" style="margin-bottom:20px;">
+
+              <!-- DATATABLE -->
+              <indicator-card :item="item" :selected="selected===index">
+              </indicator-card>
+
+            </div>
+          </masonry>
 
         </div>
 
@@ -147,7 +120,7 @@ export default {
   data () {
     return {
       nav:true,
-      selected : null,
+      selected : 0,
       activeTab: null,
       selectedData : this.$store.getters.selected,
     }
@@ -161,16 +134,6 @@ export default {
       console.log('indicatorsByArea',this.$store.getters.indicatorsByArea)
       return translation
     },
-    figures () {
-      return this.items.filter(x=>x.type==='Figure')
-    },
-    charts () {
-      const charts = this.items.filter(x=>x.type==='Chart')
-      return charts[0] ? charts : null;
-    },
-    map () {
-      return this.items.filter(x=>x.type==='Map')[0]
-    },
     featureLayers () {
       const section = this.$store.getters.selectedIndicatorSection
       return section ? section.geodata : null
@@ -180,12 +143,30 @@ export default {
     },
     carouselHeight () {
       return window.innerHeight /100*45
+    },
+    timeChartData () {
+      const figure = this.items[this.selected].figure
+      const indicators = this.$store.getters.indicatorsForSelectedArea
+      return {
+        datasets :[
+          {
+            data: indicators.map(x=>x[figure]),
+            borderColor: 'grey',
+            type:"line",
+            fill:false,
+          }
+        ],
+        labels:indicators.map(x=>x.year)
+      }
     }
   },
   methods: {
     updateSelected(index){
       this.selected = index
       console.log('updated select',this.selected )
+    },
+    log() {
+      console.log('store', this.$store.state)
     }
   },
   mounted () {
@@ -198,18 +179,19 @@ export default {
         this.selected = 0
         if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
 
-        /*newValue.geodata.forEach(x=>{
+        newValue.geodata.forEach(x=>{
           if(!this.$store.state['_col_'+x]) this.$store.dispatch('UPDATE_COLLECTION', {
             name : 'features',
             query : {},
             layer : x
           })
         })
+
         // update main map zoom
-        this.$store.commit('UPDATE',{key:['map','zoom'],value:15})*/
+        this.$store.commit('UPDATE',{key:['map','zoom'],value:15})
       })
 
-      //console.log('store', this.$store.state)
+      console.log('store', this.$store.state)
       //this.$store.commit('UPDATE',{key:['map','center'],value:this.$store.state.map.defaultCenter})
     }
 
@@ -227,7 +209,12 @@ export default {
     max-width: 600px;
     margin: auto;
   }
-
+  .bar-chart-minimal {
+    height:100px;
+  }
+  .bar-chart-minimal-small {
+    height:80px;
+  }
   .btn-title div {
     text-transform:none;
   }
@@ -283,22 +270,22 @@ export default {
     height:100%;
   }
   .ejmap-border {
-      border:1px solid var(--v-borderColor-base) !important;
+      border:1px solid #e3e3e3 !important;
   }
   .ejmap-border-right {
-      border-right:1px solid var(--v-borderColor-base) !important;
+      border-right:1px solid #e3e3e3 !important;
   }
 
   .ejmap-border-bottom {
-      border-bottom:1px solid var(--v-borderColor-base) !important;
+      border-bottom:1px solid #e3e3e3 !important;
   }
 
   .ejmap-border-top {
-      border-top:1px solid var(--v-borderColor-base) !important;
+      border-top:1px solid #e3e3e3 !important;
   }
 
   .ejmap-border-left {
-      border-left:1px solid var(--v-borderColor-base) !important;
+      border-left:1px solid #e3e3e3 !important;
   }
 
   .v-toolbar--clipped {

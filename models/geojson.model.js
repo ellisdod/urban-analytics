@@ -110,7 +110,11 @@ const geoSchema = function (name,collection) {
         year : {
           type: Number,
           required:true,
-        }
+        },
+        _survey : {
+          type: mongoose.Schema.Types.Mixed,
+          required:false,
+        },
       }
     },
     layer : {
@@ -157,6 +161,9 @@ const surveySchema = function (name,collection) {
   layer : {
     type : mongoose.Schema.Types.ObjectId,
     required : true
+  },
+  properties : {
+    type : mongoose.Schema.Types.Mixed,
   }
 }
 }

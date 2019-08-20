@@ -1,13 +1,24 @@
-const sortAscending = function(arr) {
+const sort = function(arr,descending,key) {
   if (!arr) return null
-  return arr.sort(function(m1,p1){
-      var m=parseInt(m1),
-          p=parseInt(p1);
 
-      if(m > p) return 1;
-      if(m < p) return -1;
+  const greater = descending ? -1 : 1
+  const lesser = descending ? 1 : -1
+
+  function sortFunc(m1,p1){
+
+      var m = key ? getNested(key,m1) : parseInt(m1),
+          p = key ? getNested(key,p1) : parseInt(p1);
+
+      if(m > p) return greater;
+      if(m < p) return lesser;
       return 0;
-  })
+  }
+
+
+const res = arr.sort(sortFunc)
+console.log('arrayUtils',res)
+return res
+
 }
 
 
@@ -21,7 +32,7 @@ const sortNumbers = function (arr, key) {
     if (val) acc.push(val)
     return acc
   },[])
-  const sorted = sortAscending(arr)
+  const sorted = sort(arr)
   const result = {
     min : sorted[0]
   }
@@ -41,9 +52,8 @@ const sortNumbers = function (arr, key) {
 const getNested = function (p, o) {
   p = typeof p === 'string' ? p.split('.') : p
   if (!p) return o
-  const n =  p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+  return p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
   //console.log('nested',n)
-  return n
 }
 
 const rowsToObjects = function (headers,rows) {
@@ -59,4 +69,4 @@ const rowsToObjects = function (headers,rows) {
 exports.rowsToObjects = rowsToObjects
 exports.sortNumbers = sortNumbers
 exports.getNested = getNested
-exports.sortAscending = sortAscending
+exports.sort = sort

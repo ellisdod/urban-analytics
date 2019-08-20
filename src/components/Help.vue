@@ -1,7 +1,6 @@
 <!-- HTML Template -->
 
 <template>
-  <v-container>
     <v-layout row wrap>
       <v-flex xs12 py-4 v-for="(item, i) in items">
         <div class="title pb-2">{{item.heading}}</div>
@@ -13,6 +12,7 @@
       </vue-json-pretty>
       </v-flex>
     </v-layout>
+
   </v-container>
 </template>
 
