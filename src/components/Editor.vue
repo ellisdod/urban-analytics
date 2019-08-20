@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title>
+    <v-card-title v-if="title">
       <span v-if="schema&&schema.name" class="headline">{{mode}} {{ schema.name.slice(0,schema.name.length-1) }}</span>
     </v-card-title>
     <v-tabs
@@ -8,86 +8,120 @@
     color="#f3f3f3"
     slider-color="grey"
     grow
+    v-bind:height="schema.canPaste ? null : '0px'"
     >
     <v-tab ripple @click="">Single</v-tab>
     <v-tab v-if="schema.canPaste" ripple @click="">Multiple</v-tab>
     <v-tab-item>
+      <v-form ref="form">
       <v-card-text>
         <v-container grid-list-md>
           <v-layout wrap>
             <v-flex v-for="(i,key) in schema.schema" xs12>
 
-              <v-select v-if="i._options&&Array.isArray(i._options)" v-model="edited[key]" :label="i._text" :small-chips="i._multiple" :multiple="i._multiple"
-              v-bind:items="i._options.map(x=>x.name)">
+              <v-select
+              v-if="i._options&&Array.isArray(i._options)&&i._options.length>0"
+              v-model="edited[key]"
+              :label="i._text"
+              :small-chips="i._multiple"
+              :multiple="i._multiple"
+              clearable
+              :item-text="'text_' + $store.state.language||'name'||'text' "
+              item-value="value"
+              :rules="[validateItem(edited[key],i)]"
+              v-bind:items="i._options">
             </v-select>
 
-            <v-select v-else-if="typeof i._options==='function'&&!i._categorised"
-            v-model="edited[key]"
-            :label="i._text"
-            :small-chips="i._multiple"
-            :multiple="i._multiple"
-            v-bind:items="i._options($store,edited,collection)"
-            item-text="name"
-            item-value="_id">
-          </v-select>
+            <div v-else-if="i._options&&i._options==='dynamic'" style="display:flex;flex-direction:column;" >
+            <p class="subheading"> {{ Object.keys(edited[key]).length ? 'Choices' : '' }} </p>
+            <div style="flex-basis: 100%;"></div>
+              <div style="width:100%;display:flex;" v-for="(item,i) in edited[key]">
+                <v-text-field
+                v-for="l in $store.state.languages"
+                v-model="item['text_'+l.name]"
+                :label="i+1+'. '+l.text"
+                :rules="[validateItem(edited[key],i)]"
+                class="pl-2">
+              </v-text-field>
+              <v-btn icon  @click="edited[key].splice(i,1)"><v-icon color="grey">clear</v-icon></v-btn>
+            </div>
 
-          <div v-else-if="i._categorised">
-            <v-combobox v-model="edited[key]" multiple small-chips> </v-combobox>
-            <v-menu full-width offset-y>
+            <v-spacer></v-spacer>
+            <v-btn flat outline color="grey" @click="addItem(edited[key])">{{ Object.keys(edited[key]).length ? 'add option' : 'Make Multiple Choice' }}</v-btn>
+          </div>
 
-              <v-btn
-              color="grey"
-              outline
-              slot="activator"
-              >
-              {{ key }}
-            </v-btn>
-            <v-list dense>
-              <template v-for="(val,name) in i._options($store,edited,collection)">
+          <v-select v-else-if="typeof i._options==='function'&&!i._categorised"
+          v-model="edited[key]"
+          :label="i._text"
+          :small-chips="i._multiple"
+          :multiple="i._multiple"
+          clearable
+          v-bind:items="i._options($store,edited,collection)"
+          item-text="name"
+          item-value="_id"
+          :rules="[validateItem(edited[key],i)]"
+          >
+        </v-select>
 
-                <v-list-tile v-if="val.value" :key="name" @click="edited[key].push(val.value)">
-                  {{val.name}}
+        <div v-else-if="i._categorised">
+          <v-combobox v-model="edited[key]" multiple small-chips> </v-combobox>
+          <v-menu full-width offset-y>
 
+            <v-btn
+            color="grey"
+            outline
+            slot="activator"
+            >
+            {{ key }}
+          </v-btn>
+          <v-list dense>
+            <template v-for="(val,name) in i._options($store,edited,collection)">
+
+              <v-list-tile v-if="val.value" :key="name" @click="edited[key].push(val.value)">
+                {{val.name}}
+
+              </v-list-tile>
+
+              <v-menu v-else-if="val.items" full-width offset-x max-height="500" :key="name" open-on-hover >
+                <v-list-tile slot="activator" @click="">
+                  <v-list-tile-title>{{val.name}}</v-list-tile-title>
                 </v-list-tile>
-
-                <v-menu v-else-if="val.items" full-width offset-x max-height="500" :key="name" open-on-hover >
-                  <v-list-tile slot="activator" @click="">
-                    <v-list-tile-title>{{val.name}}</v-list-tile-title>
+                <v-list dense>
+                  <v-list-tile v-for="(j,ind) in val.items " @click="edited[key].push(name+'.'+j)">
+                    <v-list-tile-title>{{ j }}</v-list-tile-title>
                   </v-list-tile>
-                  <v-list dense>
-                    <v-list-tile v-for="(j,ind) in val.items " @click="edited[key].push(name+'.'+j)">
-                      <v-list-tile-title>{{ j }}</v-list-tile-title>
-                    </v-list-tile>
-                  </v-list>
-                </v-menu>
+                </v-list>
+              </v-menu>
 
-              </template>
-
-            </v-list>
+            </template>
 
           </v-list>
 
+        </v-list>
 
-        </v-menu>
-      </div>
 
-      <v-switch v-else-if="i.type===Boolean" v-model="edited[key]" :label="i._text"></v-switch>
-      <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text"></v-text-field>
-      <v-text-field v-else v-model="edited[key]" :label="i._text" disabled></v-text-field>
-    </v-flex>
-  </v-layout>
+      </v-menu>
+    </div>
+
+    <v-switch v-else-if="i.type===Boolean||i.type==='Boolean'" v-model="edited[key]" :label="i._text" color="primary"></v-switch>
+    <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text" :type="i.type==='Number'?'number':'text'" :rules="[validateItem(edited[key],i)]"></v-text-field>
+
+    <v-text-field v-else v-model="edited[key]" :label="i._text" disabled></v-text-field>
+  </v-flex>
+</v-layout>
 </v-container>
 
 </v-card-text>
 
 <v-card-actions>
+  <v-btn color="red darken-1" flat @click="save(true)">Delete</v-btn>
   <v-spacer></v-spacer>
-  <v-btn color="grey lighten-1" flat @click="close()">Cancel</v-btn>
+  <v-btn color="grey lighten-1" flat @click="close()">Close</v-btn>
   <v-progress-circular v-if="saving" indeterminate mx-3>Saving...</v-progress-circular>
-  <v-btn v-else color="blue darken-1" flat @click="save(edited._id)">Save</v-btn>
+  <v-btn v-else color="blue darken-1" flat @click="save()">Save</v-btn>
 </v-card-actions>
 
-
+</v-form>
 </v-tab-item>
 
 <v-tab-item>
@@ -117,6 +151,13 @@
 </v-tab-item>
 </v-tabs>
 
+<v-snackbar
+      v-model="success"
+      top
+      :timeout="1000"
+      :color="$store.state.colors[2]"
+><v-icon>check</v-icon>Saved</v-snackbar>
+
 </v-card>
 </template>
 
@@ -124,13 +165,14 @@
 import VueJsonPretty from 'vue-json-pretty'
 import api from '@/api.js'
 const dbconfig = require('../db.config')
+const arrayUtils = require('@/plugins/arrayUtils')
 
 
 export default {
   components: {
     VueJsonPretty
   },
-  props : ['collection','filter','nestedPath','editItem','attributes'],
+  props : ['collection','filter','nestedPath','editItem','attributes','linkedFeature','permanent','title'],
   data() {
     return {
       activeTab : null,
@@ -145,6 +187,7 @@ export default {
       datatableTab:null,
       selectAll:false,
       runedit : false,
+      success : false,
     }
   },
   computed : {
@@ -192,104 +235,126 @@ export default {
     },
   },
   methods : {
-    edit() {
-      this.runedit = true
-      const item = this.editItem
-      //let item = this.$store.state[`_col_${collection}`][index]
-      let schema = this.templateFromSchema(this.schema.schema)
-      const items = this.$store.state[`_col_${this.collection}`]
-      if (this.nestedPath) {
-
-        for(var x=0;x<items.length;x++){
-          if (item === this.getNested(this.nestedPath,items[x])) {
-            item._id = items[x]._id
-            this.editedIndex = x
-            break
-          }
-        }
-        //item = this.getNested(this.nestedPath,item)
-        schema = this.getNested(this.nestedPath,schema)
-        item._path = this.nestedPath
-
-      } else {
-        this.editedIndex = items.indexOf(item)
-      }
-      this.edited = Object.assign({}, schema, item)
-      //console.log('dialog data', collection,index,path,item,this.edited)
-      //console.log('this',this)
+    validateItem(v,i) {
+      if (i.required && !v && v!==0 ) return i['_text_en'] + ' is required'
+      return true
     },
-    save(id) {
+    addItem (object) {
+      const item = Object.assign({value:object.length.toString()},
+        this.$store.state.languages.reduce((acc,x)=>{
+          acc['text_'+x.name]=''
+          return acc
+        },{}))
+        this.$set(object,object.length,item)
+      },
+      edit () {
+        this.runedit = true
+        //let item = this.$store.state[`_col_${collection}`][index]
+        let schema = this.templateFromSchema(this.schema.schema)
+        const edited = Object.assign({}, schema, arrayUtils.getNested(this.nestedPath, this.editItem))
+        Object.keys(edited).forEach(key=>{
+          this.$set(this.edited,key,edited[key])
+        })
+        console.log('editItem', this.edited, schema, this.editItem)
+        //console.log('dialog data', collection,index,path,item,this.edited)
+        //console.log('this',this)
+      },
+      save (del) {
 
-      this.saving = true;
-      if (this.filter) {
-        this.edited.layer = this.filterId
-      }
-      const colparams = dbconfig[this.collection].params ? this.selectedId : ''
-      const params = { id: id ,path: this.edited._path }
+        this.saving = true;
+        console.log(this.$refs.form.validate())
+        if (!del&&!this.$refs.form.validate()) {
+          this.saving = false
+          return null
+        }
+        const id = this.editItem ? this.editItem._id : null
+        const params = del ? id : { id:id }
+        const self = this
+        let updateObj = Object.assign({},this.edited)
 
-      console.log('saving', [this.collection, id, this.edited])
+        if (this.nestedPath) {
+          updateObj = Object.keys(this.edited).reduce((acc,key)=>{
+            let value = self.edited[key]
+            value = typeof value === 'string' && value.trim() === '' ? null : value
+            value = value && this.schema.schema[key].type === 'Number' ? parseInt(value) : value
+            value = value && this.schema.schema[key].type === 'Text' ? value.toString() : value
+            acc[ self.nestedPath+'.'+key] = value
+            return acc
+          },{})
+        }
 
-      api.update(this.collection,params,this.edited,{},colparams).then(()=>{
-        this.$emit('update',true)
-        return
-      }).catch(err=>{
-        alert(err)
-        return
-      })
-      .then(()=>{
-        this.saving = false
+        if (this.filter) updateObj.layer = this.filterId
+        if (this.linkedFeature) updateObj.feature = this.linkedFeature
+
+        const colparams = dbconfig[this.collection].params ? this.filterId : ''
+
+        console.log('saving', [this.collection, params.id, updateObj])
+
+        const func = del ? 'del':'update'
+
+        api[func](this.collection,params,updateObj,{},colparams)
+        .then(()=>{
+          this.edit()
+          this.$emit('update',true)
+          this.saving = false
+          this.success = true
+          this.$forceUpdate()
+          if (!this.permanent) this.$emit('close',true)
+        }).catch(err=>{
+          alert(err)
+          return
+        })
+
+      },
+      close () {
+        this.edited = {}
         this.$emit('close',true)
-      })
-    },
-    close () {
-      this.edited = {}
-      this.$emit('close',true)
-    },
-    saveMany() {
-      this.saving = true;
-      console.log('filterId: ' + this.filterId + ' collection: ' + this.collection)
+      },
+      saveMany () {
+        this.saving = true;
+        console.log('filterId: ' + this.filterId + ' collection: ' + this.collection)
 
-      if (this.pastedComputed[0] && Object.keys(this.pastedComputed[0]).length > 1) {
-        this.pastedComputed = this.pastedComputed.map(x=>{
-          x.layer = this.filterId
-          return x
-        })
-        let formData = new FormData();
-        formData.append('data', JSON.stringify(this.pastedComputed))
-        console.log('making request...')
-        api.create(this.collection,'',formData).then(x=>{
-          console.log('uploaded')
-          this.updateCollection(true)
-          this.close()
-          this.pasted = ''
-        })
+        if (this.pastedComputed[0] && Object.keys(this.pastedComputed[0]).length > 1) {
+          this.pastedComputed = this.pastedComputed.map(x=>{
+            x.layer = this.filterId
+            return x
+          })
+          let formData = new FormData();
+          formData.append('data', JSON.stringify(this.pastedComputed))
+          console.log('making request...')
+          api.create(this.collection,'',formData).then(x=>{
+            console.log('uploaded')
+            //this.$store.dispatch('UPDATE_COLLECTION',{name:'surveyRecords',layer:this.filterId})
+            this.close()
+            this.pasted = ''
+          })
+        }
+      },
+      templateFromSchema (schema) {
+        if (schema) return Object.keys(schema).reduce((acc,x)=>{
+          if(schema[x].type === Array){
+            acc[x] = []
+          } else if (schema[x].type === Boolean) {
+            acc[x] = false
+          } else {
+            acc[x] = ''
+          }
+          return acc
+        },{});
+      },
+    },
+    watch : {
+      editItem () {
+        this.edit()
       }
     },
-    templateFromSchema(schema) {
-      if (schema) return Object.keys(schema).reduce((acc,x)=>{
-        if(schema[x].type === Array){
-          acc[x] = []
-        } else if (schema[x].type === Boolean) {
-          acc[x] = false
-        } else {
-          acc[x] = ''
-        }
-        return acc
-      },{});
-    },
-  },
-  watch : {
-    editItem () {
+    mounted () {
+      let schema = dbconfig[this.collection].schema
+      if (typeof schema === 'string') schema = this.attributes
       this.edit()
+      //if (this.editItem) this.edit()
     }
-  },
-  mounted () {
-    let schema = dbconfig[this.collection].schema
-    if (typeof schema === 'string') schema = this.attributes
-    if (this.mode === 'Add') this.edited = this.templateFromSchema(schema)
-    //if (this.editItem) this.edit()
+
   }
 
-}
-
-</script>
+  </script>

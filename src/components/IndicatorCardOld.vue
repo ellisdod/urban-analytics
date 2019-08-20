@@ -10,8 +10,7 @@
   </div>
 
   <!-- KEYSTAT -->
-  <indicator-key-stat
-  v-else-if="item.type==='Figure' || item.type==='List' || item.type==='Chart'"
+  <indicator-key-stat v-else-if="item.type==='Figure' || item.type==='List' || item.type==='Chart'"
   :selected="selected"
   :name="item.text"
   :figure="item.figure"
@@ -19,14 +18,13 @@
   :unit="item.unit"
   :year="item.year"
   :type="item.type"
-  class="ejmap-border"
-  @childClick="childClick"
   >
- </indicator-key-stat>
+</indicator-key-stat>
 
 <!-- MAP -->
 <div v-else-if="item.type==='Map'">
-    <div class="subheading font-weight-light mb-2 mt-5 px-2 ejmap-border-bottom" style="">{{item.text}}</div>
+  <v-card>
+    <div class="subheading font-weight-light my-2 px-2" style="position:absolute;top:0;z-index:2;">{{item.text}}</div>
     <map-view
     contextmenu=""
     style="position:relative;"
@@ -35,9 +33,11 @@
     height="400px"
     :featureLayers="item.figure"
     v-bind:areas="true"
+    v-bind:legendBottom="true"
     class="ejmap-border"
     >
   </map-view>
+</v-card>
 </div>
 </template>
 <script>
@@ -53,11 +53,6 @@ export default {
   props: ['selected', 'item'],
   data () {
     return {
-    }
-  },
-  methods: {
-    childClick() {
-      this.$emit('childClick')
     }
   }
 }

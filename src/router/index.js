@@ -13,7 +13,8 @@ Vue.use(Auth, {
   client_id: '0oafa51gkZcH6RVN4356',
   issuer: 'https://dev-160658.okta.com/oauth2/default',
   redirect_uri: window.location.origin + '/implicit/callback',
-  scope: 'openid profile email'
+  scope: 'openid profile email groups',
+  response_type: 'id_token'
 })
 
 Vue.use(Router)

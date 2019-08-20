@@ -135,12 +135,13 @@ controllers.then(controllers=>{
 
 function planMonitorFeed (req, res, next) {
   console.log('getting plan data')
-  planMonitor.mavatScraper.downloadFile()
-  .then(x=>{
-      console.log('logdata',x)
-      res.status(200).send(x)
+  planMonitor.mavatScraper.fixIndicators()
 
-  })
+  /*planMonitor.mavatScraper.init().then(x=>{
+      console.log('logdata',x)
+      planMonitor.downloadMissingGeodata()
+      res.status(200).send(x)
+  })*/
 }
 
 function testFeed (req, res, next) {
@@ -167,7 +168,7 @@ app.listen(process.env.PORT || 8081, () => {
 
 var cron = require('node-cron');
 
-cron.schedule('*/10 * * * *', scrapePlans);
+//cron.schedule('*/10 * * * *', scrapePlans);
 
 function scrapePlans() {
   request({

@@ -60,8 +60,7 @@
       <!--<v-text-field v-if="isSaving" label="Location" v-model="neighbourhood"></v-text-field>-->
       <v-spacer></v-spacer>
       <v-btn color="grey lighten-1" dark depressed @click="close()">Cancel</v-btn>
-        <v-btn v-if="isSaving" type="submit" :loading="processing" color="blue" dark depressed>Upload</v-btn>
-      </v-card-actions>
+      <v-btn v-if="isSaving" type="submit" :loading="processing" color="blue" dark depressed>Upload</v-btn>
     </div>
   </form>
 </div>

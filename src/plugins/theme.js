@@ -4,7 +4,10 @@ export const theme = {
   primary: colors.orange.lighten1,
   secondary: colors.grey.lighten3,
   tertiary: colors.blue.base,
-  error: '#b71c1c',
+  error: colors.red.base,
   background: '#f8f9fa',
-  grey: colors.grey.base
+  scaleMin: '#ff267e',
+  scaleMax: '#267eff',
+  grey: colors.grey.base,
+  borderColor: '#e3e3e3',
 }

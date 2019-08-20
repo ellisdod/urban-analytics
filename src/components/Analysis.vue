@@ -31,7 +31,7 @@ import api from '@/api.js'
 const dbConfig = require('@/db.config')
 
 export default {
-  props : ['layer', 'areaLayer'],
+  props : ['layer', 'areaLayer', 'layerCollection'],
   data() {
     return {
       processing : false,
@@ -41,6 +41,7 @@ export default {
   },
   methods: {
     close() {
+      this.processing = false
       this.$emit('close',true)
     },
     updateAnalysis() {
@@ -57,7 +58,7 @@ export default {
 },
 computed : {
   layers() {
-    return this.$store.state._col_layers.map(x=>{
+    return this.$store.state['_col_'+this.layerCollection].map(x=>{
       return {text:x.name, value:x._id}
     }) || []
   },
@@ -68,7 +69,7 @@ computed : {
   }
 },
 mounted () {
-  this.layerSelected = this.layer || this.$store.state._col_layers_selected
+  this.layerSelected =  this.$store.state['_col_' + this.layerCollection +'_selected']
   this.areaLayerSelected = this.areaLayer || this.$store.state._col_areaLayers_selected
 }
 }

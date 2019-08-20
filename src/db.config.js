@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const dataTypes = [ 'Text', 'Number','Boolean','Array','Date']
+
 module.exports = {
    layers : {
       name: "Layers",
@@ -80,23 +82,7 @@ module.exports = {
             required : true,
             _text : "Type",
             _multiple: false,
-            _options : [
-               {
-                  name : 'String',
-               },
-               {
-                  name : 'Number',
-               },
-               {
-                  name : 'Boolean',
-               },
-               {
-                  name : 'Array',
-               },
-               {
-                  name : 'Date',
-               }
-            ]
+            _options : dataTypes
          },
          func : {
             type : Array,
@@ -129,8 +115,12 @@ module.exports = {
             _text : "Required",
          },
          public : {
-           type : Boolean,
-           _text : "Public",
+            type : Boolean,
+            _text : "Public",
+         },
+         legend : {
+            type : Boolean,
+            _text : "Legend",
          },
          layer : {
             type : mongoose.Schema.Types.ObjectId,
@@ -151,17 +141,7 @@ module.exports = {
             required : true,
             _text : "Type",
             _multiple: false,
-            _options : [
-               {
-                  name : 'String',
-               },
-               {
-                  name : 'Number',
-               },
-               {
-                  name : 'Boolean',
-               }
-            ]
+            _options : dataTypes
          },
          layer : {
             type : mongoose.Schema.Types.ObjectId,
@@ -262,6 +242,9 @@ module.exports = {
                },
                {
                   name :'Map',
+               },
+               {
+                  name :'Timeline',
                }
             ]
          },
@@ -303,11 +286,11 @@ module.exports = {
 
                if (edited.type==='Map') {
                   return layers.reduce((acc,x)=>{
-                  acc.push({'name': x.text_en,'value':x._id})
-                  return acc
-               },[])
+                     acc.push({'name': x.text_en,'value':x._id})
+                     return acc
+                  },[])
                } else if (!edited.areaLayer) {
-               return {error:{name:'First select a spatial intersect',value:'error'}}
+                  return {error:{name:'First select a spatial intersect',value:'error'}}
                }
 
                const layersObj = layers.reduce((acc,x)=>{
@@ -372,8 +355,10 @@ module.exports = {
       name:'Features',
       schema:'layerAttributes',
       params : '/:collection',
+      sort: 'feature.properties.year',
       canUpload: true,
       storeByLayer : true,
+      embedIds : 'feature.properties',
       layerCollection: 'layers',
       layerAttributes: 'layerAttributes'
    },
@@ -423,17 +408,7 @@ module.exports = {
             required : true,
             _text : "Type",
             _multiple: false,
-            _options : [
-               {
-                  name : 'String',
-               },
-               {
-                  name : 'Number',
-               },
-               {
-                  name : 'Boolean',
-               }
-            ]
+            _options : dataTypes
          },
          required : {
             type : Boolean,
@@ -460,17 +435,7 @@ module.exports = {
             required : true,
             _text : "Type",
             _multiple: false,
-            _options : [
-               {
-                  name : 'String',
-               },
-               {
-                  name : 'Number',
-               },
-               {
-                  name : 'Boolean',
-               }
-            ]
+            _options : dataTypes
          },
          required : {
             type : Boolean,
@@ -494,6 +459,7 @@ module.exports = {
          featureLayer : {
             type : Array,
             _text : "Feature Layers",
+            _multiple: true,
             _options : function(store) {
                return store.state._col_layers
             }
@@ -503,32 +469,40 @@ module.exports = {
    surveyLayerAttributes : {
       name : "Attributes",
       canPaste : true,
+      translate : ['_text'],
       schema : {
          name : {
             type : String,
             required : true,
             _text : "Name"
          },
+         _text_en : {
+            type : String,
+            required : true,
+            _text : "Text (English)"
+         },
+         _text_ar : {
+            type : String,
+            required : true,
+            _text : "Text (Arabic)"
+         },
+         required : {
+            type : Boolean,
+            _text : "Required",
+         },
          type : {
             type : String,
             required : true,
             _text : "Type",
             _multiple: false,
-            _options : [
-               {
-                  name : 'String',
-               },
-               {
-                  name : 'Number',
-               },
-               {
-                  name : 'Boolean',
-               }
-            ]
+            _options : dataTypes
          },
-         required : {
-            type : Boolean,
-            _text : "Required",
+         _options : {
+            type : Array,
+            multiple: true,
+            _text : "Options",
+            _categorised : true,
+            _options:'dynamic'
          },
          layer : {
             type : mongoose.Schema.Types.ObjectId,
@@ -542,34 +516,53 @@ module.exports = {
       params : '/:collection',
       layerCollection:'surveyLayers',
       storeByLayer:true,
-   },/*
-   blocks: {
-      name:'Blocks',
-      canUpload: true,
-      schema : {
-         feature: mongoose.Schema.Types.Feature,
-         number : Number,
-         last_checked : Date,
-      },
-      schemaOpts : {
-         strict: false
-      },
    },
-   plans: {
-      name:'Plans',
+   styles : {
+      name:'Styles',
       schema : {
-         quantities : Array,
-         timeline : Array,
-         mavat_code : String,
-         details_link : String,
-         housing_units : Number,
-         number: String,
-         plan_id: Number,
-         status_he : String,
-         status_en : String
-      },
-      schemaOpts : {
-         strict: false
+         layer : {
+            type : mongoose.Schema.Types.ObjectId,
+            required : true,
+         },
+         name : {
+            type: String,
+            required : true,
+         },
+         attribute : {
+            type : String,
+            required : true,
+         },
+         color : String,
       }
-   }*/
+   }
+   /*
+   blocks: {
+   name:'Blocks',
+   canUpload: true,
+   schema : {
+   feature: mongoose.Schema.Types.Feature,
+   number : Number,
+   last_checked : Date,
+},
+schemaOpts : {
+strict: false
+},
+},
+plans: {
+name:'Plans',
+schema : {
+quantities : Array,
+timeline : Array,
+mavat_code : String,
+details_link : String,
+housing_units : Number,
+number: String,
+plan_id: Number,
+status_he : String,
+status_en : String
+},
+schemaOpts : {
+strict: false
+}
+}*/
 }
