@@ -11,6 +11,7 @@
       solo
       flat
       dense
+      append-icon="location_on"
     >
     </v-select>
 

@@ -3,13 +3,13 @@
         v-if="$store.state._col_features"
         contextmenu=""
         style="position:relative;height:400px;"
-        height=""
+        :height="legendBottom ? '80%' : ''"
         :featureLayers="$store.state._col_layers_selected"
         featuresCollection="features"
         zoomLevel="12"
         v-bind:allLayers="true"
         :legendBottom="legendBottom"
-        v-bind:options="{legendStyle:legendStyle,areaSelect:true,mapStyle:{flexDirection:'row-reverse'}}"
+        v-bind:options="{legendStyle:legendStyle,areaSelect:true,mapStyle:mapStyle}"
         >
       </map-view>
 </template>
@@ -24,6 +24,11 @@ export default {
   computed : {
     legendBottom () {
       return this.$vuetify.breakpoint.xsOnly
+    },
+    mapStyle () {
+      return {
+        flexDirection:'row-reverse',
+      }
     },
     legendStyle (){
       const self = this

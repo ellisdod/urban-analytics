@@ -78,8 +78,8 @@
       v-model="editable">
       </v-switch>
       </v-list-tile>
-      <v-list-tile>
-        <layer-select collection="surveyLayers" label="Select Survey" icon="add"></layer-select>
+      <v-list-tile v-if="editable">
+        <layer-select collection="surveyLayers" label="Select Survey" icon="add" @change=""></layer-select>
       </v-list-tile>
     </template>
 
@@ -118,18 +118,19 @@
 
 <!-- LEGEND-->
 <div id="map-legend" v-if="showLegend" v-bind:style="legendStyle">
-  <div>
+  <div class="text-xs-center">
+    <v-icon v-if="legendBottom" color="grey lighten-2">remove</v-icon>
     <area-select
     v-if="options&&options.areaSelect"
     titleclass="pb-0 pt-3 px-3 font-weight-medium"
-    class="ejmap-border-bottom px-3 pt-1"
+    class="ejmap-border-bottom px-3 py-1"
     style="flex: 0;">
    </area-select>
    <v-select v-if="allLayers&&legendBottom"
      v-bind:items="Object.values(layers)"
      item-text="text_en"
      item-value="_id"
-     class="ejmap-border-bottom px-3 pt-1"
+     class="ejmap-border-bottom px-3 pt-2"
      v-model="layerPanelsSelected"
      multiple
      flat
@@ -137,11 +138,13 @@
    </v-select>
 </div>
 
-<div style="flex:2; overflow-y: auto; max-height:85vh">
+<div v-bind:style="{flex:2, maxHeight:'85vh', overflowY: allLayers ? 'none' : 'auto'}">
   <v-expansion-panel expand v-model="layerPanels">
-    <v-expansion-panel-content v-for="(layer,key) in layers" v-show="layer.showLegend" :key="key" @click="toggleLayer(key)">
+    <v-expansion-panel-content v-for="(layer,key,index) in layers" v-show="layer.showLegend" :key="key">
       <template v-slot:header v-if="allLayers&&!legendBottom">
-        {{layer.text_en}}
+        <div @click="">
+            {{layer.text_en}}
+        </div>
       </template>
       <v-card class="pt-2">
         <v-card-text class="pa-0">
@@ -170,6 +173,7 @@
                 @layerChange="function(e){updateLayer(layer._id, e)}"
                 @toggleFeature="function(e){filterFeatures(key,e)}"
                 class="ejmap-border-bottom"
+                style="width:100%;"
                 ></map-legend>
 
             </v-list-tile-content>
@@ -414,11 +418,12 @@ computed: {
     const style = this.options ? this.options.legendStyle : {}
     return Object.assign(
       {
+        padding: this.legendBottom ? '0 0 40px 0' : '0',
         height: this.legendBottom ? '200px' : 'auto',
         maxHeight: this.legendBottom ? '200px':'none',
-        maxWidth: this.legendBottom ? 'none' : '300px',
+        maxWidth: this.legendBottom ? '100%' : '300px',
         width: this.legendBottom ? '100%' : 'auto',
-        overflowY:'auto',
+        overflowY:this.legendBottom ? 'visible':'auto',
         overflowX: 'visible!important'
       }, style || {})
     },
@@ -436,7 +441,8 @@ computed: {
       const style = this.options ? this.options.mapStyle : {}
       //console.log('mapstyle',style)
       return Object.assign( {
-        display: this.legendBottom ? 'block' : 'flex'
+        display: this.legendBottom ? 'block' : 'flex',
+        height:  this.legendBottom ? '90%' : '100%'
       }, style || {} )
     },
     layerPanelHeight () {
@@ -892,9 +898,18 @@ watch: {
     this.layerOn(newVal,true)
   },
   layerPanels: function(newVal,oldVal) {
-    console.log('layerPanels',newVal,oldVal)
+    this.$nextTick(()=>{
+      for (var x=0;x<newVal.length;x++) {
+        if (newVal[x] !== oldVal[x]) {
+          this.layerOn(Object.keys(this.layers)[x],newVal[x])
+          break
+        }
+      }
+      //console.log('layerPanels',newVal,oldVal)
+    })
     //const layerIds = Object.keys(this.layers)
     this.checkForUpdate()
+    //this.layerOn(key,true)
     //if this panelIndex matches this component's index.. do stuff since we're selected
   },
   layerPanelsSelected: function(newVal,oldVal) {

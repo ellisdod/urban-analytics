@@ -3,13 +3,12 @@
     <v-select
       :items="$store.state[`_col_${collection}`]"
       v-model="selected"
-      item-text="name"
+      :item-text="text||'name'"
       item-value="_id"
       class="area-select"
       flat
-      box
       :label="label"
-      append-icon="icon"
+      :prepend-icon="icon"
     >
     </v-select>
 
@@ -18,7 +17,7 @@
 <script>
 
 export default {
-  props : ['collection','label','icon'],
+  props : ['collection','label','icon','text'],
   data () {
     return {
       selected : '',
@@ -29,6 +28,7 @@ export default {
   methods : {
 
     update (val) {
+      this.$emit('change',val)
       this.$store.commit('UPDATE',{
         key:'_col_'+this.collection+'_selected',
         value: val
