@@ -8,7 +8,9 @@
       class="area-select"
       flat
       :label="label"
-      :prepend-icon="icon"
+      :prepend-icon="prependIcon"
+      :append-icon="appendIcon"
+      :style="childStyle"
     >
     </v-select>
 
@@ -17,7 +19,7 @@
 <script>
 
 export default {
-  props : ['collection','label','icon','text'],
+  props : ['collection','label','prependIcon','appendIcon','text','childStyle'],
   data () {
     return {
       selected : '',

@@ -8,10 +8,12 @@
       item-value="value"
       return-object
       class="area-select"
+      color="tertiary"
       solo
       flat
       dense
-      append-icon="location_on"
+      :prepend-icon="icon"
+      :style="childStyle"
     >
     </v-select>
 
@@ -19,6 +21,7 @@
 
 <script>
 export default {
+  props : ['icon','childStyle'],
   data () {
     return {
       selected : '',
@@ -75,7 +78,9 @@ export default {
 </script>
 
 <style>
-
+.area-select .v-text-field.v-text-field--solo .v-input__append-outer, .v-text-field.v-text-field--solo .v-input__prepend-outer {
+    margin-top: 5px;
+}
 .area-select div.v-messages {
   height:0px;
   min-height:0px;
@@ -91,7 +96,10 @@ export default {
 .area-select.v-text-field.v-text-field--solo .v-input__control {
   min-height:0;
 }
-
+.area-select .v-text-field {
+    padding-top: 0px;
+   margin-top: 0px;
+}
 
 
 </style>

@@ -1,20 +1,28 @@
 <template>
   <div v-if="$vuetify.breakpoint.xsOnly">
+    <div
+      class="pa-2 px-3 mt-0 ejmap-border-top ejmap-border-bottom"
+      style="z-index:4;top:56px;position:fixed;top:56px;width:100%;display:flex;">
     <layer-select
      collection="indicatorSections"
      text="text_en"
-     style="z-index:4;background-color:white;position:fixed;top:56px;width:100%;"
-     class="pa-2 px-3 mt-0 ejmap-border-top ejmap-border-bottom"
-     icon="bar_chart"
+     prepend-icon="bar_chart"
+     append-icon=""
+     v-bind:childStyle="{fontWeight:500}"
      >
     </layer-select>
+    <area-select
+    :append-icon="''"
+    v-bind:childStyle="{fontWeight:300}"
+    ></area-select>
+    </div>
     <v-carousel
     id="indicators-carosel"
     :cycle="false"
     hide-controls
     hide-delimiters
     light
-    :height="carouselHeight"
+    :height="400"
     v-model="selected"
     style="z-index:2;overflow-y:auto;"
     >
@@ -24,9 +32,10 @@
     >
     <indicator-card :item="item" v-bind:selected="selected===i" lazy>
     </indicator-card>
+
   </v-carousel-item>
 </v-carousel>
-<div style="top:106px;position:fixed;width:100% !important;height:50%">
+<div style="top:106px;position:fixed;width:100% !important;height:44%">
 
 <map-navigator
 id="map-panel-navigator"
