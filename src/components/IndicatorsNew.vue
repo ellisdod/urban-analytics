@@ -1,6 +1,12 @@
 <template>
   <div v-if="$vuetify.breakpoint.xsOnly">
-    <layer-select collection="indicatorSections" style="z-index:4;background-color:white;" class="pa-2 px-3 ejmap-border-top ejmap-border-bottom">
+    <layer-select
+     collection="indicatorSections"
+     text="text_en"
+     style="z-index:4;background-color:white;position:fixed;top:56px;width:100%;"
+     class="pa-2 px-3 mt-0 ejmap-border-top ejmap-border-bottom"
+     icon="bar_chart"
+     >
     </layer-select>
     <v-carousel
     id="indicators-carosel"
@@ -10,7 +16,7 @@
     light
     :height="carouselHeight"
     v-model="selected"
-    style="z-index:2;"
+    style="z-index:2;overflow-y:auto;"
     >
     <v-carousel-item
     v-for="(item,i) in items"
@@ -20,14 +26,23 @@
     </indicator-card>
   </v-carousel-item>
 </v-carousel>
+<div style="top:106px;position:fixed;width:100% !important;height:50%">
+
+<map-navigator
+id="map-panel-navigator"
+style="height:100% !important;width:100% !important"
+>
+</map-navigator>
+
+</div>
 </div>
 
-<div v-else class="flex-contents">
+<div v-else style="display:flex" v-bind:class="{'flex-contents-sm': $vuetify.breakpoint.xsOnly,'flex-contents-md': $vuetify.breakpoint.smOnly,'flex-contents-lg': $vuetify.breakpoint.mdAndUp}">
   <v-navigation-drawer
   permanent
   clipped
   width="200"
-  style="z-index:2;background:none;padding-top:40px;"
+  style="z-index:2;padding-top:0px;"
   >
   <editable-data-list v-bind:disabled="true" style="background:none" collection="indicatorSections"></editable-data-list>
 </v-navigation-drawer>
@@ -51,7 +66,7 @@
             :key="index"
             :item="item"
             :selected="selected===item._id"
-            class="">
+            class="indicator-hover ejmap-border">
           </indicator-card>
 
           <div v-if="charts">
@@ -103,8 +118,7 @@ style="flex:1"
 >
 <map-navigator
 id="map-panel-navigator"
-v-bind:class="{mobile:$vuetify.breakpoint.xsOnly}"
-class="ejmap-border-left"
+v-bind:class="[{mobile:$vuetify.breakpoint.xsOnly},'ejmap-border-left']"
 >
 </map-navigator>
 
@@ -197,28 +211,10 @@ export default {
         // Do whatever makes sense now
         this.selected = 0
         if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
-
-        /*newValue.geodata.forEach(x=>{
-          if(!this.$store.state['_col_'+x]) this.$store.dispatch('UPDATE_COLLECTION', {
-            name : 'features',
-            query : {},
-            layer : x
-          })
-        })
-        // update main map zoom
-        this.$store.commit('UPDATE',{key:['map','zoom'],value:15})*/
       })
 
-      //console.log('store', this.$store.state)
-      //this.$store.commit('UPDATE',{key:['map','center'],value:this.$store.state.map.defaultCenter})
     }
 
-    //this.$store.commit('GET_INDICATORS');
-    //this.indicators = indicators(this.$store);
-    //console.log(this.indicators)
-    //console.log('databyneigh', this.$store.getters.dataByNeighbourhood)
-    //console.log('databyneigh', this.$store.getters.dataByYear)
-    ////'#ff267e', '#26ffa7', '#267eff','#000','#f46441'
   }
   </script>
 
@@ -244,7 +240,8 @@ export default {
 
   #map-panel-navigator.mobile {
     height:50% !important;
-    top:56px;
+    top:106px;
+    position:fixed;
   }
 
   #info-panel{
@@ -305,9 +302,16 @@ export default {
     z-index: 10 !important;
 }
 
-.flex-contents {
-  display: flex;
+.flex-contents-sm {
+  height: calc(100vh - 56px)!important;
+}
+
+.flex-contents-md {
   height: calc(100vh - 48px)!important;
+}
+
+.flex-contents-lg {
+  height: calc(100vh - 64px)!important;
 }
 
   #indicators-carosel {
@@ -321,17 +325,19 @@ export default {
     overflow-y:auto;
   }
 
-
-  #photos {
-    /* Prevent vertical gaps */
-    line-height: 0;
-
-    -webkit-column-count: 5;
-    -webkit-column-gap:   0px;
-    -moz-column-count:    5;
-    -moz-column-gap:      0px;
-    column-count:         5;
-    column-gap:           0px;
+  .indicator-hover {
+    margin-left:3px;
   }
+
+  .indicator-hover:hover {
+    border-left: 4px solid var(--v-primary-base) !important;
+    margin-left:0px;
+  }
+
+  .indicator-hover:hover, .indicator-hover:hover>div {
+    cursor:pointer;
+    background-color:var(--v-grey-lighten4);
+  }
+
 
   </style>

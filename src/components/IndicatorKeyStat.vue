@@ -1,6 +1,6 @@
 <template>
 
-  <v-card style="background:none" flat v-bind:class="[{selected : selected && $vuetify.breakpoint.smAndUp},'indicator-hover']" @click="updateIndicator()">
+  <v-card style="background:none" flat v-bind:class="[{selected : selected && $vuetify.breakpoint.smAndUp}]" @click="updateIndicator()">
 
     <div v-if="type === 'List' && selectedIndicator">
       <v-list>
@@ -93,7 +93,7 @@ v-bind:chart-data="generateChartDataSets">
 <!--<v-flex xs12 class="text-xs-right" style="margin-top:-40px;height:0;">
 <v-btn icon><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
 </v-flex>-->
-<div v-if="selected" class="pa-3" style="background-color:rgba(0,0,0,0.03)">
+<div v-if="selected" class="pa-3 ejmap-border-top" style="background-color:white">
 
   <v-flex xs12 class="grey--text text--darken-1">
     <div><span>Source:</span><a :href="layer.sourceUrl">{{layer.sourceShort}}</a></div>
@@ -444,20 +444,6 @@ div.selected>div {
 }
 .selected .v-slider__thumb {
   background-color:var(--v-primary-base)!important;
-}
-
-.indicator-hover {
-  margin-left:3px;
-}
-
-.indicator-hover:hover {
-  border-left: 4px solid var(--v-primary-base) !important;
-  margin-left:0px;
-}
-
-.indicator-hover:hover, .indicator-hover:hover>div {
-  cursor:pointer;
-  background-color:var(--v-grey-lighten4);
 }
 .theme--light.v-input--slider .v-slider__ticks {
   font-size:0.70em;

@@ -19,7 +19,6 @@
   :unit="item.unit"
   :year="item.year"
   :type="item.type"
-  class="ejmap-border"
   @childClick="childClick"
   >
  </indicator-key-stat>

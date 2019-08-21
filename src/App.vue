@@ -327,5 +327,12 @@ export default {
   z-index:100;
 }
 
+.v-text-field>.v-input__control>.v-input__slot:before {
+    border: none !important;
+}
+
+.theme--light.v-icon {
+    color: rgba(0,0,0,0.2) !important;
+}
 
 </style>
