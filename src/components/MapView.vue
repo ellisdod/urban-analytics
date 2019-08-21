@@ -124,13 +124,23 @@
     titleclass="pb-0 pt-3 px-3 font-weight-medium"
     class="ejmap-border-bottom px-3 pt-1"
     style="flex: 0;">
-  </area-select>
+   </area-select>
+   <v-select v-if="allLayers&&legendBottom"
+     v-bind:items="Object.values(layers)"
+     item-text="text_en"
+     item-value="_id"
+     class="ejmap-border-bottom px-3 pt-1"
+     v-model="layerPanelsSelected"
+     multiple
+     flat
+     >
+   </v-select>
 </div>
 
 <div style="flex:2; overflow-y: auto; max-height:85vh">
   <v-expansion-panel expand v-model="layerPanels">
     <v-expansion-panel-content v-for="(layer,key) in layers" v-show="layer.showLegend" :key="key" @click="toggleLayer(key)">
-      <template v-slot:header v-if="allLayers">
+      <template v-slot:header v-if="allLayers&&!legendBottom">
         {{layer.text_en}}
       </template>
       <v-card class="pt-2">
@@ -331,6 +341,7 @@ export default {
       dialog : false,
       itemTemplate : {},
       layerPanels : [],
+      layerPanelsSelected:[],
       loadingValue : null,
       loading : false,
       language: 'ar',
@@ -624,15 +635,6 @@ computed: {
           style.opacity = 0
         }
 
-        //console.log(val,attribute.range.min,attribute.range.max)
-
-        //style[colorKey] = this.layers[layerId].color
-
-        //if (!val) style.fillOpacity = 0
-        //console.log(legend, val)
-
-        //style.color = style.fillColor
-        //console.log(key, color,val)
         return style
 
       },
@@ -747,14 +749,8 @@ computed: {
     updateRange(e) {
       const attr = this.layers[e.layer].attribute
       const rangeObj = this.layers[e.layer].attributes[attr]
-      //this.$set(attrObj, 'range',Object.assign({},attrObj.range,{min:e.range[0],max:e.range[1]}))
-      //this.$set(rangeObj,'min',e.range[0])
-      //this.$set(rangeObj,'max',e.range[1])
-      //console.log('setting new values', e.range)
       this.$set(rangeObj,'range',{max:e.range[1],min:e.range[0], constant:e.range[1]-e.range[0]})
       this.$forceUpdate()
-      //attrRange.min = e.range[0]
-      //attrRange.max = e.range[1]
     },
     addRanges(layerId,features) {
       //console.log('range',layerId)
@@ -844,6 +840,7 @@ computed: {
         const categoryStyle = styles[layer._id]
         const status = this.featureLayersArray.indexOf(layer._id) > -1 ? true : false
         this.layerPanels.push(status)
+        if (status) this.layerPanelsSelected.push(layer._id)
         layer.on = this.layerPanels[index]
         layer.showLegend = this.allLayers || this.layerPanels[index]
         //if (!layer.on) return
@@ -899,6 +896,14 @@ watch: {
     //const layerIds = Object.keys(this.layers)
     this.checkForUpdate()
     //if this panelIndex matches this component's index.. do stuff since we're selected
+  },
+  layerPanelsSelected: function(newVal,oldVal) {
+    oldVal.forEach(x=>{
+      if (newVal.indexOf(x)===-1) this.layerOn(x,false)
+    })
+    newVal.forEach(x=>{
+      if (oldVal.indexOf(x)===-1) this.layerOn(x,true)
+    })
   },
   legendBottom: function(val) {
     this.$nextTick(()=>this.$refs.map.mapObject.invalidateSize())
