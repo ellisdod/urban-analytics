@@ -395,6 +395,8 @@ created () {
 },
 mounted () {
 
+  console.log('getnested test',this.getNested('test',{'test':0}))
+
 }
 }
 </script>

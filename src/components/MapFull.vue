@@ -8,6 +8,7 @@
         featuresCollection="features"
         zoomLevel="12"
         v-bind:allLayers="true"
+        :legendBottom="legendBottom"
         v-bind:options="{legendStyle:legendStyle,areaSelect:true,mapStyle:{flexDirection:'row-reverse'}}"
         >
       </map-view>
@@ -20,16 +21,19 @@ export default {
   components: {
     MapView
   },
-  data () {
-    return {
-      legendStyle : {
-        height: '100%',
+  computed : {
+    legendBottom () {
+      return this.$vuetify.breakpoint.xsOnly
+    },
+    legendStyle (){
+      const self = this
+      return {
         maxHeight: '100%',
-        width:'25%',
-        maxWidth:'300px',
-        minWidth:'200px',
+        width:self.legendBottom ? '100%':'25%',
+        maxWidth:self.legendBottom ? 'auto':'300px',
+        minWidth:self.legendBottom ? '100%':'200px',
         left:0,
-        borderRight:'1px solid #e3e3e3',
+        borderRight:self.legendBottom ? 'none':'1px solid #e3e3e3',
         backgroundColor: '#fff',
       }
     }

@@ -52,7 +52,7 @@ const sortNumbers = function (arr, key) {
 const getNested = function (p, o) {
   p = typeof p === 'string' ? p.split('.') : p
   if (!p) return o
-  return p.reduce((xs, x) => (xs && xs[x]) ? xs[x] : null, o)
+  return p.reduce((acc, x) => (acc && (acc[x]||acc[x]===0) ) ? acc[x] : null, o)
   //console.log('nested',n)
 }
 
