@@ -19,7 +19,7 @@
 <script>
 
 export default {
-  props : ['collection','label','prependIcon','appendIcon','text','childStyle'],
+  props : ['collection','label','prependIcon','appendIcon','text','childStyle','value','unselected'],
   data () {
     return {
       selected : '',
@@ -45,7 +45,7 @@ export default {
     }
   },
   created () {
-    this.selected = this.$store.state['_col_'+this.collection+'_selected']
+    if (!this.unselected) this.selected = this.value || this.$store.state['_col_'+this.collection+'_selected']
   },
   mounted () {
     this.$store.watch(

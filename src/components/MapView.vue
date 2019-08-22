@@ -75,11 +75,12 @@
       <v-switch
       color="primary"
       label="Survey Mode"
-      v-model="editable">
+      v-model="editable"
+      >
       </v-switch>
       </v-list-tile>
       <v-list-tile v-if="editable">
-        <layer-select collection="surveyLayers" label="Select Survey" icon="add" @change=""></layer-select>
+        <layer-select collection="surveyLayers" label="Select Survey" icon="add" v-bind:unselected="true" @change="loadSurveyLayer"></layer-select>
       </v-list-tile>
     </template>
 
@@ -884,6 +885,16 @@ openEditor (featureId) {
   if (!this.editable) return null
   //if (this.featuresCollection !== 'surveyFeatures') return null;
   this.dialog = true
+},
+loadSurveyLayer () {
+  //console.log('loadsurveylayer',layer)
+  const surveyLayer = this.$store.state._col_surveyLayers.filter(x=>x._id===this.$store.state._col_surveyLayers_selected)[0]
+  Object.keys(this.layers).forEach(key=>{
+    const val = surveyLayer.featureLayer.indexOf(key) > -1 ? true : false
+    this.$set(this.layers[key],'on',val)
+    this.filterFeatures(key)
+  })
+  this.update()
 }
 
 },

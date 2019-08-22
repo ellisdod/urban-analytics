@@ -150,7 +150,11 @@ const indicatorSchema = function (name,collection) {
 const surveySchema = function (name,collection) {
   Schema.call(this,name,collection)
   this.schema = {
-  date : {
+  createdDate : {
+    type : Date,
+    required : true
+  },
+  lastEditedDate : {
     type : Date,
     required : true
   },
@@ -164,6 +168,14 @@ const surveySchema = function (name,collection) {
   },
   properties : {
     type : mongoose.Schema.Types.Mixed,
+  },
+  createdBy : {
+    type: String,
+    required : true
+  },
+  lastEditedBy : {
+    type: String,
+    required : true
   }
 }
 }
