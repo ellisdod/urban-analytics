@@ -29,6 +29,7 @@
               :item-text="'text_' + $store.state.language||'name'||'text' "
               item-value="value"
               :rules="[validateItem(edited[key],i)]"
+              box
               v-bind:items="i._options">
             </v-select>
 
@@ -41,6 +42,7 @@
                 v-model="item['text_'+l.name]"
                 :label="i+1+'. '+l.text"
                 :rules="[validateItem(edited[key],i)]"
+                box
                 class="pl-2">
               </v-text-field>
               <v-btn icon  @click="edited[key].splice(i,1)"><v-icon color="grey">clear</v-icon></v-btn>
@@ -59,6 +61,7 @@
           v-bind:items="i._options($store,edited,collection)"
           item-text="name"
           item-value="_id"
+          box
           :rules="[validateItem(edited[key],i)]"
           >
         </v-select>
@@ -104,7 +107,7 @@
     </div>
 
     <v-switch v-else-if="i.type===Boolean||i.type==='Boolean'" v-model="edited[key]" :label="i._text" color="primary"></v-switch>
-    <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text" :type="i.type==='Number'?'number':'text'" :rules="[validateItem(edited[key],i)]"></v-text-field>
+    <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text" :type="i.type==='Number'?'number':'text'" :rules="[validateItem(edited[key],i)]" box></v-text-field>
 
     <v-text-field v-else v-model="edited[key]" :label="i._text" disabled></v-text-field>
   </v-flex>
