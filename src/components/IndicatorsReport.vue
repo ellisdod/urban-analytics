@@ -1,0 +1,234 @@
+<template>
+  <div class="page">
+  <v-container fluid pa-4>
+    <v-layout row wrap fill-height >
+      <v-flex xs6>
+        <area-select class="display-1"></area-select>
+        <div class="title">Neighbourhood Profile</div>
+        <div>{{$store.state.year}}</div>
+      </v-flex>
+   <v-flex xs6>
+    <map-navigator style="height:400px;"
+    >
+    </map-navigator>
+  </v-flex>
+   </v-layout>
+  </v-container>
+
+  <div style="flex:2;overflow-y:auto;">
+    <v-container fluid pa-0 pb-5>
+
+      <v-layout row wrap fill-height pb5 pa-4 :key="index" v-for="(section,index) in sections">
+
+        <v-flex xs12 class="title mb-4 pt-1 pb-3 ejmap-border-bottom">
+          <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  {{ section.section ? section.section.text_en : ''}} </div>
+        </v-flex>
+
+        <v-flex xs7 d-flex style="z-index:2;">
+          <div style="position:relative;display:block;width:100%;flex:1">
+
+            <!-- INDICATORS -->
+            <indicator-card
+            v-for="(item,index) in section.figures"
+            @childClick="updateSelected(item._id)"
+            style="margin-bottom:0;"
+            :key="index"
+            :item="item"
+            :selected="selected===item._id"
+            :compact="true"
+            class="indicator-hover ejmap-border-bottom">
+          </indicator-card>
+
+
+       </div>
+
+      </v-flex>
+      <v-flex xs5 pl-4>
+
+      <div v-if="section.map">
+        <map-view
+        contextmenu=""
+        style="position:relative;"
+        featuresCollection="features"
+        zoomLevel="12"
+        height="400px"
+        :featureLayers="section.map.figure"
+        v-bind:areas="true"
+        class="ejmap-border"
+        :hideLegend="false"
+        >
+      </map-view>
+      <div class="body-1 pb-2">
+        <span class="mr-2">Map</span><span class="font-weight-light">{{section.map.text}}</span>
+      </div>
+    </div>
+
+    <div v-else-if="section.charts.length">
+        <indicator-card
+        v-for="(item,index) in section.charts"
+        @childClick="updateSelected(item._id)"
+        style="margin-bottom:20px;"
+        :key="index"
+        :item="item"
+        :selected="selected===item._id"
+        class="">
+      </indicator-card>
+   </div>
+    </v-flex>
+
+   </v-layout>
+   </v-container>
+
+  </div>
+
+</v-flex>
+</v-layout>
+</v-container>
+
+
+
+
+
+
+
+<!--
+<v-flex sm4 xs12 pa-0 style="height: calc(100vh - 48px);">
+
+</v-flex>
+<div style="position:fixed;background:none;top:0;width:74%;height:100%;z-index:1;" class="hidden-xs-only"></div>-->
+</div>
+
+
+</div>
+
+
+
+
+</template>
+
+<script>
+import BarHorizontal from '../plugins/barHorizontal.js'
+import BarVertical from '../plugins/barVertical.js'
+import IndicatorKeyStat from './IndicatorKeyStat.vue'
+import IndicatorHeading from './IndicatorHeading.vue'
+import colors from 'vuetify/es5/util/colors'
+import {indicators} from '../plugins/indicators.js'
+import {translate} from '../plugins/translate.js'
+import MapView from 'components/MapView.vue'
+import MapNavigator from 'components/MapNavigator.vue'
+import EditableDataList from 'components/EditableDataList.vue'
+import AreaSelect from 'components/AreaSelect.vue'
+import LayerSelect from 'components/LayerSelect.vue'
+import IndicatorCard from 'components/IndicatorCard.vue'
+
+export default {
+  components: {
+    MapView, MapNavigator, BarHorizontal,BarVertical, IndicatorKeyStat, IndicatorHeading,EditableDataList,AreaSelect,IndicatorCard,LayerSelect
+  },
+  data () {
+    return {
+      nav:true,
+      selected : null,
+      activeTab: null,
+      selectedData : this.$store.getters.selected,
+    }
+  },
+  computed: {
+    sections () {
+      const data = this.$store.state._col_indicatorBlocks
+      console.log('indicator blocks', data)
+      const translation = translate(data, ['text','description'], this.$store.state.language)
+      //console.log('translateion', translation)
+      //console.log('indicatorsByArea',this.$store.getters.indicatorsByArea)
+      const sections = translation.reduce((acc,x)=>{
+        acc[x.layer] = acc[x.layer] || {}
+        acc[x.layer].figures = acc[x.layer].figures || []
+        acc[x.layer].charts = acc[x.layer].charts || []
+        acc[x.layer].section = acc[x.layer].section || this.$store.state._col_indicatorSections.filter(i=>i._id === x.layer)[0]
+
+        if (x.type === 'Map') acc[x.layer].map = x
+        else if (x.type === 'Figure') acc[x.layer].figures.push(x)
+        else if (x.type === 'Chart') acc[x.layer].charts.push(x)
+        return acc
+      },{})
+      console.log('sections',sections)
+      return sections
+
+    }
+
+  },
+  methods: {
+    updateSelected(index){
+      this.selected = index
+      console.log('updated select',this.selected )
+    }
+  },
+  mounted () {
+    this.$store.commit('UPDATE',{key:'hideToolbar',value:true})
+    this.$store.watch(
+      (state, getters) => getters.selectedIndicatorSection,
+      (newValue, oldValue) => {
+        console.log('section changed',newValue)
+        // Do whatever makes sense now
+        this.selected = 0
+        if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
+      })
+
+    }
+
+  }
+  </script>
+
+  <style>
+
+  body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #FAFAFA;
+    font: 12pt "Tahoma";
+}
+* {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+.page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 5mm;
+    margin: 0mm auto;
+    border: 1px #D3D3D3 solid;
+    border-radius: 5px;
+    background: white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+.subpage {
+    padding: 1cm;
+    border: 5px red solid;
+    height: 257mm;
+    outline: 2cm #FFEAEA solid;
+}
+
+@page {
+    size: A4;
+    margin: 0;
+}
+@media print {
+    html, body {
+        width: 210mm;
+        height: 297mm;
+    }
+    .page {
+        margin: 0;
+        border: initial;
+        border-radius: initial;
+        width: initial;
+        min-height: initial;
+        box-shadow: initial;
+        background: initial;
+        page-break-after: always;
+    }
+}
+
+  </style>

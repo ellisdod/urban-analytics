@@ -142,14 +142,20 @@ function FeatureController (model) {
     let features = model.find({$and:[{layer:req.params.collection},{'feature.geometry.type':{$exists:true}}]},'',{lean: true})
     let areaLayer = layers.areaLayers.find({ _id :req.params.areaLayerId},'',{lean: true})
     let areas = geojson.areas.find({ layer :req.params.areaLayerId},'',{lean: true})
+    let layerAttributes = layers.layerAttributes.find({layer:req.params.collection},'',{lean: true})
 
-    Promise.all([features,areaLayer,areas])
+    Promise.all([features,areaLayer,areas,layerAttributes])
     .then(arr=>{
       features = arr[0]
       areaLayer = arr[1][0]
       areas = arr[2]
+      layerAttributes = arr[3]
+
       if (features.length===0) res.status(500).send('No features found for selected layer')
       console.log('analysing ' + features.length + ' features...')
+
+      const shape_area = layerAttributes.filter(x=>x.name==='shape_area')[0]
+      const shape_length = layerAttributes.filter(x=>x.name==='shape_length')[0]
 
       console.log('features example',features[0])
 
@@ -157,11 +163,12 @@ function FeatureController (model) {
 
       console.log('joined',joined[0])
 
-      const ops = []
-      for(var x=0;x<features.length;x++){
-        features[x].feature.properties = joined[x].properties
-        ops.push( this.createUpdateReq({_id:features[x]._id},null,features[x]) )
-      }
+      const ops = features.map((x,index)=>{
+        x.feature.properties = joined[index].properties
+        if (shape_area) x.feature.properties.shape_area = turf.area(x.feature)
+        if (shape_length) x.feature.properties.shape_length = turf.length(x.feature) * 1000
+        return this.createUpdateReq({_id:x._id},null,x)
+      })
 
       return model.bulkWrite(ops)
     })
@@ -200,7 +207,7 @@ this.computeAttributeFunctions = function(accumulator,attributes,feature,count){
     case 'MultiPolygon':
     case 'Polygon':
     geoKey = 'shape_area'
-    property[geoKey] = property[geoKey] || turf.area(feature)*1000000
+    property[geoKey] = property[geoKey] || turf.area(feature)
     break
     case 'LineString':
     case 'MultiLineString':
@@ -273,34 +280,61 @@ this.computeLayerCalc = function (calc,ind) {
     },{})
   }
 
-  let result = calc.reduce((acc,x, index)=>{
-    //console.log('key', x)
-    x = x.length < 26 ? parseInt(x) : arrayUtils.getNested(x,ind)
-    //console.log('nested value', x)
-    if (index === 0) {
-      acc = x
-    } else if (index % 2 === 0) {
-      const operator = calc[index-1].slice(0,1)
-      if (typeof acc === 'number' && typeof x === 'number') {
-        acc = mathIt[ operator ](acc,x)
-      } else if (acc && typeof acc === 'object' && typeof x === 'number') { // null is object
-        //console.log('object/number')
-        acc = mathObj(acc,x,operator)
-      } else if (typeof acc === 'number' && x && typeof x === 'object'){
-        //console.log('number/object')
-        acc = mathObj(x,acc,operator)
-      } else if (acc && typeof acc === 'object' && x && typeof x === 'object'){
-        //console.log('number/object')
-
-        Object.keys(acc).forEach(key=>{
-          acc[key] = mathObj(x,acc[key],operator)
-        })
-
+  function nestArray(array,startKey,endKey) {
+    startKey = startKey || '('
+    endKey = endKey || ')'
+    let index = 0
+    var nest = function (arr) {
+      const mainArr = []
+      while (index<arr.length) {
+        if ( arr[index]===startKey ) {
+          index ++
+          mainArr.push(nest(arr))
+        }
+        else if (arr[index]===endKey) break
+        else mainArr.push(arr[index])
+        index ++
       }
+      return mainArr
     }
-    //console.log(index, acc)
-    return acc
-  },0)
+
+    return nest(array)
+  }
+
+  function calculateArray(arr) {
+    let operator;
+    return arr.reduce((acc,x, index)=>{
+      //console.log('key', x)
+      if (Array.isArray(x)) x = calculateArray(x)
+      x = x.length < 26 ? parseInt(x) : arrayUtils.getNested(x,ind)
+      //console.log('nested value', x)
+      if (index === 0) {
+        acc = x
+      } else if (mathIt[x]) {
+        operator = x
+      } else if (operator) {
+        if (typeof acc === 'number' && typeof x === 'number') {
+          acc = mathIt[ operator ](acc,x)
+        } else if (acc && typeof acc === 'object' && typeof x === 'number') { // null is object
+          //console.log('object/number')
+          acc = mathObj(acc,x,operator)
+        } else if (typeof acc === 'number' && x && typeof x === 'object'){
+          //console.log('number/object')
+          acc = mathObj(x,acc,operator)
+        } else if (acc && typeof acc === 'object' && x && typeof x === 'object'){
+          //console.log('number/object')
+          Object.keys(acc).forEach(key=>{
+            acc[key] = mathObj(x,acc[key],operator)
+          })
+        }
+      }
+      //console.log(index, acc)
+      return acc
+    },0)
+  }
+
+  let result = calculateArray(nestArray(calc))
+
   console.log('rounded',roundObj(result))
   return roundObj(result)
 
@@ -473,7 +507,7 @@ this.createAttributeStyles = function(features,attributes) {
               { name : val}
             ]
           },null,
-            {
+          {
             layer:mongoose.Types.ObjectId(x.layer),
             attribute:attr,
             name:val
@@ -482,21 +516,21 @@ this.createAttributeStyles = function(features,attributes) {
         ))
       }
     } else if (a.type === 'Number') {
-          /*if(val===null || val===undefined) return acc
-          val = parseInt(val)
-          acc[attr].range = acc[attr].range || {min:val,max:val}
-          acc[attr].range.min = val < acc[attr].range.min ? val : acc[attr].range.min
-          acc[attr].range.max = val > acc[attr].range.max ? val : acc[attr].range.max*/
-      }
+      /*if(val===null || val===undefined) return acc
+      val = parseInt(val)
+      acc[attr].range = acc[attr].range || {min:val,max:val}
+      acc[attr].range.min = val < acc[attr].range.min ? val : acc[attr].range.min
+      acc[attr].range.max = val > acc[attr].range.max ? val : acc[attr].range.max*/
+    }
   }
   return acc
-  },{})
+},{})
 
-  //console.log(obj,features.length,layerAttributes.length)
+//console.log(obj,features.length,layerAttributes.length)
 
-  //console.log(styles)
+//console.log(styles)
 
-  return layers.styles.bulkWrite(ops)
+return layers.styles.bulkWrite(ops)
 }
 
 this.spatialJoin = function (features, areas, code) {
@@ -527,7 +561,7 @@ this.spatialJoin = function (features, areas, code) {
 
 
 
-    //return tag(features, areas, 'id', code)
+  //return tag(features, areas, 'id', code)
 
 }
 }

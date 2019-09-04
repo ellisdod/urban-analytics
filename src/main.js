@@ -41,6 +41,7 @@ Vue.config.productionTip = true
 
   const store = new Vuex.Store({
     state : Object.assign({
+      hideToolbar:false,
       mode:null,
       activeUser : {},
       selectedFeatureLayers:[],
@@ -50,7 +51,7 @@ Vue.config.productionTip = true
       cityIndicators: [],
       neighbourhood: 2412,
       areaLayer : '5cf510e19bfa58b6c509903b',
-      year:2016,
+      year:2019,
       language:'en',
       languages: [{
         name:'en',
@@ -520,6 +521,71 @@ getters : {
       return features.map(x=>x.feature)
 
     })
+  },
+
+  nestedAttributes : state => {
+    return (store,edited) => {
+
+       const proxyFunction = '%%%'
+
+       let layers = state._col_layers.map(b => Object.assign({},b));
+
+       if (state.tab!=='features') {
+         const areaLayer = state._col_areaLayers.filter(b => b._id === state._col_areaLayers_selected)
+         layers = layers.concat(areaLayer)
+       }
+
+       const layersObj = layers.reduce((acc,x)=>{
+          acc[x._id]= x
+          return acc
+       },{})
+
+       if (edited.type==='Map') {
+          return layers.reduce((acc,x)=>{
+             acc.push({'name': x.text_en,'value':x._id})
+             return acc
+          },[])
+       } /*else if (!edited.areaLayer) {
+          return {error:{name:'First select a spatial intersect',value:'error'}}
+       }*/
+
+       //attrs = state._col_indicatorAttributes.concat()
+
+       const areaAttrs = state._col_indicatorAttributes.map(x => Object.assign({},x,{
+         func : [proxyFunction]
+       }))
+
+       const layerCalcs = state._col_layerCalcs.map(x => Object.assign({},x,{
+         func : [proxyFunction]
+       }))
+
+       const attrs = state._col_layerAttributes.concat(areaAttrs).concat(layerCalcs)
+
+       console.log('options attrs',attrs)
+
+       /*const filtered = layers.reduce((acc,x)=>{
+          if(x.spatial_intersect.some(a=>edited.areaLayer.indexOf(a)>-1)) acc.push(x._id)
+          return acc
+       },[areaKey])*/
+       const filtered = layers.map(x=>x._id)
+
+
+       return attrs.reduce((acc,att)=>{
+
+          const index = filtered.indexOf(att.layer)
+          const id = filtered[index]
+
+          if (att.func.length === 0 || !id ) return acc
+
+          acc[id] = acc[id] || { name: layersObj[id].text_en || layersObj[id].name, items : [] }
+          att.func.forEach(func=>{
+            if (func) acc[id].items.push((att.name+'.'+func).replace('.'+proxyFunction,''))
+          })
+
+          return acc
+       },{})
+
+    }
   },
   collectionSchema : state => {
     return (collection,filter) => {

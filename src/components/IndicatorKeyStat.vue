@@ -16,38 +16,45 @@
     </div>
 
     <!-- WITH CHART -->
-    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" class="pa-3" style="position:relative;background:white;">
+    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-1':compact}" style="position:relative;background:white;">
 
-      <v-flex order-xs1 xs4 sm4 md3>
+      <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8':compact,'sm4':!compact,'sm8':compact, 'md3':!compact, 'md8':compact }">
 
-        <div class="subheading font-weight-light">{{name}}</div>
-
-
-        <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap; height:55px;">
-          <span class="display-1 py-0">{{selectedIndicator[figure[0]]||0}}</span>
-          <span v-if="unit" class="subheading ml-1">{{unit}}</span>
+        <div v-bind:style="{minWidth:compact ?'180px':0}" v-bind:class="[{'body-1':compact,'subheading':!compact },'font-weight-light']">
+          {{name}}
         </div>
-        <div class="font-weight-light">{{year}}</div>
+
+        <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
+          <span v-bind:class="[{'display-1':!compact,'subheading':compact},'py-0']">
+            {{selectedIndicator[figure[0]]||0}}
+          </span>
+          <span v-if="unit" class="subheading ml-1">
+            {{unit}}
+          </span>
+        </div>
+
+        <div v-bind:class="[{'caption':compact,'pl-4':compact},'font-weight-light']">{{year}}</div>
 
       </v-flex>
 
-      <v-flex order-xs3 order-sm2 xs10 xs-offset2 sm8 sm-offset-4 md5 pt-3 v-bind:class="{'mb-5':selected && $vuetify.breakpoint.smOnly, 'my-3':selected && $vuetify.breakpoint.xsOnly}">
+      <v-flex order-xs3 order-sm2 sm-offset-4 pt-3 v-bind:class="{'xs-offset2':!compact,'xs4':compact, 'mb-5':selected && $vuetify.breakpoint.smOnly && !compact, 'my-3':selected && $vuetify.breakpoint.xsOnly && !compact, 'sm8': !compact, 'sm4': compact, 'md8':!compact,'md4':compact }">
 
         <div v-bind:style="chartWidthClass">
 
-          <bar-vertical v-if="type==='Figure'"
-          v-bind:chart-data="prepBarChartData"
-          class="bar-chart-minimal mt-4"
-          v-bind:click-handler="true"
-          v-bind:x-labels="false"
-          v-bind:y-labels="false">
-        </bar-vertical>
+          <comparative-chart v-if="type==='Figure'"
+          :name="name"
+          :figure="figure"
+          :year="year"
+          :selected="selected||compact"
+          :compact="compact"
+          >
+         </comparative-chart>
 
     </div>
 
   </v-flex>
 
-  <v-flex order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4 v-bind:class="{'hidden-sm-and-down':!selected}">
+  <v-flex v-if="!compact" order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4 v-bind:class="{'hidden-sm-and-down':!selected}">
 
     <v-sparkline
     :value="timeChartData"
@@ -119,13 +126,13 @@ v-bind:chart-data="generateChartDataSets">
 </template>
 
 <script>
-
+import ComparativeChart from './ComparativeChart.vue'
 import BarVertical from '../plugins/barVertical.js'
 import colors from 'vuetify/es5/util/colors'
 
 export default {
   components: {
-    BarVertical
+    BarVertical, ComparativeChart
   },
   data () {
     return {
@@ -134,7 +141,7 @@ export default {
       selectedYear : '',
     }
   },
-  props: ['name','figure','description','unit','type','small','noChart','selected'],
+  props: ['name','figure','description','unit','type','small','noChart','selected','compact'],
   methods : {
     makeSliderLabels (years) {
       const min = years[0]
@@ -270,6 +277,7 @@ export default {
       return this.$store.state.indicators.filter(x=>x.year===this.thisYear) || []
     },
     areaDataMatched () {
+      if (!this.dataYears) return null
       return this.$store.getters.indicatorsForSelectedArea.filter(x=>this.dataYears.some(f=>x.year===f))
       if (!areas) return null
       const matched = areas.reduce((acc,x)=>{
@@ -342,41 +350,6 @@ export default {
       }
       return style
     },
-    prepBarChartData() {
-      //console.log(this.$store.getters.dataByYear)
-      if (!this.type === ' Figure') return {}
-      const key = this.figure
-      const neighbourhood = this.$store.state.neighbourhood
-      const label = this.name
-      const highlight = this.selected ? this.$vuetify.theme.primary : colors.grey.lighten1
-      let citydata = this.$store.getters.allIndicatorsByYear
-      //console.log('citydata',citydata)
-      if (!citydata || !this.year) return {};
-      citydata = citydata[this.year]
-      //console.log('citydata.year',citydata,this.year)
-      //citydata.forEach((x,y)=> citydata[y][key] = parseInt(x[key]))
-      citydata = citydata.map(x=>{
-        x[key] = x[key] || 0
-        return x
-      })
-      const sorted = citydata.sort((a,b)=> (!b[key])-(!a[key]) || +(a[key]>b[key])||-(a[key]<b[key]))
-      const names = this.$store.getters.areaNames
-      const sleected = this.$store.getters.selectedAreas
-      //console.log('sorted',sorted,names,sleected)
-      return {
-        labels: sorted.map(x=> names[x.areaCode]),
-        area_code: neighbourhood,
-        datasets :[{
-          label: label,
-          backgroundColor: sorted.map(x=> {
-            return x.areaCode === neighbourhood ? highlight : colors.grey.lighten3;
-          }),
-          borderWidth:1,
-          borderColor: colors.grey.lighten2,
-          data: sorted.map(x=> {return x[key]})
-        }]
-      }
-    },
     timeChartData () {
       const figure = this.figure[0]
       const indicators = this.$store.getters.indicatorsForSelectedArea
@@ -448,13 +421,6 @@ div.selected>div {
 .theme--light.v-input--slider .v-slider__ticks {
   font-size:0.70em;
   border-color: var(--v-grey-lighten2) !important;
-}
-
-.bar-chart-minimal {
-  height:100px;
-}
-.bar-chart-minimal-small {
-  height:80px;
 }
 
 div.v-slider__thumb{

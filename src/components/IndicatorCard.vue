@@ -19,6 +19,7 @@
   :unit="item.unit"
   :year="item.year"
   :type="item.type"
+  :compact="compact"
   @childClick="childClick"
   >
  </indicator-key-stat>
@@ -49,7 +50,7 @@ export default {
   components: {
     MapView, IndicatorKeyStat, Timeline
   },
-  props: ['selected', 'item'],
+  props: ['selected', 'item','compact'],
   data () {
     return {
     }

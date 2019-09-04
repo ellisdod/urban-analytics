@@ -1,8 +1,23 @@
 const mongoose = require('mongoose');
 
-const dataTypes = [ 'Text', 'Number','Boolean','Array','Date']
+const dataTypes = [{
+  name:'Text',
+  value:'Text'
+},{
+  name:'Number',
+  value:'Number'
+},{
+  name:'Boolean',
+  value:'Boolean'
+},{
+  name:'Array',
+  value:'Array'
+},{
+  name:'Date',
+  value:'Date'
+}]
 
-module.exports = {
+const config = {
    layers : {
       name: "Layers",
       schema : {
@@ -54,17 +69,20 @@ module.exports = {
             type : Boolean,
             _text:"Filtered by area",
          },
-         sourceUrl : {
+         source_url : {
             type : String,
-            _text : "Source Link",
+            _text : "Source - Link",
+            _hint : "e.g https://jerusaleminstitute.org.il/en/yearbook/#/265/6868"
          },
-         sourceLong : {
+         source_ref : {
             type : String,
-            _text : "Source - Full Text",
+            _text : "Source - Reference",
+            _hint : "e.g Jerusalem Statistical Yearbook, Table IX/16"
          },
-         sourceShort : {
+         source_org : {
             type : String,
-            _text : "Source - Short Text",
+            _text : "Source - Organisation",
+            _hint : "e.g JIIS"
          }
       },
    },
@@ -153,7 +171,8 @@ module.exports = {
             _multiple: true,
             _combobox:true,
             _categorised : true,
-            _options: function(store,edited) {
+            _options: {component:'Calculator'}
+          /*  function(store,edited) {
                //if(!edited.areaLayer)return {}
                const layers = store.state._col_layers
                const layersObj = layers.reduce((acc,x)=>{
@@ -187,7 +206,7 @@ module.exports = {
                //console.log('categorised options',options)
                return options
 
-            }
+            } */
          }
       }
    },
@@ -278,62 +297,7 @@ module.exports = {
             _text : "Figure",
             _categorised : true,
             _options : function(store,edited) {
-
-               const replaceString = '%%%'
-               const areaKey = 'attached'
-
-               const layers = store.state._col_layers
-
-               if (edited.type==='Map') {
-                  return layers.reduce((acc,x)=>{
-                     acc.push({'name': x.text_en,'value':x._id})
-                     return acc
-                  },[])
-               } else if (!edited.areaLayer) {
-                  return {error:{name:'First select a spatial intersect',value:'error'}}
-               }
-
-               const layersObj = layers.reduce((acc,x)=>{
-                  acc[x._id]=x
-                  return acc
-               },{'attached':{text_en:'Area'}})
-
-               const areaAttrs = store.state._col_indicatorAttributes.map(x => {
-                  x.func = [replaceString]
-                  x.layer = areaKey
-                  return x
-               })
-
-               const layerCalcs = store.state._col_layerCalcs.map(x => {
-                  x.func = [replaceString]
-                  return x
-               })
-               const layerAttrs = layerCalcs.concat(store.state._col_layerAttributes).concat(areaAttrs)
-
-               console.log('options layerAttrs',layerAttrs)
-
-               const filtered = layers.reduce((acc,x)=>{
-                  if(x.spatial_intersect.some(a=>edited.areaLayer.indexOf(a)>-1)) acc.push(x._id)
-                  return acc
-               },[areaKey])
-
-               const options = layerAttrs.reduce((acc,att)=>{
-                  if (att.func.length > 0) {
-                     const index = filtered.indexOf(att.layer)
-                     if (index>-1) {
-                        const id = filtered[index]
-                        acc[id] = acc[id] || { name: layersObj[id].text_en, items : [] }
-                        att.func.forEach(func=>{
-                           if (func) acc[id].items.push((att.name+'.'+func).replace('.'+replaceString,''))
-                        })
-                     }
-                  }
-                  return acc
-               },{})
-
-               console.log('categorised options',options)
-               return options
-
+               return store.getters.nestedAttributes(store,edited)
             }
          },
          description_en : {
@@ -441,10 +405,25 @@ module.exports = {
             type : Boolean,
             _text : "Required",
          },
+         source_ref : {
+            type : String,
+            _text : "Source - Reference",
+            _hint : "e.g Jerusalem Statistical Yearbook, Table IX/16"
+         },
+         source_org : {
+            type : String,
+            _text : "Source - Organisation",
+            _hint : "e.g JIIS"
+         },
+         source_url : {
+            type : String,
+            _text : "Source - Link",
+            _hint : "e.g https://jerusaleminstitute.org.il/en/yearbook/#/265/6868"
+         },
          layer : {
             type : mongoose.Schema.Types.ObjectId,
             required : true,
-         }
+         },
       },
    },
    surveyLayers : {
@@ -566,3 +545,5 @@ strict: false
 }
 }*/
 }
+
+module.exports = config

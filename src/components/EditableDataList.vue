@@ -215,7 +215,7 @@ export default {
     tabledata () {
       if(this.layer) return this.layer.attributes
     },
-    featureHeaders() {
+    featureHeaders () {
       if (!this.schema.schema) return []
       let base = this.multiselect ? [{value:'_selected',type:'select',_text:'', sortable: false}] : []
       const x = Object.keys(this.schema.schema).reduce((acc,x)=>{
@@ -237,7 +237,8 @@ export default {
 
 },
 methods: {
-  prepareItems() {
+  prepareItems () {
+    console.log('preparing items',this.filterId)
     let items = []
     if (dbconfig[this.collection].storeByLayer) {
       items = this.$store.state[`_col_${this.collection}`][this.filterId] || []
@@ -249,15 +250,15 @@ methods: {
     //if (this.nestedPath) items = items.map(x=>flatten(x))
     return this.multiselect ? this.addSelects(items) : items || []
   },
-  getNested(path,obj) {
+  getNested (path,obj) {
     if (!path) return obj
     return arrayUtils.getNested(path,obj)
   },
-  openEditor(item) {
+  openEditor (item) {
     this.editItem = item
     this.dialog = true
   },
-  addSelects(items,value) {
+  addSelects (items,value) {
     if (!this.multiselect) return items
     return items.map((x,i)=>{
       //const p = this.nestedPath ? arrayUtils.getNested(this.nestedPath, x) : x
@@ -266,7 +267,7 @@ methods: {
       return x
     })
   },
-  updateCollection(force) {
+  updateCollection (force) {
     if (!force && !dbconfig[this.collection].storeByLayer && !this.$store.state[`_col_${this.collection}_selected`]) {
       this.items = this.prepareItems()
       console.log('rejecting')
@@ -379,6 +380,7 @@ watch: {
   filterId (newValue) {
     //console.log('WATCH: layerchanged',newValue)
     if (this.collection==='features') this.updateCollection()
+    this.$nextTick(()=>this.items = this.prepareItems())
   }
 },
 created () {
@@ -394,8 +396,6 @@ created () {
   if (!this.datatable) this.setMode()
 },
 mounted () {
-
-  console.log('getnested test',this.getNested('test',{'test':0}))
 
 }
 }

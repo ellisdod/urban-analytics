@@ -65,7 +65,7 @@ v-for="(val,key,index) in tabs"
 :key="index" ripple @click="update(key)"
 >{{val.text_en}}</v-tab>
 
-<v-tab-item lazy v-for="(val,key,index) in tabs" :key="index" class="pt-4">
+<v-tab-item lazy v-for="(val,key,index) in tabs" :key="index" class="pt-4"> <!--v-if="tab===key"-->
     <layer-select
     v-if="$vuetify.breakpoint.xsOnly"
     :collection="val.filter.collection"
@@ -123,7 +123,7 @@ v-for="(val,key,index) in tabs"
     </editable-data-list>
   </v-flex>
 
-  <v-flex v-else-if="item.type==='json' && $store.state.selectedFeature" class="py-5" :key="index" xs12>
+  <v-flex v-else-if="item.type==='json'" class="py-5" :key="index" xs12>
     <div class="py-2 subheading font-weight-light  ejmap-border-bottom">Indicators </div>
     <v-tabs slider-color="primary" color="background" show-arrows>
       <v-tab v-for="(indicator,index) in $store.getters.indicatorsForSelectedArea" :key="index" ripple>
@@ -302,6 +302,12 @@ export default {
               type: 'datalist',
               heading: 'Attached Attributes',
               collection:'indicatorAttributes',
+              filter:'areaLayers',
+            },
+            {
+              type: 'datalist',
+              heading: 'Attached Calculations',
+              collection:'layerCalcs',
               filter:'areaLayers',
             },
             {
