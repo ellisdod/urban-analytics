@@ -36,6 +36,10 @@
   :options-style="geoJsonStyle(key)"
   />
 
+  <v-btn style="position:absolute;bottom:5px;right:5px;z-index:1000;" icon @click="exportLayersAsCSV">
+    <v-icon color="grey">get_app</v-icon>
+  </v-btn>
+
 <div class="map-menu">
   <v-menu
     min-width="300px"
@@ -65,7 +69,7 @@
           <v-switch
         color="primary"
         label="Legend"
-        v-model="showLegend">
+        v-model="hideLegend">
       </v-switch>
       </v-list-tile>
       <template v-if="surveyorAuth">
@@ -118,7 +122,7 @@
 
 
 <!-- LEGEND-->
-<div id="map-legend" v-if="showLegend" v-bind:style="legendStyle">
+<div id="map-legend" v-if="hideLegend" v-bind:style="legendStyle">
   <div class="text-xs-center">
     <v-icon v-if="legendBottom" color="grey lighten-2">remove</v-icon>
     <area-select
@@ -141,7 +145,7 @@
 
 <div v-bind:style="{flex:2, maxHeight:'85vh', overflowY: allLayers ? 'none' : 'auto'}">
   <v-expansion-panel expand v-model="layerPanels">
-    <v-expansion-panel-content v-for="(layer,key,index) in layers" v-show="layer.showLegend" :key="key">
+    <v-expansion-panel-content v-for="(layer,key,index) in layers" v-show="layer.hideLegend" :key="key">
       <template v-slot:header v-if="allLayers&&!legendBottom">
         <div @click="">
             {{layer.text_en}}
@@ -321,7 +325,7 @@ const translate = require('@/plugins/translate')
 
 export default {
   name: 'MapView',
-  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable'],
+  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -402,9 +406,6 @@ computed: {
   attributes () {
     if (!this.featureLayers) return null
     return this.layers[this.featureLayers[0]] ? this.layers[this.featureLayers[0]].attributes : null
-  },
-  showLegend () {
-    return this.hideLegend || this.featuresCollection === 'areas' ? false : true
   },
   featureLayersArray() {
     if (!this.featureLayers) {
@@ -541,8 +542,8 @@ computed: {
       },
       getGeoJsonOptions (key) {
         //console.log('getgeojsonopts',key,this.layers[key])
-        if (this.featuresCollection === 'areas') return this.geoJsonAreaOptions
-        const type = this.layers[key].data_type
+        //if (this.featuresCollection === 'areas') return this.geoJsonAreaOptions
+        const type = this.featuresCollection === 'areas' ? 'MultiPolygon' : this.layers[key].data_type
         let opts = {
           onEachFeature: this.featureInteract
         }
@@ -577,7 +578,8 @@ computed: {
             click : function(e) {
               const p = e.target.feature.properties
               self.openEditor(p._id)
-              self.$store.commit("UPDATE",{key:'_col_features_selected',value:p._id})
+              self.$store.commit("UPDATE",{key:'_col_'+self.featuresCollection+'_selected',value:p._id})
+              self.$store.commit("UPDATE",{key:'neighbourhood',value:p.areaCode || p.JIIS_stat_area})
               self.$store.commit('UPDATE',{
                 key:['map','center'],
                 value: {
@@ -727,7 +729,7 @@ computed: {
       key = typeof key === 'number' ? Object.keys(this.layers)[key] : key
       if (this.layers[key]) {
         this.$set(this.layers[key], 'on', e)
-        this.$set(this.layers[key], 'showLegend',  this.allLayers || e)
+        this.$set(this.layers[key], 'hideLegend',  this.allLayers || e)
       }
       const index = Object.keys(this.layers).indexOf(key)
       this.$set(this.layerPanels, index, e);
@@ -849,7 +851,7 @@ computed: {
         this.layerPanels.push(status)
         if (status) this.layerPanelsSelected.push(layer._id)
         layer.on = this.layerPanels[index]
-        layer.showLegend = this.allLayers || this.layerPanels[index]
+        layer.hideLegend = this.allLayers || this.layerPanels[index]
         //if (!layer.on) return
         //console.log('layerid',x._id,layer._id)
         layer.attributes = this.$store.state['_col_layerAttributes'].reduce((acc,att)=>{
@@ -895,6 +897,87 @@ loadSurveyLayer () {
     this.filterFeatures(key)
   })
   this.update()
+},
+exportLayersAsCSV() {
+  Object.keys(this.layers).forEach(key=>{
+    if (this.layers[key].on) {
+      console.log('exporting layer ' + key)
+      this.exportToCsv(this.layers[key])
+    }
+  })
+},
+exportToCsv(layer) {
+    var processRow = function (row) {
+        var finalVal = '';
+        for (var j = 0; j < row.length; j++) {
+            var innerValue = row[j] === null ? '' : row[j].toString();
+            if (row[j] instanceof Date) {
+                innerValue = row[j].toLocaleString();
+            };
+            var result = innerValue.replace(/"/g, '""');
+            if (result.search(/("|,|\n)/g) >= 0)
+                result = '"' + result + '"';
+            if (j > 0)
+                finalVal += ',';
+            finalVal += result;
+        }
+        return finalVal + '\n';
+    };
+
+    //const figure = this.figure[0]
+    //const title = this.unit ? `${this.name} (${this.unit})` : this.name
+    //let indicators = this.$store.getters.allIndicatorsByAreaYear
+    let rows = [
+      //[title],
+      //['Source', this.layer.sourceLong || '' ],
+      //['Link', this.layer.sourceUrl || '' ],
+      //['-'],
+      //['Name','Code',...this.dataYears],
+    ]
+    //console.log(figure)
+    let headerRow = this.$store.state._col_layerAttributes.reduce((arr,x) => {
+        if (x.layer === layer._id) arr.push(x.name)
+        return arr
+      },[])
+
+     rows = layer.features.map(x=> {
+
+      const row = headerRow.map(x=>'');
+      return Object.keys(x.properties).reduce((arr,key)=>{
+        const index = headerRow.indexOf(key)
+        const val =x.properties[key]
+        if (typeof val !== 'object' && index>-1) arr.splice(index,1,val)
+        return arr
+      },row)
+
+    })
+
+    rows = [headerRow, ...rows]
+    console.log(rows)
+
+    const filename = layer.name.toLowerCase().replace(/[\s\.]/g,'_') + '.csv'
+
+    var csvFile = '';
+    for (var i = 0; i < rows.length; i++) {
+        csvFile += processRow(rows[i]);
+    }
+
+    var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, filename);
+    } else {
+        var link = document.createElement("a");
+        if (link.download !== undefined) { // feature detection
+            // Browsers that support HTML5 download attribute
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
 }
 
 },

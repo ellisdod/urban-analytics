@@ -1,7 +1,7 @@
 <template>
   <v-app id="keep" app >
 
-<v-toolbar app light clipped-left flat color="#fff" class="ejmap-border-bottom">
+<v-toolbar v-if="!$store.state.hideToolbar" app light clipped-left flat color="#fff" class="ejmap-border-bottom">
   <img src="../public/ejmap-logo.svg" @click="log()">
 
   <v-toolbar-title>
@@ -125,10 +125,8 @@
 
 <script>
 import MapView from './components/MapView.vue'
-import MapNavigator from './components/MapNavigator.vue'
 import Viewer from './components/Viewer.vue'
 import axios from 'axios'
-import api from './api.js'
 const dbconfig = require('./db.config')
 
 
@@ -152,6 +150,7 @@ export default {
         { icon: 'help', text: 'About', route: 'help' },
         { icon: 'map', route: 'map', text: 'Map'  },
         { icon: 'bar_chart', text: 'Urban Indicators', route: 'indicators' },
+        { icon: 'insert_drive_file', text: 'Profiles', route: 'reports' },
       ];
       const loggedInActions = [
         { icon: 'settings', text: 'Manage Data', route: 'manage' }

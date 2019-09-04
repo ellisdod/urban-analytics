@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Indicators from './../components/IndicatorsNew.vue'
+import IndicatorsReport from './../components/IndicatorsReport.vue'
 import MapFull from './../components/MapFull.vue'
 import Upload from './../components/Upload.vue'
 import ManageData from './../components/ManageDataMaster.vue'
@@ -47,6 +48,10 @@ let router = new Router({
     {
       path: '/indicators',
       component: Indicators
+    },
+    {
+      path: '/reports',
+      component: IndicatorsReport
     },
     {
       path: '/implicit/callback',

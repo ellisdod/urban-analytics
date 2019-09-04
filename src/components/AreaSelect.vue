@@ -100,6 +100,9 @@ export default {
     padding-top: 0px;
    margin-top: 0px;
 }
+.area-select .v-select__selections {
+  line-height:normal;
+}
 
 
 </style>

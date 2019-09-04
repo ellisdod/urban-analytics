@@ -26,12 +26,15 @@
               :small-chips="i._multiple"
               :multiple="i._multiple"
               clearable
-              :item-text="'text_' + $store.state.language||'name'||'text' "
-              item-value="value"
+              item-text="name"
+              item-value="name"
               :rules="[validateItem(edited[key],i)]"
               box
+              validate-on-blur
               v-bind:items="i._options">
             </v-select>
+
+            <component v-if="i._options&&i._options.component" :is="i._options.component" :value="edited[key]" @change="function(e){edited[key]=e}"/>
 
             <div v-else-if="i._options&&i._options==='dynamic'" style="display:flex;flex-direction:column;" >
             <p class="subheading"> {{ Object.keys(edited[key]).length ? 'Choices' : '' }} </p>
@@ -43,6 +46,7 @@
                 :label="i+1+'. '+l.text"
                 :rules="[validateItem(edited[key],i)]"
                 box
+                validate-on-blur
                 class="pl-2">
               </v-text-field>
               <v-btn icon  @click="edited[key].splice(i,1)"><v-icon color="grey">clear</v-icon></v-btn>
@@ -62,54 +66,26 @@
           item-text="name"
           item-value="_id"
           box
+          validate-on-blur
           :rules="[validateItem(edited[key],i)]"
           >
         </v-select>
 
-        <div v-else-if="i._categorised">
-          <v-combobox v-model="edited[key]" multiple small-chips> </v-combobox>
-          <v-menu full-width offset-y>
-
-            <v-btn
-            color="grey"
-            outline
-            slot="activator"
-            >
-            {{ key }}
-          </v-btn>
-          <v-list dense>
-            <template v-for="(val,name) in i._options($store,edited,collection)">
-
-              <v-list-tile v-if="val.value" :key="name" @click="edited[key].push(val.value)">
-                {{val.name}}
-
-              </v-list-tile>
-
-              <v-menu v-else-if="val.items" full-width offset-x max-height="500" :key="name" open-on-hover >
-                <v-list-tile slot="activator" @click="">
-                  <v-list-tile-title>{{val.name}}</v-list-tile-title>
-                </v-list-tile>
-                <v-list dense>
-                  <v-list-tile v-for="(j,ind) in val.items " @click="edited[key].push(name+'.'+j)">
-                    <v-list-tile-title>{{ j }}</v-list-tile-title>
-                  </v-list-tile>
-                </v-list>
-              </v-menu>
-
-            </template>
-
-          </v-list>
-
-        </v-list>
-
-
-      </v-menu>
-    </div>
+        <div v-else-if="i._categorised" style="display:flex;">
+          <v-combobox
+          small-chips
+          multiple
+          box
+          v-model="edited[key]"
+          ></v-combobox>
+          <nested-menu :items="i._options($store,edited)" title="add" @change="function(e){edited[key].push(e)}"></nested-menu>
+        </div>
 
     <v-switch v-else-if="i.type===Boolean||i.type==='Boolean'" v-model="edited[key]" :label="i._text" color="primary"></v-switch>
-    <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text" :type="i.type==='Number'?'number':'text'" :rules="[validateItem(edited[key],i)]" box></v-text-field>
+    <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text" :type="i.type==='Number'?'number':'text'" :rules="[validateItem(edited[key],i)]" box validate-on-blur></v-text-field>
 
-    <v-text-field v-else v-model="edited[key]" :label="i._text" disabled></v-text-field>
+    <v-text-field v-else v-model="edited[key]" :label="i._text" validate-on-blur disabled></v-text-field>
+
   </v-flex>
 </v-layout>
 </v-container>
@@ -167,13 +143,15 @@
 <script>
 import VueJsonPretty from 'vue-json-pretty'
 import api from '@/api.js'
+import Calculator from './Calculator.vue'
+import NestedMenu from './NestedMenu.vue'
 const dbconfig = require('../db.config')
 const arrayUtils = require('@/plugins/arrayUtils')
 
 
 export default {
   components: {
-    VueJsonPretty
+    VueJsonPretty, Calculator, NestedMenu
   },
   props : ['collection','filter','nestedPath','editItem','attributes','linkedFeature','permanent','title'],
   data() {
@@ -251,14 +229,19 @@ export default {
         this.$set(object,object.length,item)
       },
       edit () {
+        console.log('edited 1', this.edited)
         this.runedit = true
         //let item = this.$store.state[`_col_${collection}`][index]
         let schema = this.templateFromSchema(this.schema.schema)
         const edited = Object.assign({}, schema, arrayUtils.getNested(this.nestedPath, this.editItem))
-        Object.keys(edited).forEach(key=>{
+        console.log('edited', edited)
+        /*Object.keys(edited).forEach(key=>{
           this.$set(this.edited,key,edited[key])
-        })
-        console.log('editItem', this.edited, schema, this.editItem)
+        })*/
+        this.edited = Object.assign({}, schema, arrayUtils.getNested(this.nestedPath, this.editItem))
+
+        //this.edited.func = this.editItem.func.map(x=>x)
+        console.log('editItem', this.edited, schema, this.editItem, edited)
         //console.log('dialog data', collection,index,path,item,this.edited)
         //console.log('this',this)
       },
