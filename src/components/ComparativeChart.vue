@@ -67,6 +67,6 @@ export default {
   height:100px;
 }
 .bar-chart-minimal-small {
-  height:70px;
+  height:65px;
 }
 </style>

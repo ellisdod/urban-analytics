@@ -30,7 +30,19 @@
 
 
     <div v-for="(val,index) in valueStyles" :key="index" style="background-color:none;!important" class="caption px-0">
-        <v-switch :color="val.color" :input-value="val.on" @change="updateFilterObject('categories',val.name,$event)" :label="val.name"></v-switch>
+        <v-switch v-if="!small" :color="val.color" :input-value="val.on" @change="updateFilterObject('categories',val.name,$event)" :label="val.name"></v-switch>
+        <div v-else style="width:50%;display:inline-block;float:left;">
+         <div v-bind:style="{
+             display:'inline-block',
+             height:'8px',
+             width:'8px',
+             borderRadius:'50%',
+             backgroundColor:val.color,
+             border:'1px solid #999',
+             marginRight:'5px',
+             }"></div>
+         <span class="caption">{{val.name}}</span>
+        </div>
     </div>
 
 
@@ -40,7 +52,7 @@
 <script>
 
 export default {
-  props: ['layer','attributeName','attributes'],
+  props: ['layer','attributeName','attributes','small'],
   data () {
     return {
       range : [],

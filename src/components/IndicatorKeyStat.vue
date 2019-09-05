@@ -16,7 +16,7 @@
     </div>
 
     <!-- WITH CHART -->
-    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-1':compact}" style="position:relative;background:white;">
+    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;background:white;">
 
       <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8':compact,'sm4':!compact,'sm8':compact, 'md3':!compact, 'md8':compact }">
 
@@ -28,12 +28,12 @@
           <span v-bind:class="[{'display-1':!compact,'subheading':compact},'py-0']">
             {{selectedIndicator[figure[0]]||0}}
           </span>
-          <span v-if="unit" class="subheading ml-1">
+          <span v-if="unit" v-bind:class="[{'subheading ml-1':!compact,'caption':compact}]">
             {{unit}}
           </span>
         </div>
 
-        <div v-bind:class="[{'caption':compact,'pl-4':compact},'font-weight-light']">{{year}}</div>
+        <div v-bind:class="[{'caption pl-2':compact},'font-weight-light']">{{ year&&year!==$store.state.year ? '(' + year + ')' : '' }}</div>
 
       </v-flex>
 
