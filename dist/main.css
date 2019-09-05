@@ -154,6 +154,9 @@
 #map_features.leaflet-touch .leaflet-bar a {
   color:#000 !important;
 }
+#map-legend .v-input--slider {
+  margin-top:-10px;
+}
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
   background: rgba(0,0,0,0.8);
 }
@@ -224,7 +227,7 @@
   height:100px;
 }
 .bar-chart-minimal-small {
-  height:70px;
+  height:65px;
 }
 
 
@@ -584,6 +587,9 @@ body {
     height: 257mm;
     outline: 2cm #FFEAEA solid;
 }
+.leaflet-container {
+  background:none;
+}
 @page {
     size: A4;
     margin: 0;
@@ -602,6 +608,9 @@ html, body {
         box-shadow: initial;
         background: initial;
         page-break-after: always;
+}
+.section {
+      page-break-inside:avoid;
 }
 }
 

@@ -2,15 +2,45 @@
   <div class="page">
   <v-container fluid pa-4>
     <v-layout row wrap fill-height >
-      <v-flex xs6>
-        <area-select class="display-1"></area-select>
-        <div class="title">Neighbourhood Profile</div>
-        <div>{{$store.state.year}}</div>
+      <v-flex xs3>
+        <div class="title font-weight-light">Neighbourhood Profile</div>
+        <div class="title mt-2">{{$store.state.year}}</div>
       </v-flex>
-   <v-flex xs6>
-    <map-navigator style="height:400px;"
-    >
-    </map-navigator>
+      <v-flex xs9>
+        <area-select class="display-1"></area-select>
+      </v-flex>
+      <v-flex xs12 py-3> </v-flex>
+
+      <v-flex xs9>
+        <map-view
+        contextmenu=""
+        featuresCollection=""
+        :featureLayers="['buildingslayerid']"
+        :zoomLevel="15"
+        height="300px"
+        v-bind:areas="true"
+        class="ejmap-border-top ejmap-border-bottom ejmap-border-right"
+        :hideLegend="true"
+        :hideControls="true"
+        highlightColor="black"
+        baseMapLink="https://api.maptiler.com/maps/22b3d9af-6774-4072-8dcd-68392fec6910/style.json?key=ArAI1SXQTYA6P3mWFnDs"
+        >
+        </map-view>
+      </v-flex>
+   <v-flex xs3>
+     <map-view
+     contextmenu=""
+     featuresCollection=""
+     :zoomLevel="11"
+     height="300px"
+     v-bind:areas="true"
+     class="ejmap-border-top ejmap-border-bottom"
+     :hideLegend="true"
+     :hideControls="true"
+     highlightColor="black"
+     baseMapLink="https://api.maptiler.com/maps/22b3d9af-6774-4072-8dcd-68392fec6910/style.json?key=ArAI1SXQTYA6P3mWFnDs"
+     >
+   </map-view>
   </v-flex>
    </v-layout>
   </v-container>
@@ -18,7 +48,7 @@
   <div style="flex:2;overflow-y:auto;">
     <v-container fluid pa-0 pb-5>
 
-      <v-layout row wrap fill-height pb5 pa-4 :key="index" v-for="(section,index) in sections">
+      <v-layout row wrap fill-height pb5 pa-4 :key="index" class="section" v-for="(section,index) in sections">
 
         <v-flex xs12 class="title mb-4 pt-1 pb-3 ejmap-border-bottom">
           <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  {{ section.section ? section.section.text_en : ''}} </div>
@@ -50,12 +80,14 @@
         contextmenu=""
         style="position:relative;"
         featuresCollection="features"
-        zoomLevel="12"
-        height="400px"
+        :zoomLevel="14"
+        height="300px"
         :featureLayers="section.map.figure"
         v-bind:areas="true"
-        class="ejmap-border"
-        :hideLegend="false"
+        :minimiseLegend="true"
+        :legendBottom="true"
+        :hideControls="true"
+        baseMapLink="https://api.maptiler.com/maps/22b3d9af-6774-4072-8dcd-68392fec6910/style.json?key=ArAI1SXQTYA6P3mWFnDs"
         >
       </map-view>
       <div class="body-1 pb-2">
@@ -210,6 +242,10 @@ export default {
     outline: 2cm #FFEAEA solid;
 }
 
+.leaflet-container {
+  background:none;
+}
+
 @page {
     size: A4;
     margin: 0;
@@ -228,6 +264,9 @@ export default {
         box-shadow: initial;
         background: initial;
         page-break-after: always;
+    }
+    .section {
+      page-break-inside:avoid;
     }
 }
 

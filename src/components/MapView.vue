@@ -3,7 +3,7 @@
     <l-map
     v-if="layersSet"
     ref="map"
-    :zoom="$store.state.map.zoom"
+    :zoom="zoomLevel || $store.state.map.zoom"
     :center="$store.state.map.center"
     :options="mapOptions"
     @update:center="centerUpdate"
@@ -20,10 +20,16 @@
     :geojson="areasGeoJson"
     :options-style="areaStyle"
     :options="getGeoJsonOptions()"/>
-  -->    <l-geo-json
+  -->
+  <l-geo-json
+  :geojson="areasGeoJson"
+  :options="getGeoJsonOptions('','MultiPolygon')"
+  :options-style="getAreaStyle(true)"
+  />
+  <l-geo-json
   v-if="featuresCollection==='areas'"
   :geojson="areasGeoJson"
-  :options="getGeoJsonOptions()"
+  :options="getGeoJsonOptions('','MultiPolygon')"
   :options-style="getAreaStyle()"
   />
 
@@ -36,11 +42,11 @@
   :options-style="geoJsonStyle(key)"
   />
 
-  <v-btn style="position:absolute;bottom:5px;right:5px;z-index:1000;" icon @click="exportLayersAsCSV">
+  <v-btn v-if="!hideControls" style="position:absolute;bottom:5px;right:5px;z-index:1000;" icon @click="exportLayersAsCSV">
     <v-icon color="grey">get_app</v-icon>
   </v-btn>
 
-<div class="map-menu">
+<div v-if="!hideControls" class="map-menu">
   <v-menu
     min-width="300px"
     :close-on-content-click="false"
@@ -68,7 +74,7 @@
       <v-list-tile>
           <v-switch
         color="primary"
-        label="Legend"
+        label="Hide legend"
         v-model="hideLegend">
       </v-switch>
       </v-list-tile>
@@ -122,8 +128,8 @@
 
 
 <!-- LEGEND-->
-<div id="map-legend" v-if="hideLegend" v-bind:style="legendStyle">
-  <div class="text-xs-center">
+<div id="map-legend" v-if="!hideLegend" v-bind:style="legendStyle">
+  <div v-if="!minimiseLegend" class="text-xs-center">
     <v-icon v-if="legendBottom" color="grey lighten-2">remove</v-icon>
     <area-select
     v-if="options&&options.areaSelect"
@@ -145,7 +151,7 @@
 
 <div v-bind:style="{flex:2, maxHeight:'85vh', overflowY: allLayers ? 'none' : 'auto'}">
   <v-expansion-panel expand v-model="layerPanels">
-    <v-expansion-panel-content v-for="(layer,key,index) in layers" v-show="layer.hideLegend" :key="key">
+    <v-expansion-panel-content v-for="(layer,key,index) in layers" v-show="layer.showLegend" :key="key">
       <template v-slot:header v-if="allLayers&&!legendBottom">
         <div @click="">
             {{layer.text_en}}
@@ -153,7 +159,7 @@
       </template>
       <v-card class="pt-2">
         <v-card-text class="pa-0">
-          <div class="pt-1 px-3 grey--text text-uppercase">Filter</div>
+          <div v-if="!minimiseLegend" class="pt-1 px-3 grey--text text-uppercase">Filter</div>
 
           <v-list>
             <v-list-tile
@@ -163,7 +169,7 @@
             @click="updateLayer(layer._id,{key:'attribute',value:v.attribute})">
 
                 <template v-if="index!==0">
-                  <v-select :items="['AND','OR']" value="AND" class="caption" style="flex:3"></v-select>
+                  <v-select :items="['AND','OR']" value="AND" class="caption" style="flex:3; margin-top: -20px;"></v-select>
                   <v-btn icon @click="removeFilter(layer,i)" style="margin:0px -10px -10px 10px"><v-icon small>close</v-icon></v-btn>
                 </template>
 
@@ -174,6 +180,7 @@
                 :layer="layer"
                 :attributes="layer.attributes"
                 :attributeName="layer.filters[i].attribute"
+                :small="minimiseLegend"
                 @filterChange="function(e){updateLayer(layer._id, e, `filters.${i}`);updateLayer(layer._id, e)}"
                 @layerChange="function(e){updateLayer(layer._id, e)}"
                 @toggleFeature="function(e){filterFeatures(key,e)}"
@@ -184,6 +191,7 @@
             </v-list-tile-content>
           </v-list-tile>
         </v-list>
+        <template v-if="!minimiseLegend">
         <div class="text-xs-right" style="width:100%;">
           <v-btn depressed color="rgba(0,0,0,0)" @click="addFilter(layer)" class="caption grey--text">Add filter<v-icon small>add</v-icon></v-btn>
         </div>
@@ -198,7 +206,7 @@
         track-color="rgba(0,0,0,0)"
         ></v-slider>
         <div style="flex-basis:100%"></div>
-        <div style="flex:1" class="caption mt-2">Stoke</div>
+        <div style="flex:1" class="caption mt-2">Stroke</div>
         <v-slider
         class="px-2 mt-0"
         v-model="layer.strokeOpacity"
@@ -207,6 +215,7 @@
         track-color="rgba(0,0,0,0)"
         ></v-slider>
         </div>
+      </template>
 
       </v-card-text>
     </v-card>
@@ -325,7 +334,7 @@ const translate = require('@/plugins/translate')
 
 export default {
   name: 'MapView',
-  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend'],
+  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapLink','minimiseLegend','hideControls','highlightColor'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -436,7 +445,8 @@ computed: {
       return this.$refs.container && this.$refs.container.clientWidth < 300 ? true : false
     },
     mapHeight() {
-      const navHeight = document.getElementsByTagName('nav')[0].clientHeight
+      const nav = document.getElementsByTagName('nav')[0]
+      const navHeight = nav ? nav.clientHeight : 0
       return this.height || (window.innerHeight-navHeight) + 'px'
     },
     mapStyle () {
@@ -470,8 +480,7 @@ computed: {
     areasGeoJson () {
       // remove features without area code
       let data = this.$store.getters.selectedAreas
-      if (!data) return null
-      return this.embedIds(data)
+      return data ? this.embedIds(data) : null
     },
     editItems () {
       return this.$store.getters.surveyRecordsByFeature[this.$store.state._col_features_selected]
@@ -540,10 +549,10 @@ computed: {
       close() {
         this.dialog = false
       },
-      getGeoJsonOptions (key) {
+      getGeoJsonOptions (key,type) {
         //console.log('getgeojsonopts',key,this.layers[key])
         //if (this.featuresCollection === 'areas') return this.geoJsonAreaOptions
-        const type = this.featuresCollection === 'areas' ? 'MultiPolygon' : this.layers[key].data_type
+        type = type || this.layers[key].data_type
         let opts = {
           onEachFeature: this.featureInteract
         }
@@ -611,7 +620,7 @@ computed: {
           radius: 4,
           fillColor: this.$store.state.colors[2],
           color:this.$store.state.colors[2],
-          weight: 1.5,
+          weight: 1,
           stroke:true,
           opacity: layer.strokeOpacity/100,
           fillOpacity: layer.fillOpacity/100,
@@ -647,20 +656,24 @@ computed: {
         return style
 
       },
-      getAreaStyle(){
+      getAreaStyle(outline){
         const self = this
         const style = {
           weight: 2,
           color: 'grey',
           opacity: 0.4,
           fillColor: 'grey',
-          fillOpacity: 0.2,
+          fillOpacity: outline ? 0 : 0.2
         }
+
         return function(feature){
           if (self.$store.state.neighbourhood === feature.properties.areaCode) {
-            return Object.assign({},style, {color: 'orange',
-            fillColor: 'orange'
-          })
+            const selectStyle = {
+              weight: 4,
+              fillColor: 'orange'
+            }
+            if (self.highlightColor) selectStyle.color = self.highlightColor
+            return Object.assign({}, style, selectStyle)
         } else {
           return style
         }
@@ -729,7 +742,7 @@ computed: {
       key = typeof key === 'number' ? Object.keys(this.layers)[key] : key
       if (this.layers[key]) {
         this.$set(this.layers[key], 'on', e)
-        this.$set(this.layers[key], 'hideLegend',  this.allLayers || e)
+        this.$set(this.layers[key], 'showLegend',  this.allLayers || e)
       }
       const index = Object.keys(this.layers).indexOf(key)
       this.$set(this.layerPanels, index, e);
@@ -828,7 +841,7 @@ computed: {
 
     setLayers() {
       const styles = this.$store.getters.styles
-      const schema = dbconfig[this.featuresCollection]
+      const schema = dbconfig[this.featuresCollection||'features']
       const allLayers = this.allLayers
 
       let layers = this.$store.state['_col_'+schema.layerCollection]
@@ -851,7 +864,7 @@ computed: {
         this.layerPanels.push(status)
         if (status) this.layerPanelsSelected.push(layer._id)
         layer.on = this.layerPanels[index]
-        layer.hideLegend = this.allLayers || this.layerPanels[index]
+        layer.showLegend = this.allLayers || this.layerPanels[index]
         //if (!layer.on) return
         //console.log('layerid',x._id,layer._id)
         layer.attributes = this.$store.state['_col_layerAttributes'].reduce((acc,att)=>{
@@ -1030,11 +1043,17 @@ mounted(){
   //console.log('map',this.$refs.myMap.mapObject)
   //
 
+
   this.$nextTick(()=>{
     L.mapboxGL({
       accessToken: 'not-needed',
-      style: 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
+      style: this.baseMapLink || 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
     }).addTo(this.$refs.map.mapObject)
+
+    if (this.hideControls) {
+      this.$refs.map.mapObject
+    }
+
   })
 
   this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
@@ -1091,6 +1110,9 @@ mounted(){
 }
 #map_features.leaflet-touch .leaflet-bar a {
   color:#000 !important;
+}
+#map-legend .v-input--slider {
+  margin-top:-10px;
 }
 
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
