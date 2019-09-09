@@ -3,7 +3,8 @@ export const chart = {
     'title': String,
     'x-labels':Boolean,
     'y-labels':Boolean,
-    'clickHandler':Boolean
+    'clickHandler':Boolean,
+    'showLegend':Boolean
   },
   data () {
     const self = this;
@@ -39,10 +40,16 @@ export const chart = {
           }]
         },
         legend: {
-          display:false
+          display:self.$props.showLegend,
+          position:'left',
+          fullWidth:false,
+          labels: {
+            boxWidth:12,
+          }
         },
         title: {
           display:true,
+          align:'left',
           text:self.$props.title||''
         },
         maintainAspectRatio:false,

@@ -606,7 +606,7 @@ html, body {
         width: initial;
         min-height: initial;
         box-shadow: initial;
-        background: initial;
+        background: 'white';
         page-break-after: always;
 }
 .section {

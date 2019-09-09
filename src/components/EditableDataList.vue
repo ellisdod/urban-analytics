@@ -71,7 +71,7 @@
         <template v-else>
           {{ getNested(h.value, props.item) }}
         </template>
-
+        <!--
           <div v-if="ind===featureHeaders.length-1" class="attribute-controls-wrapper">
             <div class="attribute-controls" style="top:-30px;">
               <v-btn small fab color="grey" outline  @click="openEditor(props.item)">
@@ -82,6 +82,7 @@
               </v-btn>
             </div>
           </div>
+        -->
         </td>
       </tr>
     </template>
@@ -102,13 +103,16 @@
     v-for="(x, index) in listItems"
     :key="index"
     v-model="x.active"
-    @click="select(index, x._id)">
+    @click="select(index, x._id)"
+    v-on:dblclick="openEditor(x)"
+    >
     <v-list-tile-action v-if="listKey&&schema.schema[listKey]._options&&schema.schema[listKey]._options[0]">
       <v-icon>{{schema.schema[listKey]._options.filter(i => i.name === x[listKey])[0].icon}} </v-icon>
     </v-list-tile-action>
     <v-list-tile-content>
       <div v-if="x._id" class="attribute-controls-wrapper">
         {{x.text || x.text_en || x.name}}
+        <!--
         <div v-if="!disabled" class="attribute-controls">
           <v-btn small fab color="grey" outline @click="openEditor(x)">
             <v-icon>edit</v-icon>
@@ -117,6 +121,7 @@
             <v-icon>delete</v-icon>
           </v-btn>
         </div>
+      -->
       </div>
     </v-list-tile-content>
 
@@ -238,7 +243,7 @@ export default {
 },
 methods: {
   prepareItems () {
-    console.log('preparing items',this.filterId)
+    console.log('preparing items',this.collection, this.filterId)
     let items = []
     if (dbconfig[this.collection].storeByLayer) {
       items = this.$store.state[`_col_${this.collection}`][this.filterId] || []
@@ -247,6 +252,7 @@ methods: {
       items = Array.from(this.$store.state[`_col_${this.collection}`])
       if (this.filter &&items[0]) items = items.filter(x=>x.layer === this.filterId)
     }
+    console.log('items',items)
     //if (this.nestedPath) items = items.map(x=>flatten(x))
     return this.multiselect ? this.addSelects(items) : items || []
   },
@@ -268,7 +274,7 @@ methods: {
     })
   },
   updateCollection (force) {
-    if (!force && !dbconfig[this.collection].storeByLayer && !this.$store.state[`_col_${this.collection}_selected`]) {
+    if (!force && !dbconfig[this.collection].storeByLayer && this.$store.state[`_col_${this.collection}_selected`]) {
       this.items = this.prepareItems()
       console.log('rejecting')
       return Promise.reject();

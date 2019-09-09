@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" style="padding-top:400px;" ref="page">
   <v-container fluid pa-4>
     <v-layout row wrap fill-height >
       <v-flex xs3>
@@ -9,7 +9,7 @@
       <v-flex xs9>
         <area-select class="display-1"></area-select>
       </v-flex>
-      <v-flex xs12 py-3> </v-flex>
+      <v-flex xs12 py-4> </v-flex>
 
       <v-flex xs9>
         <map-view
@@ -42,13 +42,14 @@
      >
    </map-view>
   </v-flex>
+  <v-flex xs12 style="padding-top:100px;" class="text-xs-center">International Peace and Cooperation Center </v-flex>
    </v-layout>
   </v-container>
 
   <div style="flex:2;overflow-y:auto;">
     <v-container fluid pa-0 pb-5>
 
-      <v-layout row wrap fill-height pb5 pa-4 :key="index" class="section" v-for="(section,index) in sections">
+      <v-layout row wrap pb5 pa-4 :key="index" class="section" v-for="(section,index) in sections">
 
         <v-flex xs12 class="title mb-4 pt-1 pb-3 ejmap-border-bottom">
           <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  {{ section.section ? section.section.text_en : ''}} </div>
@@ -69,14 +70,26 @@
             class="indicator-hover ejmap-border-bottom">
           </indicator-card>
 
+          <indicator-card
+          v-if="section.charts.length&&section.map"
+          v-for="(item,index) in section.charts"
+          @childClick="updateSelected(item._id)"
+          style="margin-bottom:20px;"
+          :key="index"
+          :item="item"
+          :selected="selected===item._id"
+          class="mt-4">
+        </indicator-card>
+
 
        </div>
 
       </v-flex>
-      <v-flex xs5 pl-4>
 
-      <div v-if="section.map">
+      <v-flex v-if="section.map||section.charts.length" xs5 pl-4>
+
         <map-view
+        v-if="section.map"
         contextmenu=""
         style="position:relative;"
         featuresCollection="features"
@@ -87,26 +100,26 @@
         :minimiseLegend="true"
         :legendBottom="true"
         :hideControls="true"
+        :attribute="section.map.unit"
         baseMapLink="https://api.maptiler.com/maps/22b3d9af-6774-4072-8dcd-68392fec6910/style.json?key=ArAI1SXQTYA6P3mWFnDs"
         >
+        <div class="body-1 pt-2">
+          <span class="font-weight-light">{{section.map.text}}</span>
+        </div>
       </map-view>
-      <div class="body-1 pb-2">
-        <span class="mr-2">Map</span><span class="font-weight-light">{{section.map.text}}</span>
-      </div>
-    </div>
 
-    <div v-else-if="section.charts.length">
-        <indicator-card
-        v-for="(item,index) in section.charts"
-        @childClick="updateSelected(item._id)"
-        style="margin-bottom:20px;"
-        :key="index"
-        :item="item"
-        :selected="selected===item._id"
-        class="">
-      </indicator-card>
-   </div>
+      <indicator-card
+      v-else-if="section.charts.length"
+      v-for="(item,index) in section.charts"
+      @childClick="updateSelected(item._id)"
+      style="margin-bottom:20px;"
+      :key="index"
+      :item="item"
+      :selected="selected===item._id">
+    </indicator-card>
+
     </v-flex>
+
 
    </v-layout>
    </v-container>
@@ -173,6 +186,7 @@ export default {
       //console.log('translateion', translation)
       //console.log('indicatorsByArea',this.$store.getters.indicatorsByArea)
       const sections = translation.reduce((acc,x)=>{
+        if (!x.active) return acc
         acc[x.layer] = acc[x.layer] || {}
         acc[x.layer].figures = acc[x.layer].figures || []
         acc[x.layer].charts = acc[x.layer].charts || []
@@ -180,7 +194,7 @@ export default {
 
         if (x.type === 'Map') acc[x.layer].map = x
         else if (x.type === 'Figure') acc[x.layer].figures.push(x)
-        else if (x.type === 'Chart') acc[x.layer].charts.push(x)
+        else if (x.type === 'Chart' || x.type === 'List') acc[x.layer].charts.push(x)
         return acc
       },{})
       console.log('sections',sections)
@@ -205,6 +219,18 @@ export default {
         this.selected = 0
         if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
       })
+      this.$store.watch(
+        (state) => state.neighbourhood,
+        (val) => {
+          const document = this.$refs.page.getRootNode()
+          document.title = 'EJ_Profile_2019_'+this.$store.getters.areaNames[this.$store.state.neighbourhood];
+        })
+    this.$nextTick(()=>{
+      const document = this.$refs.page.getRootNode()
+      document.title = 'EJ_Profile_2019_'+this.$store.getters.areaNames[this.$store.state.neighbourhood];
+      console.log('page',this.$refs.page.getRootNode())
+    })
+
 
     }
 
@@ -262,7 +288,7 @@ export default {
         width: initial;
         min-height: initial;
         box-shadow: initial;
-        background: initial;
+        background: 'white';
         page-break-after: always;
     }
     .section {

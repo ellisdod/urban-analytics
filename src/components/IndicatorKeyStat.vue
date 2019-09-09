@@ -18,7 +18,7 @@
     <!-- WITH CHART -->
     <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;background:white;">
 
-      <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8':compact,'sm4':!compact,'sm8':compact, 'md3':!compact, 'md8':compact }">
+      <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8 sm8 md8':compact,'sm4':!compact, }">
 
         <div v-bind:style="{minWidth:compact ?'180px':0}" v-bind:class="[{'body-1':compact,'subheading':!compact },'font-weight-light']">
           {{name}}
@@ -33,18 +33,22 @@
           </span>
         </div>
 
-        <div v-bind:class="[{'caption pl-2':compact},'font-weight-light']">{{ year&&year!==$store.state.year ? '(' + year + ')' : '' }}</div>
+        <div v-bind:class="[{'caption pl-2':compact},'font-weight-light']">{{ selectedYear&&selectedYear!==$store.state.year ? '(' + selectedYear + ')' : '' }}</div>
 
       </v-flex>
 
-      <v-flex order-xs3 order-sm2 sm-offset-4 pt-3 v-bind:class="{'xs-offset2':!compact,'xs4':compact, 'mb-5':selected && $vuetify.breakpoint.smOnly && !compact, 'my-3':selected && $vuetify.breakpoint.xsOnly && !compact, 'sm8': !compact, 'sm4': compact, 'md8':!compact,'md4':compact }">
+      <v-flex order-xs3 order-sm2 sm-offset-4 pt-3 v-bind:class="{
+        'mb-5':selected && $vuetify.breakpoint.smOnly && !compact,
+        'my-3':selected && $vuetify.breakpoint.xsOnly && !compact,
+        'xs-offset2 sm8 md4':!compact,
+        'xs4 sm4 md4':compact }">
 
         <div v-bind:style="chartWidthClass">
 
           <comparative-chart v-if="type==='Figure'"
           :name="name"
           :figure="figure"
-          :year="year"
+          :year="selectedYear"
           :selected="selected||compact"
           :compact="compact"
           >
@@ -163,9 +167,9 @@ export default {
     },
     updateIndicator() {
       this.$emit('childClick')
-      if (!this.figure[0] || !this.year || this.figure[1]) return null
+      if (!this.figure[0] || !this.selectedYear || this.figure[1]) return null
       this.$store.commit("UPDATE",{key:['navigator','indicator'],value:{figure:this.figure[0],name:this.name}})
-      this.$store.commit("UPDATE",{key:'year',value:this.year})
+      this.$store.commit("UPDATE",{key:'year',value:this.selectedYear})
     },
     getNested (p, o) {
       p = typeof p === 'string' ? p.split('.') : p
@@ -264,18 +268,6 @@ export default {
     rotateStyle () {
       return {transform: 'rotate('+this.rotation+'deg)'}
     },
-    getDataByHoodYear () {
-      //return {}
-      return this.$store.getters.dataByNeighbourhood.filter(x=>x.year===this.thisYear)[0] || {}
-    },
-    getDataByCityYear () {
-      //return {}
-      return this.$store.state.cityIndicators.filter(x=>x.year===this.thisYear)[0] || {}
-    },
-    getDataByYear () {
-      //return {}
-      return this.$store.state.indicators.filter(x=>x.year===this.thisYear) || []
-    },
     areaDataMatched () {
       if (!this.dataYears) return null
       return this.$store.getters.indicatorsForSelectedArea.filter(x=>this.dataYears.some(f=>x.year===f))
@@ -292,15 +284,6 @@ export default {
       if (!this.areaDataMatched) return null
       return this.areaDataMatched[this.areaDataMatched.length-1]
     },
-    latestYear () {
-      if (this.areaDataLatest) {
-        //console.log('arealatest', this.areaDataLatest)
-        return this.selectedYear
-      }
-    },
-    year () {
-      return this.selectedYear || this.latestYear
-    },
     selectedIndicator () {
       if (!this.dataYears || !this.selectedYear) {
         return {}
@@ -316,15 +299,32 @@ export default {
     dataYears () {
       const d = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
       //console.log('datayears',d,this.$store.getters.allIndicatorKeyYears,this.$store.getters.allIndicatorsByYear)
-      return d
+      return d || []
     },
     generateChartDataSets() {
-      if (this.type !== 'Chart' || !this.selectedIndicator) {
-        //console.log('chart data test', this.selectedIndicator)
-        return null
-      }
+      if (this.type !== 'Chart' || !this.selectedIndicator) return null
+      const latestYear = this.dataYears.slice(-1)[0]
       const color = this.selected ? this.$vuetify.theme.primary : this.$vuetify.theme.grey
-      //console.log('chartdata', this.figure.map(x=>this.selectedIndicator[x]))
+      console.log('this.$store.getters.allIndicatorsByAreaYear',this.$store.getters.allIndicatorsByAreaYear)
+      return {
+        datasets : Object.keys(this.$store.getters.allIndicatorsByAreaYear).map(area=>{
+          const selectedArea = this.$store.state.neighbourhood === parseInt(area)
+          return {
+            //label:store.state.neighbourhood,
+            data: this.figure.map(x=>this.$store.getters.allIndicatorsByAreaYear[area][latestYear][x]),
+            borderColor: selectedArea ? color : this.$vuetify.theme.grey_lighten1,
+            borderWidth: selectedArea ? 1 : 0.5,
+            borderOpacity: 0.2,
+            type:"line",
+            fill:false,
+            pointRadius: selectedArea ? 1 : 0,
+          }
+
+        }),
+       labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
+
+      }
+      /*
       return {
         datasets :[
           {
@@ -337,6 +337,7 @@ export default {
         ],
         labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
       }
+      */
     },
     chartWidthClass(){
       let style = {position:'relative',width:'95%'}

@@ -188,7 +188,7 @@ export default {
       return this.items.filter(x=>x.type==='Figure')
     },
     charts () {
-      const charts = this.items.filter(x=>x.type==='Chart')
+      const charts = this.items.filter(x=>x.type==='Chart'||x.type==='List')
       return charts[0] ? charts : null;
     },
     map () {

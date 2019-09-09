@@ -7,7 +7,7 @@
       <div style="flex:1">
 
 
-      <div style="background-color:rgba(0,0,0,0.06);min-height:150px;display:flex;flex-wrap:wrap;align-self:flex-start;" @click.stop="sel(-1)">
+      <div style="background-color:rgba(0,0,0,0.06);min-height:150px;min-width:30px;display:flex;flex-wrap:wrap;align-self:flex-start;" @click.stop="sel(-1)">
 
         <v-chip
              v-for="(i,index) in formula"
@@ -21,9 +21,7 @@
              @input="remove(index)">
             {{ i.text.split('.').slice(1,i.text.split('.').length).join('.') || i.text }}
         </v-chip>
-        <v-spacer></v-spacer>
 
-        <v-btn icon @click="clear"><v-icon>clear</v-icon></v-btn>
       </div>
       <div style="height:50px;">
         <v-text-field box class="mt-1" v-if="selected!==null" v-model="formula[selected].text" @change="update"></v-text-field>
@@ -66,13 +64,14 @@ export default {
       operators : ['+','-','*','/'],
       openBracket : '(',
       closeBracket : ')',
+      selected : null,
     }
   },
   methods : {
     push (e) {
       if (!e && e !== 0) return
       e = e.trim()
-      const lastItem = this.formula.slice(-1)[0]
+      const lastItem = this.formula[this.formula.length-1]
       if (lastItem&&this.operators.indexOf(lastItem.text)>-1&&this.operators.indexOf(e)>-1) return
 
       //console.log('test',lastItem,lastItem&&this.operators.indexOf(lastItem.text)>-1,this.operators.indexOf(e)>-1)
@@ -80,6 +79,7 @@ export default {
       //console.log(this.formula)
 
       this.$set(this.formula, this.formula.length,this.makeItem(e))
+      //this.formula.push(this.makeItem(e))
       this.$emit('change',this.formula.map(x=>x.text))
       //this.formula.push( this.makeItem(e) )
 
@@ -88,6 +88,7 @@ export default {
     },
     update(e) {
       console.log('updating')
+      //this.formula.splice(this.selected, 1,this.makeItem(e))
       this.$set(this.formula, this.selected,this.makeItem(e))
       this.$emit('change',this.formula.map(x=>x.text))
     },
@@ -99,18 +100,19 @@ export default {
     },
     sel(index) {
       console.log('sel ' + index )
-      this.formula.forEach((x,i)=>{
-        if (i === index) {
-         x.selected = !x.selected
-       } else {
-         x.selected = false;
-       }
+      this.selected = this.formula[index].selected ? null : index
+      this.formula = this.formula.map((x,i)=>{
+          x.selected = i === index ? !x.selected : false;
+         return x
       })
       this.$forceUpdate()
     },
     remove(index) {
-      this.$delete(this.formula, index)
+      //this.$delete(this.formula, index)
+      this.selected = null
+      this.formula = this.formula.splice(index,1)
       this.$emit('change',this.formula.map(x=>x.text))
+
       //this.formula = [...this.formula]
     },
     clear() {
@@ -120,13 +122,6 @@ export default {
   computed : {
     formula () {
       return this.value ? this.value.map(x=>this.makeItem(x)) : []
-    },
-    selected () {
-      for (var x=0;x<this.formula.length;x++) {
-          if (this.formula[x].selected) return x
-      }
-
-      return null
     },
     controls () {
       return [...this.operators, this.openBracket, this.closeBracket]
