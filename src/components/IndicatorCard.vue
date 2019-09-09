@@ -11,7 +11,7 @@
 
   <!-- KEYSTAT -->
   <indicator-key-stat
-  v-else-if="item.type==='Figure' || item.type==='List' || item.type==='Chart'"
+  v-else-if="item.type==='Figure' || item.type==='Chart'"
   :selected="selected"
   :name="item.text"
   :figure="item.figure"
@@ -23,6 +23,11 @@
   @childClick="childClick"
   >
  </indicator-key-stat>
+
+ <pie-chart
+  v-else-if="item.type==='List'"
+  :figure="item.figure[0]"
+ >{{item.text}}</pie-chart>
 
 <!-- MAP -->
 <div v-else-if="item.type==='Map'">
@@ -45,10 +50,11 @@
 import IndicatorKeyStat from './IndicatorKeyStat.vue'
 import MapView from './MapView.vue'
 import Timeline from './Timeline.vue'
+import PieChart from './PieChart.vue'
 
 export default {
   components: {
-    MapView, IndicatorKeyStat, Timeline
+    MapView, IndicatorKeyStat, Timeline, PieChart
   },
   props: ['selected', 'item','compact'],
   data () {

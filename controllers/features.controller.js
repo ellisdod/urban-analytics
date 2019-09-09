@@ -9,6 +9,7 @@ const layers = require('../models/models.model')
 const geojson = require('../models/geojson.model')
 const functions = require('../src/api.functions')
 const arrayUtils = require('../src/plugins/arrayUtils.js')
+const flatten = require('flatten-obj')()
 
 
 
@@ -158,6 +159,7 @@ function FeatureController (model) {
       const shape_length = layerAttributes.filter(x=>x.name==='shape_length')[0]
 
       console.log('features example',features[0])
+      console.log('areas example',areas[0])
 
       const joined = this.spatialJoin(features,areas,areaLayer.code)
 
@@ -169,6 +171,7 @@ function FeatureController (model) {
         if (shape_length) x.feature.properties.shape_length = turf.length(x.feature) * 1000
         return this.createUpdateReq({_id:x._id},null,x)
       })
+      console.log('updating ' + ops.length + ' features')
 
       return model.bulkWrite(ops)
     })
@@ -233,6 +236,7 @@ this.computeAttributeFunctions = function(accumulator,attributes,feature,count){
         const p = property[i.name] || 'unknown'
         obj[key].count[p] =  (obj[key].count[p] || 0) + 1
         obj[key].total.count = (obj[key].total.count || 0) + 1
+        obj[key].total.categories = Object.keys(obj[key].count).length
         if (geoKey) {
           const val = parseInt(property[geoKey]||'0')
           obj[key][geoKey] = obj[key][geoKey] || {}
@@ -260,6 +264,7 @@ this.computeLayerCalc = function (calc,ind) {
       }
       return obj
     },acc)
+    else return null
   }
 
   var mathIt = {
@@ -303,37 +308,53 @@ this.computeLayerCalc = function (calc,ind) {
 
   function calculateArray(arr) {
     let operator;
-    return arr.reduce((acc,x, index)=>{
-      //console.log('key', x)
-      if (Array.isArray(x)) x = calculateArray(x)
-      x = x.length < 26 ? parseInt(x) : arrayUtils.getNested(x,ind)
+    console.log(arr,ind,calc)
+    const res = arr.reduce((acc, x, index,arr)=>{
+
+      console.log(x, 'operator: '+ operator, mathIt[x])
+      if (Array.isArray(x)) {
+        console.log('is array')
+        x = calculateArray(x)
+      } else if (typeof x === 'string' && !mathIt[x]) {
+        console.log('is string', arrayUtils.getNested(x.replace(calc.layer,calc.key),ind))
+        console.log(x.replace(calc.layer,calc.key))
+        x = x.length < 26 ? parseInt(x) : arrayUtils.getNested(x.replace(calc.layer,calc.key),ind)
+      }
       //console.log('nested value', x)
-      if (index === 0) {
+      if ( x === null || x === undefined ) {
+        acc = null
+        arr.slice(0) // break early
+        return acc
+      } else if (index === 0) {
         acc = x
       } else if (mathIt[x]) {
         operator = x
-      } else if (operator) {
+        console.log('operator: '+ operator)
+      } else if (x&&operator) {
         if (typeof acc === 'number' && typeof x === 'number') {
           acc = mathIt[ operator ](acc,x)
         } else if (acc && typeof acc === 'object' && typeof x === 'number') { // null is object
           //console.log('object/number')
           acc = mathObj(acc,x,operator)
-        } else if (typeof acc === 'number' && x && typeof x === 'object'){
+        } else if (typeof acc === 'number' && x && typeof x === 'object') {
           //console.log('number/object')
           acc = mathObj(x,acc,operator)
-        } else if (acc && typeof acc === 'object' && x && typeof x === 'object'){
+        } else if (acc && typeof acc === 'object' && x && typeof x === 'object') {
           //console.log('number/object')
           Object.keys(acc).forEach(key=>{
             acc[key] = mathObj(x,acc[key],operator)
           })
         }
+        console.log('res: '+ acc)
       }
       //console.log(index, acc)
       return acc
     },0)
+    console.log(res)
+    return res
   }
 
-  let result = calculateArray(nestArray(calc))
+  let result = calculateArray(nestArray(calc.func))
 
   console.log('rounded',roundObj(result))
   return roundObj(result)
@@ -352,7 +373,7 @@ this.applyLayerFunctions = function(features,areaLayer) {
 
   let layerAttributes = layers.layerAttributes.find({layer:layerId},'',{lean: true})
   let areas = geojson.areas.find({layer: areaLayer._id},'',{lean: true})
-  let layerCalcs = layers.layerCalcs.find({layer:layerId},'',{lean: true})
+  let layerCalcs = layers.layerCalcs.find({$or:[{layer:layerId},{layer:areaLayer._id}]},'',{lean: true})
   let indicators = geojson.indicators.find({layer: areaLayer._id },'',{lean: true})
   let styles = layers.styles.find({layer:layerId},'',{lean:true})
 
@@ -364,6 +385,12 @@ this.applyLayerFunctions = function(features,areaLayer) {
     areas = arr[1]
     layerCalcs = arr[2]
     indicators = arr[3]
+
+    layerCalcs.forEach(x=>{
+      //console.log('x.layer:areaLayer',x.layer,areaLayer._id)
+      x.key = x.layer.toString() === areaLayer._id.toString() ? 'attached' : layerId
+      return x
+    })
 
     //console.log('layerCalcs',layerCalcs[0])
     //console.log('indeicators',indicators[0])
@@ -460,25 +487,41 @@ this.applyLayerFunctions = function(features,areaLayer) {
   },this.chainError)
   .then((inds,err)=>{
     console.log(`calculating ${layerCalcs.length} for ${inds.length} indicators`)
-    const ops = []
-    inds.forEach((x,i)=>{
-      if (!inds[i][layerId]) return
+
+    const ops = inds.reduce((acc,x,i)=>{
+      //if (!inds[i][layerId]) return //why?
+      let updateObj;
       layerCalcs.forEach(calc=>{
         //console.log(i, inds[i])
         //inds[i][layerId] = inds[i][layerId] || {} // null values exist for areas without features
-        inds[i][layerId][calc.name] = self.computeLayerCalc(calc.func,x)
+        const calcResult = self.computeLayerCalc(calc,x)
+        console.log('calcResult',calcResult)
+        //if (calcResult !== null && calcResult !== undefined ) {
+          updateObj = updateObj || {}
+          updateObj[calc.key] = updateObj[calc.key] || {}
+          updateObj[calc.key][calc.name] = calcResult
+        //}
       })
-      console.log('computed indicator', inds[i])
-      ops.push( this.createUpdateReq({'_id':inds[i]._id}, layerId, inds[i][layerId]) )
+      console.log('updateObj',updateObj)
+      if (updateObj) acc.push( this.createUpdateReq({'_id':x._id}, null, flatten(updateObj) ) )
+      //console.log('computed indicator', JSON.stringify(this.createUpdateReq({'_id':x._id}, null, flatten(updateObj) )))
+      //acc.push( this.createUpdateReq({'_id':x._id}, null, flatten(updateObj) ) )
+      return acc
       //console.log('completed ' + ops.length)
-    })
+    },[])
+
+    //console.log('operations',ops)
     if (ops.length > 0 ) {
+      console.log('updating ' + ops.length + ' indicators'  )
       return geojson.indicators.bulkWrite(ops)
     } else {
-      return Promise.resolve()
+      return Promise.reject()
     }
   })
-  .then(()=> this.createAttributeStyles(features,layerAttributes))
+  .then((x)=> {
+    console.log(x)
+    return this.createAttributeStyles(features,layerAttributes)
+  })
   .catch(err=>{
     console.log(err)
     return Promise.reject()
@@ -494,7 +537,7 @@ this.createAttributeStyles = function(features,attributes) {
 
     for (var i=0;i<attributes.length;i++) {
       const a = attributes[i]
-      if (a.type === 'String') {
+      if (a.type === 'String' || a.type === 'Text') {
         const attr = a.name
         const val =  x.feature.properties[attr]
         acc[attr] = acc[attr] || {}
@@ -528,9 +571,9 @@ this.createAttributeStyles = function(features,attributes) {
 
 //console.log(obj,features.length,layerAttributes.length)
 
-//console.log(styles)
+console.log('operations: ' + ops.length + '\nfeatures: ' + features.length + ' \nattributes: ' + attributes.length)
 
-return layers.styles.bulkWrite(ops)
+return ops.length ? layers.styles.bulkWrite(ops) : Promise.reject('no styles to add')
 }
 
 this.spatialJoin = function (features, areas, code) {
@@ -544,14 +587,17 @@ this.spatialJoin = function (features, areas, code) {
 
   const shapeType = features.features[0].geometry.type
   if (shapeType === 'Point') {
-    tagged = turf.tag(features, areas, 'id', code)
+    tagged = turf.tag(features, areas, 'areaCode', code)
   } else {
     //console.log(centroid)
     //console.log(typeof centroid)
     const centroids = features.features.map(x=>turf.centroid(x))
     console.log('centroids',centroids.length)
-    tagged = turf.tag( { type :"FeatureCollection", features :centroids}, areas, 'id', code)
-    console.log('tagged',tagged.length)
+    console.log('centroid', centroids[0])
+
+    tagged = turf.tag( { type :"FeatureCollection", features :centroids}, areas, 'areaCode', code)
+    console.log('tagged',tagged.features.length, tagged.features.filter(x=>x.properties[code]).length, tagged.features[0])
+
     //console.log('total tagged',tagged.features.filter(x=>x.properties.JIIS_stat_area).length )
   }
   return features.features.map((x,i)=>{

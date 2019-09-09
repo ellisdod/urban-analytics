@@ -22,19 +22,19 @@
               <v-select
               v-if="i._options&&Array.isArray(i._options)&&i._options.length>0"
               v-model="edited[key]"
+              :items="i._options"
               :label="i._text"
               :small-chips="i._multiple"
               :multiple="i._multiple"
               clearable
-              item-text="name"
-              item-value="name"
+              :item-text="Object.keys(i._options[0]).filter(x=>x.indexOf('text')>-1||x.indexOf('name')>-1)[0]"
+              item-value="value"
               :rules="[validateItem(edited[key],i)]"
               box
-              validate-on-blur
-              v-bind:items="i._options">
+              validate-on-blur>
             </v-select>
 
-            <component v-if="i._options&&i._options.component" :is="i._options.component" :value="edited[key]" @change="function(e){edited[key]=e}"/>
+            <component v-else-if="i._options&&i._options.component" :is="i._options.component" :value="edited[key]" @change="function(e){edited[key]=e}"/>
 
             <div v-else-if="i._options&&i._options==='dynamic'" style="display:flex;flex-direction:column;" >
             <p class="subheading"> {{ Object.keys(edited[key]).length ? 'Choices' : '' }} </p>
@@ -84,7 +84,7 @@
     <v-switch v-else-if="i.type===Boolean||i.type==='Boolean'" v-model="edited[key]" :label="i._text" color="primary"></v-switch>
     <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text" :type="i.type==='Number'?'number':'text'" :rules="[validateItem(edited[key],i)]" box validate-on-blur></v-text-field>
 
-    <v-text-field v-else v-model="edited[key]" :label="i._text" validate-on-blur disabled></v-text-field>
+  <!--  <v-text-field v-else v-model="edited[key]" :label="i._text" validate-on-blur disabled></v-text-field>-->
 
   </v-flex>
 </v-layout>
@@ -135,7 +135,9 @@
       top
       :timeout="1000"
       :color="$store.state.colors[2]"
-><v-icon>check</v-icon>Saved</v-snackbar>
+>
+<v-icon>check</v-icon>Saved
+</v-snackbar>
 
 </v-card>
 </template>
@@ -261,9 +263,12 @@ export default {
         if (this.nestedPath) {
           updateObj = Object.keys(this.edited).reduce((acc,key)=>{
             let value = self.edited[key]
-            value = typeof value === 'string' && value.trim() === '' ? null : value
-            value = value && this.schema.schema[key].type === 'Number' ? parseInt(value) : value
-            value = value && this.schema.schema[key].type === 'Text' ? value.toString() : value
+            if (typeof value === 'string' && value.trim() === '' ) {
+              value = null
+            } else if (value && this.schema.schema[key]) {
+              if (this.schema.schema[key].type === 'Number') value = parseInt(value)
+              else if (this.schema.schema[key].type === 'Text') value = value.toString()
+            }
             acc[ self.nestedPath+'.'+key] = value
             return acc
           },{})

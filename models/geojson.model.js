@@ -75,12 +75,12 @@ function Schema(name,collection) {
       validate: {
         validator: function(v) {
 
-          return v.toLowerCase() === layer.data_type.toLowerCase() ||
-                 'multi'+v.toLowerCase() === layer.data_type.toLowerCase();
+          return v.toLowerCase().replace('multi','') === layer.data_type.toLowerCase().replace('multi','')
+
         },
         message: props => `${props.value} does not match layer data type:
                            \n Layer: ${layer.data_type.toLowerCase()}
-                           \n Feature: ${v.toLowerCase()}`
+                           \n Feature: ${props.value.toLowerCase()}`
       }
     }
   }

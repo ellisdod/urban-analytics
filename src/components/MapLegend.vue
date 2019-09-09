@@ -67,6 +67,7 @@ export default {
       return this.attributes[this.attributeName]
     },
     valueStyles () {
+      if (!this.$store.getters.styles[this.layer._id]) return null
       return this.$store.getters.styles[this.layer._id][this.attributeName]
     }
   },

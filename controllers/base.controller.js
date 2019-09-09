@@ -54,7 +54,7 @@ const Controller = function(model) {
     model.findOneAndUpdate(query, req.body, {upsert:true}, function (err, Building) {
       if (err) return next(err);
       const message = req.params.id ? 'Updated!' : 'Inserted!';
-      res.send(message);
+      res.status(200).send(message);
     })
   }
 

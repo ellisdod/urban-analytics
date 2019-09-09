@@ -4,8 +4,10 @@
     v-if="layersSet"
     ref="map"
     :zoom="zoomLevel || $store.state.map.zoom"
+    :zoomControl="false"
     :center="$store.state.map.center"
     :options="mapOptions"
+    :attribution="''"
     @update:center="centerUpdate"
     @update:zoom="zoomUpdate"
     :id="'map_'+featuresCollection"
@@ -105,7 +107,7 @@
 </l-map>
 
 <!-- TIMELINE -->
-<div v-for="(layer,id) in layers" class="map-info-panel ejmap-border-left ejmap-border-right" v-if="id==='5d2f0b46fe977fdb42180cd2'&&layer.on&&layer.features">
+<div v-for="(layer,id) in layers" v-if="!minimiseLegend&&id==='5d2f0b46fe977fdb42180cd2'&&layer.on&&layer.features" class="map-info-panel ejmap-border-left ejmap-border-right">
   <timeline
   title="Plan Submissions"
   :features="layer.features"
@@ -129,6 +131,7 @@
 
 <!-- LEGEND-->
 <div id="map-legend" v-if="!hideLegend" v-bind:style="legendStyle">
+  <slot></slot>
   <div v-if="!minimiseLegend" class="text-xs-center">
     <v-icon v-if="legendBottom" color="grey lighten-2">remove</v-icon>
     <area-select
@@ -253,7 +256,7 @@
   :center="$store.state.map.center"
   :options="mapOptions"
   id="preview_map"
-  v-bind:style="{height:'150px'}"
+  v-bind:style="{height:'150px',backgroundColor:'white'}"
   >
 <l-geo-json
 v-else-if="layersSet" v-for="(val,key) in layers"
@@ -334,7 +337,7 @@ const translate = require('@/plugins/translate')
 
 export default {
   name: 'MapView',
-  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapLink','minimiseLegend','hideControls','highlightColor'],
+  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapLink','minimiseLegend','hideControls','highlightColor','attribute'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -370,13 +373,15 @@ export default {
         url3: 'http://a.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png ',
       },
       center: L.latLng(31.778837,35.243452),
-      attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+      attribution: this.$props.hideControls ? '':'&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
       currentZoom: 14,
       currentCenter: L.latLng(31.778837,35.243452),
       showParagraph: false,
       mapOptions: {
         zoomSnap: 0.5,
-        scrollWheelZoom :false
+        scrollWheelZoom :false,
+        zoomControl: this.$props.hideControls ? false : true,
+        attributionControl:false,
       },
       layers: {},
   hidden:[],
@@ -589,15 +594,17 @@ computed: {
               self.openEditor(p._id)
               self.$store.commit("UPDATE",{key:'_col_'+self.featuresCollection+'_selected',value:p._id})
               self.$store.commit("UPDATE",{key:'neighbourhood',value:p.areaCode || p.JIIS_stat_area})
+              const center = {
+                lng:(e.target._bounds._northEast.lng + e.target._bounds._southWest.lng)/2,  //e.latlng.lng
+                lat:(e.target._bounds._northEast.lat + e.target._bounds._southWest.lat)/2
+              }
+              //self.$refs.map.mapObject.panTo(center)
               self.$store.commit('UPDATE',{
                 key:['map','center'],
-                value: {
-                  lng:(e.target._bounds._northEast.lng + e.target._bounds._southWest.lng)/2,  //e.latlng.lng
-                  lat:(e.target._bounds._northEast.lat + e.target._bounds._southWest.lat)/2
-                }
+                value: center
               })
               console.log(e)
-              self.$nextTick(()=>self.$forceUpdate())
+              //self.$nextTick(()=>self.$forceUpdate())
             },
           });
       },
@@ -619,9 +626,9 @@ computed: {
         style = Object.assign({
           radius: 4,
           fillColor: this.$store.state.colors[2],
-          color:this.$store.state.colors[2],
+          color: this.$store.state.colors[2],
           weight: 1,
-          stroke:true,
+          stroke: true,
           opacity: layer.strokeOpacity/100,
           fillOpacity: layer.fillOpacity/100,
         }, style )
@@ -762,20 +769,19 @@ computed: {
       }
       else base[e.key]=e.value
 
+      console.log('has range', layer.attributes[layer.attribute].range)
+
       if (e.key === 'range') {
-        this.$set(layer,'colorRange',e.value)
-        this.$set(layer,'colorConstant',e.value[1]-e.value[0])
+        this.setRanges(layer, e.value[0], e.value[1])
+      } else if (layer.attributes[layer.attribute].range) {
+        console.log('setting ranges')
+        const range = layer.attributes[layer.attribute].range
+        this.setRanges(layer, range.min,range.max)
       }
       this.filterFeatures(layerId)
     },
-    updateRange(e) {
-      const attr = this.layers[e.layer].attribute
-      const rangeObj = this.layers[e.layer].attributes[attr]
-      this.$set(rangeObj,'range',{max:e.range[1],min:e.range[0], constant:e.range[1]-e.range[0]})
-      this.$forceUpdate()
-    },
     addRanges(layerId,features) {
-      //console.log('range',layerId)
+      console.log('range',layerId)
       const layer = this.layers[layerId]
       if (!features) return null
 
@@ -788,11 +794,15 @@ computed: {
           //console.log(key+' range',range)
           this.$set(layer.attributes[key],'range', range)
           if (key===layer.attribute) {
-            layer.colorRange = [range.min,range.max]
-            layer.colorConstant = range.max - range.min
+            this.setRanges(layer, range.min, range.max)
+            console.log('range attribute',key)
           }
         }
       })
+    },
+    setRanges(layer, min, max) {
+      this.$set(layer,'colorRange',[min,max])
+      this.$set(layer,'colorConstant', max - min)
     },
     updateCollection(collection, layerId) {
       return this.$store.dispatch('UPDATE_COLLECTION', {name: collection, layer:layerId} )
@@ -872,7 +882,7 @@ computed: {
           if (acc[att.name] && categoryStyle) acc[att.name].categories = categoryStyle[att.name]
           return acc
         },{})
-        layer.attribute = Object.keys(layer.attributes)[0]
+        layer.attribute = this.attribute || Object.keys(layer.attributes)[0]
         layer.filters['0'].attribute = layer.attribute
 
         this.$set(this.layers, layer._id, layer)
