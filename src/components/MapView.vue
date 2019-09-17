@@ -377,9 +377,6 @@ export default {
     Timeline : Timeline,
     LayerSelect : LayerSelect
   },
-  $_veeValidate: {
-    validator: 'new'
-  },
   data () {
     return {
       mapMenu:false,
@@ -618,7 +615,7 @@ export default {
           layer.bindPopup(html);
           layer.on({
             click : self.updateOnSelect,
-            mousedown: function(e) {
+            'contextmenu': function(e) {
               const p = e.target.feature.properties
               if(!self.clickInterval){
 
@@ -631,7 +628,7 @@ export default {
                 }, 100)
               }
             },
-            mouseup: () => self.resetClickTimer()
+            'mouseup touchend': () => self.resetClickTimer()
           });
         },
         updateOnSelect (e) {
@@ -1127,13 +1124,10 @@ mounted(){
     }
 
     if (this.editable) {
-      this.$refs.map.mapObject.on('mousedown',function(e) {
+      self.$refs.map.$el.style.cursor = 'crosshair'
+      this.$refs.map.mapObject.on('contextmenu',function(e) {
         //console.log(e)
-        if(!self.clickInterval){
-          console.log(self.$refs.map)
-          self.$refs.map.$el.style.cursor = 'crosshair'
-          self.clickInterval = setInterval(() => {
-            if (self.clickTimer === 10) {
+
               self.$store.commit('UPDATE',{
                 key:['map','center'],
                 value: e.latlng
@@ -1141,18 +1135,12 @@ mounted(){
               self.$store.commit("UPDATE",{key:'_col_'+self.featuresCollection+'_selected',value:''})
               self.addNewSurveyFeature([e.latlng.lng,e.latlng.lat])
               self.openEditor()
-              self.resetClickTimer()
-            } else self.clickTimer++
-          }, 100)
-        }
-      })
-      this.$refs.map.mapObject.on('mouseup', function(e) {
-        if (self.clickInterval) self.resetClickTimer()
-        self.$refs.map.$el.style.cursor = 'grab'
-      })
-    }
 
-  })
+        })
+      }
+
+  }
+)
 
   this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
   //this.$store.watch( (state) => state._col_layers_selected, this.checkForUpdate )
