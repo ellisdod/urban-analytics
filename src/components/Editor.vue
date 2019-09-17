@@ -260,6 +260,13 @@ export default {
         const self = this
         let updateObj = Object.assign({},this.edited)
 
+        if (Array.isArray(updateObj._options)&&Object.keys(updateObj._options[0]).indexOf('value')>-1) {
+          updateObj._options.forEach(x=>{
+            x.value = x.value.toString()
+          })
+        }
+
+        //flatten object using dot notation
         if (this.nestedPath) {
           updateObj = Object.keys(this.edited).reduce((acc,key)=>{
             let value = self.edited[key]
@@ -273,9 +280,14 @@ export default {
             return acc
           },{})
         }
+        if (dbconfig[this.collection].create) {
+          //const newObj = dbconfig[this.collection].create(this)
+
+          updateObj = dbconfig[this.collection].create(this)
+          console.log('updated object',updateObj)
+        }
 
         if (this.filter) updateObj.layer = this.filterId
-        if (this.linkedFeature) updateObj.feature = this.linkedFeature
 
         const colparams = dbconfig[this.collection].params ? this.filterId : ''
 
