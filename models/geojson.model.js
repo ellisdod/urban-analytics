@@ -150,34 +150,48 @@ const indicatorSchema = function (name,collection) {
 const surveySchema = function (name,collection) {
   Schema.call(this,name,collection)
   this.schema = {
-  createdDate : {
-    type : Date,
-    required : true
-  },
-  lastEditedDate : {
-    type : Date,
-    required : true
-  },
-  feature : {
-    type : mongoose.Schema.Types.ObjectId,
-    required : true
-  },
-  layer : {
-    type : mongoose.Schema.Types.ObjectId,
-    required : true
-  },
-  properties : {
-    type : mongoose.Schema.Types.Mixed,
-  },
-  createdBy : {
-    type: String,
-    required : true
-  },
-  lastEditedBy : {
-    type: String,
-    required : true
+    feature:  {
+      type : {
+        type : String,
+        required : true
+      },
+      geometry : mongoose.Schema.Types.Geometry,
+      properties : {
+        year : {
+          type: Number,
+          required:true,
+        },
+        _survey : {
+          type: mongoose.Schema.Types.Mixed,
+          required:false,
+        },
+        _createdBy : {
+          type: String,
+          required : true
+        },
+        _lastEditedBy : {
+          type: String,
+          required : true
+        },
+        _createdDate : {
+          type : Date,
+          required : true
+        },
+        _lastEditedDate : {
+          type : Date,
+          required : true
+        },
+      }
+    },
+    layer : {
+      type : mongoose.Schema.Types.ObjectId,
+      required : true
+    },
+    linkedFeature : {
+      type : mongoose.Schema.Types.ObjectId,
+      required : true
+    },
   }
-}
 }
 
 
@@ -252,7 +266,7 @@ function setSurveyModels () {
       //if (layers.length===0) return null;
       layers.forEach( layer => {
         let schema = new surveySchema(layer._id,'surveyRecords')
-        schema.addPropertiesFromLayerAttrs(layer,attributes)
+        schema.addPropertiesFromLayerAttrs(layer,attributes,'feature.properties')
         schema.exportModel()
         //console.log('schema',schema.schema)
         //console.log(Object.keys(exports))

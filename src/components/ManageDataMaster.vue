@@ -354,7 +354,7 @@ export default {
               multiselect :true,
               collection:'surveyRecords',
               filter:'surveyLayers',
-              nestedPath:'properties'
+              nestedPath:'feature.properties'
             }
           ]
         },

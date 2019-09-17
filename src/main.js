@@ -619,8 +619,8 @@ getters : {
   surveyRecordsByFeature : state => {
     if (!state._col_surveyRecords[state._col_surveyLayers_selected]) return null
     return state._col_surveyRecords[state._col_surveyLayers_selected].reduce((acc,x) =>{
-      acc[x.feature] = acc[x.feature] || []
-      acc[x.feature].push(x)
+      acc[x.linkedFeature] = acc[x.linkedFeature] || []
+      acc[x.linkedFeature].push(x)
       return acc
     },{})
   }

@@ -1,7 +1,7 @@
 import colors from 'vuetify/es5/util/colors'
 
 export const theme = {
-  primary: colors.orange.lighten1,
+  primary: colors.orange.base, //colors.orange.lighten1,
   secondary: colors.grey.lighten3,
   tertiary: colors.blue.base,
   error: colors.red.base,
