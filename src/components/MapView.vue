@@ -3,7 +3,7 @@
     <l-map
     v-if="layersSet"
     ref="map"
-    :zoom="zoomLevel || $store.state.map.zoom"
+    :zoom="$store.state.map.zoom"
     :zoomControl="false"
     :center="$store.state.map.center"
     :options="mapOptions"
@@ -438,14 +438,14 @@ export default {
 
   },
   computed: {
-    surveyorAuth() {
+    surveyorAuth () {
       return arrayUtils.getNested('state.activeUser.groups.Surveyor',this.$store)
     },
     attributes () {
       if (!this.featureLayers) return null
       return this.layers[this.featureLayers[0]] ? this.layers[this.featureLayers[0]].attributes : null
     },
-    featureLayersArray() {
+    featureLayersArray () {
       if (!this.featureLayers) {
         return []
       } else if (Array.isArray(this.featureLayers)) {
@@ -454,7 +454,7 @@ export default {
         return [this.featureLayers]
       }
     },
-    legendStyle() {
+    legendStyle () {
       const style = this.options ? this.options.legendStyle : {}
       return Object.assign(
         {
@@ -467,13 +467,13 @@ export default {
           overflowX: 'visible!important'
         }, style || {})
       },
-      infoStyle() {
+      infoStyle () {
         return this.legendStyle.left === 0 ? {right : 0 } :  {left:0}
       },
       widthSmall () {
         return this.$refs.container && this.$refs.container.clientWidth < 300 ? true : false
       },
-      mapHeight() {
+      mapHeight () {
         const nav = document.getElementsByTagName('nav')[0]
         const navHeight = nav ? nav.clientHeight : 0
         return this.height || (window.innerHeight-navHeight) + 'px'
@@ -489,10 +489,10 @@ export default {
       layerPanelHeight () {
         return this.survey ? window.innerHeight - 150 : 350;
       },
-      surveyKeyArray() {
+      surveyKeyArray () {
         return Object.values(this.surveyKey);
       },
-      protobufOpts() {
+      protobufOpts () {
         const opacity = this.survey ? this.surveyOpacity : 1;
         return {
           vectorTileLayerStyles: vectorTileStyling2,
@@ -500,7 +500,7 @@ export default {
           opacity: opacity
         };
       },
-      tileOpts() {
+      tileOpts () {
         const opacity = this.survey ? this.surveyOpacity : 1;
         return {
           opacity: opacity
@@ -516,19 +516,19 @@ export default {
       }
     },
     methods: {
-      addFilter(layer) {
+      addFilter (layer) {
         let max = Object.keys(layer.filters).slice(-1)[0]
         max = (parseInt(max) + 1)
         const attributeKeys = Object.keys(layer.attributes)
         this.$set(layer.filters, max.toString(), {attribute:attributeKeys[max]})
       },
-      removeFilter(layer,index) {
+      removeFilter (layer,index) {
         this.$delete(layer.filters,index.toString())
       },
-      toggleLayer(key) {
+      toggleLayer (key) {
 
       },
-      filterFeatures(layerId) {
+      filterFeatures (layerId) {
         console.log('filterFeatures')
         function notAttributeValue(f,att, categories){
           const val = f.feature.properties[att]
@@ -560,7 +560,7 @@ export default {
         //this.update()
 
       },
-      openMavatPlan(mavat_code) {
+      openMavatPlan (mavat_code) {
         let w = window.open()
         w.document.write(`<html><body>
           <form action="http://mavat.moin.gov.il/MavatPS/Forms/SV4.aspx?tid=4" method="post" name="redirect_form">
@@ -568,7 +568,7 @@ export default {
           <v-btn type="submit">Go to mavat website<v-btn>
           </form></body></html>`)
         },
-        embedIds(features) {
+        embedIds (features) {
           return features.reduce((acc,x)=>{
             x.feature.properties._id = x._id
             acc.push( x.feature)
@@ -594,7 +594,7 @@ export default {
           }
           return opts
         },
-        featureInteract(feature, layer) {
+        featureInteract (feature, layer) {
           const self = this;
           const p = feature.properties
           let html = Object.keys(feature.properties).reduce((acc,key)=>
@@ -654,14 +654,14 @@ export default {
         removeLastSurveyFeature () {
           this.newSurveyFeatures.splice(this.newSurveyFeatures.length-1,1)
         },
-        geoJsonStyle(layerId) {
+        geoJsonStyle (layerId) {
           const style = {}
           var self = this;
           return (feature) => {
             return self.getLegendStyle(feature, layerId, style)
           }
         },
-        getLegendStyle(feature,layerId,style){
+        getLegendStyle (feature,layerId,style){
           //if (!this.legends) return null
           //console.log(feature.properties._id===this.$store.state._col_features_selected,feature.properties._id,this.$store.state._col_features_selected)
           style = Object.assign({
@@ -713,7 +713,7 @@ export default {
           return style
 
         },
-        getAreaStyle(outline){
+        getAreaStyle (outline) {
           const self = this
           const style = {
             weight: 2,
@@ -737,7 +737,7 @@ export default {
           }
 
         },
-        updateBaseMap(map,on) {
+        updateBaseMap (map,on) {
           //console.log(map,on);
           this.baseMap = on ? map : '';
           this.baseMaps.forEach(x=> x.selected = x.type == map ? on :false )
@@ -748,17 +748,17 @@ export default {
         centerUpdate (center) {
           this.currentCenter = center;
         },
-        getCoordsPoint(feature) {
+        getCoordsPoint (feature) {
           const crds = feature.geometry.coordinates[0][0];
           return L.latLng(crds[1],crds[0]);
         },
-        getSurveyNames(){
+        getSurveyNames (){
           API.distinct('buildings','feature.properties.neighbourhood')
           .then( x=> {
             this.surveyNames = x.data
           })
         },
-        getSurveyData(name) {
+        getSurveyData (name) {
           //console.log(name);
           API.getSurveyData(name)
           .then( x=> {
@@ -775,7 +775,7 @@ export default {
             this.center = this.editMapCenter =this.getCoordsPoint(x.data[0].feature)
           })
         },
-        toggleOptionsDialog() {
+        toggleOptionsDialog () {
           this.optionsDialog = ! this.optionsDialog;
           if (this.optionsDialog) {
             setTimeout(function(){
@@ -794,7 +794,7 @@ export default {
             setTimeout(()=>map.invalidateSize(),500)
           }
         },
-        layerOn(key,e) {
+        layerOn (key,e) {
           console.log('turning on layer: ' + key, e)
           key = typeof key === 'number' ? Object.keys(this.layers)[key] : key
           if (this.layers[key]) {
@@ -805,7 +805,7 @@ export default {
           this.$set(this.layerPanels, index, e);
           //Object.assign(this.layers[key],{on:e})
         },
-        updateLayer(layerId,e,path) {
+        updateLayer (layerId,e,path) {
           console.log('updating Layer')
           const layer = this.layers[layerId]
           const base = path ? arrayUtils.getNested(path,layer) : layer;
@@ -830,7 +830,7 @@ export default {
           }
           this.filterFeatures(layerId)
         },
-        addRanges(layerId,features) {
+        addRanges (layerId,features) {
           console.log('range',layerId)
           const layer = this.layers[layerId]
           if (!features) return null
@@ -850,14 +850,15 @@ export default {
             }
           })
         },
-        setRanges(layer, min, max) {
+        setRanges (layer, min, max) {
           this.$set(layer,'colorRange',[min,max])
           this.$set(layer,'colorConstant', max - min)
         },
-        updateCollection(collection, layerId) {
+        updateCollection (collection, layerId) {
+          console.log('updating collection', layerId)
           return this.$store.dispatch('UPDATE_COLLECTION', {name: collection, layer:layerId} )
         },
-        checkForUpdate() {
+        checkForUpdate () {
           if (!this.layers) return null
           console.log('checking for update')
           const featurecol = this.$store.state['_col_'+this.featuresCollection]
@@ -898,7 +899,7 @@ export default {
             this.update()
           })
         },
-        setLayers() {
+        setLayers () {
           const styles = this.$store.getters.styles
           const schema = dbconfig[this.featuresCollection||'features']
           const allLayers = this.allLayers
@@ -960,16 +961,23 @@ openEditor (featureId) {
   //if (this.featuresCollection !== 'surveyFeatures') return null;
 },
 loadSurveyLayer () {
-  //console.log('loadsurveylayer',layer)
+  console.log('loadsurveylayer')
+  //this.zoomToArea()
   const surveyLayer = this.$store.state._col_surveyLayers.filter(x=>x._id===this.$store.state._col_surveyLayers_selected)[0]
   Object.keys(this.layers).forEach(key=>{
     const val = surveyLayer.featureLayer.indexOf(key) > -1 ? true : false
-    this.$set(this.layers[key],'on',val)
-    this.filterFeatures(key)
+    this.layerOn(key,val)
   })
   this.update()
+  this.loadSurveyRecords()
 },
-addUnlinkedSurveyFeatures() {
+loadSurveyRecords () {
+  console.log('loading survey records')
+  if (this.editable) this.updateCollection('surveyRecords', this.$store.state._col_surveyLayers_selected)
+  .then(()=>this.addUnlinkedSurveyFeatures())
+},
+addUnlinkedSurveyFeatures () {
+  console.log('updating survey features')
   if (!this.editable) return null
   const records = this.$store.state._col_surveyRecords[this.$store.state._col_surveyLayers_selected]
   this.newSurveyFeatures = records.filter(x=>!x.linkedFeature).map(x=>x.feature)
@@ -987,7 +995,7 @@ exportLayersAsCSV () {
     }
   })
 },
-exportToCsv(layer) {
+exportToCsv (layer) {
   var processRow = function (row) {
     var finalVal = '';
     for (var j = 0; j < row.length; j++) {
@@ -1062,7 +1070,7 @@ exportToCsv(layer) {
 }
 
 },
-created() {
+created () {
   this.setLayers()
 },
 watch: {
@@ -1100,9 +1108,7 @@ watch: {
   },
   editable: function(val) {
     if (!val) return null
-    this.updateCollection('surveyRecords', this.$store.state._col_surveyLayers_selected)
-    .then(()=>this.addUnlinkedSurveyFeatures())
-
+    this.loadSurveyRecords()
   }
 },
 
@@ -1154,9 +1160,7 @@ mounted () {
   }
 )
 
-if (this.editable) this.updateCollection('surveyRecords', this.$store.state._col_surveyLayers_selected)
-.then(()=>this.addUnlinkedSurveyFeatures())
-
+//this.loadSurveyRecords()
 this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
 //this.$store.watch( (state) => state._col_layers_selected, this.checkForUpdate )
 //this.$store.watch( (state) => state._col_indicatorSections_selected, this.checkForUpdate )
@@ -1189,6 +1193,10 @@ return acc;
   top:12px;
   right:12px;
   text-align:right;
+}
+
+.main-map.theme--light.v-icon {
+    color: 'black' !important;
 }
 
 .highlighted {

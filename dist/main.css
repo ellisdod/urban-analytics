@@ -135,6 +135,9 @@
   right:12px;
   text-align:right;
 }
+.main-map.theme--light.v-icon {
+    color: 'black' !important;
+}
 .highlighted {
   background-color:#e8e8e8;
 }
