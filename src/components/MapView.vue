@@ -264,32 +264,32 @@
 </div>
 
 <v-dialog
-  v-if="dialog&&editable"
-  v-model="dialog"
-  max-width="700px"
-  :fullscreen="$vuetify.breakpoint.xsOnly"
-  persistent>
-  <l-map
-  v-if="layersSet"
-  :zoom="18"
-  :center="$store.state.map.center"
-  :options="mapOptions"
-  id="preview_map"
-  v-bind:style="{height:'150px',backgroundColor:'white'}"
-  >
-  <l-geo-json
-  v-if="editable"
-  :geojson="newSurveyFeatures"
-  :options="getGeoJsonOptions('','Point',true)"
-  />
-  <l-geo-json
-  v-else-if="layersSet" v-for="(val,key) in layers"
-  v-if="layers[key].on && layers[key].features"
-  :key="key"
-  :geojson="layers[key].features"
-  :options="getGeoJsonOptions(key)"
-  :options-style="geoJsonStyle(key)"
-  />
+v-if="dialog&&editable"
+v-model="dialog"
+max-width="700px"
+:fullscreen="$vuetify.breakpoint.xsOnly"
+persistent>
+<l-map
+v-if="layersSet"
+:zoom="18"
+:center="$store.state.map.center"
+:options="mapOptions"
+id="preview_map"
+v-bind:style="{height:'150px',backgroundColor:'white'}"
+>
+<l-geo-json
+v-if="editable"
+:geojson="newSurveyFeatures"
+:options="getGeoJsonOptions('','Point',true)"
+/>
+<l-geo-json
+v-else-if="layersSet" v-for="(val,key) in layers"
+v-if="layers[key].on && layers[key].features"
+:key="key"
+:geojson="layers[key].features"
+:options="getGeoJsonOptions(key)"
+:options-style="geoJsonStyle(key)"
+/>
 </l-map>
 <v-tabs>
   <v-tab v-for="(item,index) in editItems" :key="index">
@@ -381,8 +381,7 @@ export default {
     return {
       mapMenu:false,
       newSurveyFeatures:[],
-      clickInterval:false,
-      clickTimer:0,
+      featureClick: false,
       layersSet : false,
       dialog : false,
       itemTemplate : {},
@@ -578,6 +577,7 @@ export default {
         },
         close() {
           this.dialog = false
+          this.featureClick = false
         },
         getGeoJsonOptions (key,type,disable) {
           //console.log('getgeojsonopts',key,this.layers[key])
@@ -614,21 +614,14 @@ export default {
 
           layer.bindPopup(html);
           layer.on({
-            click : self.updateOnSelect,
-            'contextmenu': function(e) {
+            contextmenu : function(e) {
+              self.featureClick = true
+              console.log('featureclick', e)
               const p = e.target.feature.properties
-              if(!self.clickInterval){
-
-                self.clickInterval = setInterval(() => {
-                  if (self.clickTimer === 10) {
-                    self.updateOnSelect(e)
-                    self.openEditor(p._id)
-                    self.resetClickTimer()
-                  } else self.clickTimer++
-                }, 100)
-              }
+              self.updateOnSelect(e)
+              self.openEditor(p._id)
             },
-            'mouseup touchend': () => self.resetClickTimer()
+            click : self.updateOnSelect
           });
         },
         updateOnSelect (e) {
@@ -673,8 +666,8 @@ export default {
           //console.log(feature.properties._id===this.$store.state._col_features_selected,feature.properties._id,this.$store.state._col_features_selected)
           style = Object.assign({
             radius: 4,
-            fillColor: this.$store.state.colors[2],
-            color: this.$store.state.colors[2],
+            fillColor: this.$store.state.colors[0],
+            color: this.$store.state.colors[0],
             weight: 1,
             stroke: true,
           }, style )
@@ -690,13 +683,15 @@ export default {
 
           let colorKey = 'fillColor'
 
+          if (this.$store.getters.surveyRecordsByFeature[feature.properties._id]){
+            style.fillColor = style.color = this.$store.state.colors[0]
+          } else {
+            style.fillColor = style.color = this.$store.state.colors[2]
+          }
+
           if (feature.geometry.type.indexOf('LineString')>-1) {
             style.stroke = true
             colorKey = 'color'
-          }
-
-          if (this.editable && this.$store.getters.surveyRecordsByFeature[feature.properties._id]){
-            style.fillColor = style.color = '#34eb6e'
           }
 
           if (feature.properties._id === this.$store.state._col_features_selected) {
@@ -903,7 +898,6 @@ export default {
             this.update()
           })
         },
-
         setLayers() {
           const styles = this.$store.getters.styles
           const schema = dbconfig[this.featuresCollection||'features']
@@ -974,6 +968,11 @@ loadSurveyLayer () {
     this.filterFeatures(key)
   })
   this.update()
+},
+addUnlinkedSurveyFeatures() {
+  if (!this.editable) return null
+  const records = this.$store.state._col_surveyRecords[this.$store.state._col_surveyLayers_selected]
+  this.newSurveyFeatures = records.filter(x=>!x.linkedFeature).map(x=>x.feature)
 },
 resetClickTimer () {
   if (this.clickInterval) clearInterval(this.clickInterval)
@@ -1098,10 +1097,16 @@ watch: {
   },
   legendBottom: function(val) {
     this.$nextTick(()=>this.$refs.map.mapObject.invalidateSize())
+  },
+  editable: function(val) {
+    if (!val) return null
+    this.updateCollection('surveyRecords', this.$store.state._col_surveyLayers_selected)
+    .then(()=>this.addUnlinkedSurveyFeatures())
+
   }
 },
 
-mounted(){
+mounted () {
   //console.log('layers on mount',this.layers)
   this.$nextTick(() => {
     //if (window.screen.width < 800) this.updateBaseMap('basic',true);
@@ -1128,29 +1133,39 @@ mounted(){
       this.$refs.map.mapObject.on('contextmenu',function(e) {
         //console.log(e)
 
-              self.$store.commit('UPDATE',{
-                key:['map','center'],
-                value: e.latlng
-              })
-              self.$store.commit("UPDATE",{key:'_col_'+self.featuresCollection+'_selected',value:''})
-              self.addNewSurveyFeature([e.latlng.lng,e.latlng.lat])
-              self.openEditor()
+        self.$nextTick(()=>{
+          if (self.featureClick) return null
+          console.log('mapclick', e)
+
+          self.$store.commit('UPDATE',{
+            key:['map','center'],
+            value: e.latlng
+          })
+          self.$store.commit("UPDATE",{key:'_col_'+self.featuresCollection+'_selected',value:''})
+          self.addNewSurveyFeature([e.latlng.lng,e.latlng.lat])
+          self.openEditor()
 
         })
-      }
+
+      })
+
+    }
 
   }
 )
 
-  this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
-  //this.$store.watch( (state) => state._col_layers_selected, this.checkForUpdate )
-  //this.$store.watch( (state) => state._col_indicatorSections_selected, this.checkForUpdate )
+if (this.editable) this.updateCollection('surveyRecords', this.$store.state._col_surveyLayers_selected)
+.then(()=>this.addUnlinkedSurveyFeatures())
 
-  //create survey plugin
-  //this.getSurveyNames();
-  /*this.editFeature = surveyQuestionsJson.reduce((acc,x)=>{
-  acc[x.name] = '';
-  return acc;
+this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
+//this.$store.watch( (state) => state._col_layers_selected, this.checkForUpdate )
+//this.$store.watch( (state) => state._col_indicatorSections_selected, this.checkForUpdate )
+
+//create survey plugin
+//this.getSurveyNames();
+/*this.editFeature = surveyQuestionsJson.reduce((acc,x)=>{
+acc[x.name] = '';
+return acc;
 },{});
 */
 
