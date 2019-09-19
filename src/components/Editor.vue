@@ -133,7 +133,7 @@
 <v-snackbar
       v-model="success"
       top
-      :timeout="1000"
+      :timeout="1500"
       :color="$store.state.colors[2]"
 >
 <v-icon>check</v-icon>Saved
@@ -311,7 +311,7 @@ export default {
       },
       close () {
         this.edited = {}
-        this.$emit('close',true)
+        this.$emit('close',false)
       },
       saveMany () {
         this.saving = true;
@@ -328,7 +328,7 @@ export default {
           api.create(this.collection,'',formData).then(x=>{
             console.log('uploaded')
             //this.$store.dispatch('UPDATE_COLLECTION',{name:'surveyRecords',layer:this.filterId})
-            this.close()
+            this.$emit('close',true)
             this.pasted = ''
           })
         }

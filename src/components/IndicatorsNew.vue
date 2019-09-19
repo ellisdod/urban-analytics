@@ -2,13 +2,13 @@
   <div v-if="$vuetify.breakpoint.xsOnly">
     <div
       class="pa-2 px-3 mt-0 ejmap-border-top ejmap-border-bottom"
-      style="z-index:4;top:56px;position:fixed;top:56px;width:100%;display:flex;">
+      style="z-index:4;top:56px;position:fixed;width:100%;display:flex;overlfow-y:hidden;height:50px;">
     <layer-select
      collection="indicatorSections"
      text="text_en"
      prepend-icon="bar_chart"
      append-icon=""
-     v-bind:childStyle="{fontWeight:500}"
+     v-bind:childStyle="{fontWeight:500,paddingTop:0,marginTop:0}"
      >
     </layer-select>
     <area-select
@@ -346,6 +346,10 @@ export default {
   .indicator-hover:hover, .indicator-hover:hover>div {
     cursor:pointer;
     background-color:var(--v-grey-lighten4);
+  }
+
+  div.v-select__selection.v-select__selection--comma {
+    white-space: nowrap;
   }
 
 

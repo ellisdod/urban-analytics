@@ -66,7 +66,7 @@
     <v-spacer></v-spacer>
     <template v-slot:activator="{ on }">
       <v-btn icon v-on="on">
-        <v-icon>more_vert</v-icon>
+        <v-icon color="black">layers</v-icon>
       </v-btn>
     </template>
 
@@ -306,7 +306,7 @@ v-if="layers[key].on && layers[key].features"
     :linkedFeature="$store.state._col_features_selected"
     :editItem="item"
     :permanent="true"
-    @close="close()"
+    @close="close"
     @update="function(){
       updateCollection('surveyRecords',$store.state._col_surveyLayers_selected)
       .then(()=>update())
@@ -321,7 +321,7 @@ v-if="layers[key].on && layers[key].features"
     :linkedFeature="$store.state._col_features_selected"
     :attributes="attributes"
     :permanent="true"
-    @close="close()"
+    @close="close"
     @update="function(){
       updateCollection('surveyRecords',$store.state._col_surveyLayers_selected)
       .then(()=>update())
@@ -575,7 +575,7 @@ export default {
             return acc
           },[])
         },
-        close() {
+        close(saved) {
           this.dialog = false
           this.featureClick = false
         },
@@ -1195,8 +1195,8 @@ return acc;
   text-align:right;
 }
 
-.main-map.theme--light.v-icon {
-    color: 'black' !important;
+.map-menu i.theme--light.v-icon {
+    color: #000 !important;
 }
 
 .highlighted {
