@@ -135,8 +135,8 @@
   right:12px;
   text-align:right;
 }
-.main-map.theme--light.v-icon {
-    color: 'black' !important;
+.map-menu i.theme--light.v-icon {
+    color: #000 !important;
 }
 .highlighted {
   background-color:#e8e8e8;
@@ -557,6 +557,9 @@ span.func-count {
 .indicator-hover:hover, .indicator-hover:hover>div {
     cursor:pointer;
     background-color:var(--v-grey-lighten4);
+}
+div.v-select__selection.v-select__selection--comma {
+    white-space: nowrap;
 }
 
 

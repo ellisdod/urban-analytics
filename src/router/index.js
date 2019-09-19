@@ -25,7 +25,7 @@ let router = new Router({
   routes: [
     {
       path: '/',
-      component: Indicators
+      component: MapFull
     },
     {
       path: '/upload',
