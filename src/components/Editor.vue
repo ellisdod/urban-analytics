@@ -260,7 +260,7 @@ export default {
         const self = this
         let updateObj = Object.assign({},this.edited)
 
-        if (Array.isArray(updateObj._options)&&Object.keys(updateObj._options[0]).indexOf('value')>-1) {
+        if (Array.isArray(updateObj._options)&&updateObj._options[0]&&Object.keys(updateObj._options[0]).indexOf('value')>-1) {
           updateObj._options.forEach(x=>{
             x.value = x.value.toString()
           })

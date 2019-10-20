@@ -11,6 +11,16 @@
 
   <v-spacer></v-spacer>
 
+  <v-btn
+    v-for="l in $store.state.languages"
+    v-if="l.name !== $store.state.language"
+    class="hidden-xs-only" @click="$store.commit('UPDATE',{key:'language',value:l.name})"
+    flat
+    >
+    {{l.text}}
+  </v-btn>
+
+
   <v-tooltip v-for="(item,i) in items" bottom :key="i" open-delay="100">
       <template v-slot:activator="{ on }">
         <v-btn class="hidden-xs-only" v-on="on" :to="item.route" icon>
