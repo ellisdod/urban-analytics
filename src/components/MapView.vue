@@ -597,8 +597,10 @@ export default {
         featureInteract (feature, layer) {
           const self = this;
           const p = feature.properties
-          let html = Object.keys(feature.properties).reduce((acc,key)=>
-          acc + '<tr><td><b>' + key + '<b><td><td>' + p[key] + '</td><tr>','<table>')
+          let html = Object.keys(p).reduce((acc,key)=>{
+            if (key.indexOf('_')==0|| key === 'JIIS_stat_area' || key === 'data_type') return acc
+            return acc + '<tr><td><b>' + key + '<b><td><td>' + p[key] + '</td><tr>'
+          },'<table>')
           + '</table>'
 
           if (p.mavat_code) {
@@ -625,6 +627,7 @@ export default {
           });
         },
         updateOnSelect (e) {
+
           const p = e.target.feature.properties
           //self.openEditor(p._id)
           const self = this
@@ -640,6 +643,9 @@ export default {
             value: center
           })
           console.log(e)
+          //e.target._openPopup()
+
+
           self.$forceUpdate()
         },
         addNewSurveyFeature (latlng) {

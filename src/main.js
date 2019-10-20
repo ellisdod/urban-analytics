@@ -58,7 +58,7 @@ Vue.config.productionTip = true
         text:'English'
       },{
         name:'ar',
-        text:'Arabic'
+        text:'العربية'
       }],
       theme : theme,
       tab:'',
