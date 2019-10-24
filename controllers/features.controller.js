@@ -38,7 +38,7 @@ function FeatureController (model) {
 
     return new Promise((resolve,reject)=>{
       fs.readFile(req.files.file.path, function(err, data) {
-        if (err) reject(err)
+        if (err) reject(err + ': could not read file')
         resolve(data)
       })
     })
@@ -152,7 +152,7 @@ function FeatureController (model) {
       areas = arr[2]
       layerAttributes = arr[3]
 
-      if (features.length===0) res.status(500).send('No features found for selected layer')
+      if (features.length===0) throw new Error('No features found for selected layer')
       console.log('analysing ' + features.length + ' features...')
 
       const shape_area = layerAttributes.filter(x=>x.name==='shape_area')[0]
@@ -180,7 +180,7 @@ function FeatureController (model) {
       //console.log(features[0].feature.properties)
       return this.applyLayerFunctions(features,areaLayer)
     })
-    .then(x=>res.status(200).send(x),this.chainError)
+    .then(x => res.status(200).send(x) )
     .catch(err => {
       this.chainError(err,res)
     })
@@ -545,9 +545,9 @@ this.createAttributeStyles = function(features,attributes) {
           acc[attr][val] = true
           ops.push(this.createUpdateReq({
             $and:[
-              { layer:mongoose.Types.ObjectId(x.layer) },
-              { attribute:attr},
-              { name : val}
+              { layer : mongoose.Types.ObjectId(x.layer) },
+              { attribute : attr },
+              { name : val }
             ]
           },null,
           {
@@ -571,9 +571,9 @@ this.createAttributeStyles = function(features,attributes) {
 
 //console.log(obj,features.length,layerAttributes.length)
 
-console.log('operations: ' + ops.length + '\nfeatures: ' + features.length + ' \nattributes: ' + attributes.length)
+ console.log('operations: ' + ops.length + '\nfeatures: ' + features.length + ' \nattributes: ' + attributes.length)
 
-return ops.length ? layers.styles.bulkWrite(ops) : Promise.reject('no styles to add')
+ return ops.length ? layers.styles.bulkWrite(ops) : null
 }
 
 this.spatialJoin = function (features, areas, code) {

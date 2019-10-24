@@ -19,6 +19,7 @@ const dbconfig = require('./db.config')
 const flatten = require('flatten-obj')()
 const arrayUtils = require('./plugins/arrayUtils')
 
+
 global.DEBUG = process.env.NODE_ENV === 'dev' ? true : false
 
 Vue.use(Vuetify, {

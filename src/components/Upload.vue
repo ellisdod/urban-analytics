@@ -73,9 +73,11 @@
 
 import axios from 'axios'
 import api from '@/api.js'
+import displayMessage from '../mixins/message.js'
 const dbConfig = require('@/db.config')
 
 export default {
+  mixins: [displayMessage],
   props : ['layer', 'layerCollection'],
   data() {
     return {
@@ -143,16 +145,7 @@ export default {
        })
        .catch(err=>{
          this.processing = false
-         console.log('err.response',err.response)
-         if(!err.response) {
-           alert(err)
-           return null
-         }
-         const errors = err.response.data.errors
-         alert(Object.keys(errors).reduce((acc,x)=>{
-           acc = acc + '\n' + errors[x].name + ': ' + errors[x].message
-           return acc
-         },''))
+         this.displayMessage(err)
        });
   }
 },

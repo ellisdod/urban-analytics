@@ -690,7 +690,7 @@ export default {
           let colorKey = 'fillColor'
 
           if (this.$store.getters.surveyRecordsByFeature[feature.properties._id]){
-            style.fillColor = style.color = this.$store.state.colors[0]
+            style.fillColor = style.color = this.$store.state.colors[1]
           } else {
             style.fillColor = style.color = this.$store.state.colors[2]
           }

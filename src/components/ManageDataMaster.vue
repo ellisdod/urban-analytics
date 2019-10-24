@@ -10,7 +10,9 @@
           <v-btn v-on="on"
           color="grey" class="mb-2" flat @click="uploadDialog=true" :icon="iconise">
           <v-icon class="">cloud_upload</v-icon>
-          <span class="hidden-sm-and-down ml-2">Upload</span>
+          <span class="hidden-sm-and-down ml-2">
+            {{ translateText("Upload") }}
+          </span>
         </v-btn>
       </template>
       <span>Upload Data</span>
@@ -20,7 +22,9 @@
         <v-btn v-on="on"
         color="grey" class="mb-2" flat @click="analysisDialog=true" :icon="iconise">
         <v-icon class="">assessment</v-icon>
-        <span class="hidden-sm-and-down ml-2">Update Feature Analysis</span>
+        <span class="hidden-sm-and-down ml-2">
+          {{ translateText("Update Feature Analysis") }}
+         </span>
       </v-btn>
     </template>
     <span>Update Feature Analysis</span>
@@ -63,7 +67,7 @@ show-arrows
 <v-tab
 v-for="(val,key,index) in tabs"
 :key="index" ripple @click="update(key)"
->{{val.text_en}}</v-tab>
+>{{val.text}}</v-tab>
 
 <v-tab-item lazy v-for="(val,key,index) in tabs" :key="index" class="pt-4"> <!--v-if="tab===key"-->
     <layer-select
@@ -183,6 +187,7 @@ import VueJsonPretty from 'vue-json-pretty'
 import LayerSelect from 'components/LayerSelect.vue'
 import api from '@/api.js'
 import axios from 'axios'
+import {translate} from '@/plugins/translate'
 
 export default {
   components: {
@@ -215,7 +220,7 @@ export default {
       return this.$vuetify.breakpoint.smAndDown
     },
     tabs () {
-      return  {
+      const tabs = {
         features : {
           text_en : 'Features',
           uploadLayer : this.$store.state['_col_layers_selected'],
@@ -231,19 +236,19 @@ export default {
           tables : [
             {
               type: 'datalist',
-              heading: 'Attributes',
+              heading_en: 'Attributes',
               collection:'layerAttributes',
               filter:'layers',
             },
             {
               type: 'datalist',
-              heading: 'Calculations',
+              heading_en: 'Calculations',
               collection:'layerCalcs',
               filter:'layers',
             },
             {
               type: 'datalist',
-              heading: 'Features Table',
+              heading_en: 'Features Table',
               multiselect :true,
               collection:'features',
               filter:'layers',
@@ -252,7 +257,7 @@ export default {
             },
             {
               type: 'datalist',
-              heading: 'Style',
+              heading_en: 'Style',
               collection:'styles',
               filter:'layers',
               searchable:true,
@@ -272,13 +277,13 @@ export default {
           tables : [
             {
               type: 'datalist',
-              heading: 'Attributes',
+              heading_en: 'Attributes',
               collection:'areaAttributes',
               filter:'areaLayers',
             },
             {
               type: 'datalist',
-              heading: 'Areas',
+              heading_en: 'Areas',
               collection:'areas',
               filter:'areaLayers',
               multiselect :true,
@@ -300,13 +305,13 @@ export default {
           tables : [
             {
               type: 'datalist',
-              heading: 'Attached Attributes',
+              heading_en: 'Attached Attributes',
               collection:'indicatorAttributes',
               filter:'areaLayers',
             },
             {
               type: 'datalist',
-              heading: 'Attached Calculations',
+              heading_en: 'Attached Calculations',
               collection:'layerCalcs',
               filter:'areaLayers',
             },
@@ -323,7 +328,7 @@ export default {
           tables : [
             {
               type: 'datalist',
-              heading: 'Blocks',
+              heading_en: 'Blocks',
               collection:'indicatorBlocks',
               filter:'indicatorSections',
             }
@@ -344,13 +349,13 @@ export default {
           tables : [
             {
               type: 'datalist',
-              heading: 'Questions',
+              heading_en: 'Questions',
               collection:'surveyLayerAttributes',
               filter:'surveyLayers',
             },
             {
               type: 'datalist',
-              heading: 'Survey Results',
+              heading_en: 'Survey Results',
               multiselect :true,
               collection:'surveyRecords',
               filter:'surveyLayers',
@@ -359,6 +364,7 @@ export default {
           ]
         },
       }
+    return translate([tabs], ['heading','text'], this.$store.state.language)[0]
     }
 
   },
@@ -377,6 +383,9 @@ export default {
       console.log('store',this.$store.state)
       //this.$forceUpdate()
       //console.log(this.$store.getters.selectedFeature)
+    },
+    translateText(text) {
+      return translate(text, null,this.$store.state.language)
     }
   },
   mounted(){

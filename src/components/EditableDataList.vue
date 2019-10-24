@@ -64,6 +64,7 @@
         style="padding-bottom:0;"
         color="grey"
         v-model="props.item._selected"
+        @change="selectLinked(props.index)"
         >
         </v-checkbox>
 
@@ -284,16 +285,15 @@ methods: {
     return new Promise((res,rej)=>{
       let request = this.collection
       if (dbconfig[this.collection].storeByLayer) {
-        const layer = self.filterId
         request = {
           name : this.collection,
-          layer : layer
+          layer : self.filterId
         }
-        if (!layer || (!force && this.$store.state._col_features[layer])) rej('No layer specified')
+        if (!self.filterId || (!force && this.$store.state['_col_' + this.collection][self.filterId])) rej('No layer specified')
       }
       self.$store.dispatch('UPDATE_COLLECTION',request)
       .then(x=>{
-        //console.log('forcing update')
+        console.log('updating items')
         this.items = this.prepareItems()
         self.$forceUpdate()
         res(x)
@@ -372,6 +372,24 @@ methods: {
   logStore() {
     //console.log('data',this)
     //console.log('store',this.$store.state)
+  },
+  selectLinked(index) {
+    //item._selected = !item._selected
+    this.$nextTick(()=>{
+      const item = this.items[index]
+      //item._selected = item._selected = true
+      //console.log(index, 'select: ' + item._selected)
+      if (!this.filter) return null
+      this.$store.commit('UPDATE', {
+           key:'_col_features_selected',
+           value: item._selected ? item.linkedFeature : 0
+      })
+      this.$forceUpdate()
+    })
+
+    //item._selected = !item._selected
+
+
   }
 
 },
