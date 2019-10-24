@@ -21,6 +21,8 @@ const dataTypes = [{
 const config = {
   layers : {
     name: "Layers",
+    name_en: "Layers",
+    name_ar: "طبقات",
     schema : {
       name : {
         type : String,
@@ -89,6 +91,7 @@ const config = {
   },
   layerAttributes : {
     name : "Attributes",
+    name_ar : "سمات",
     canPaste : true,
     schema : {
       name : {
@@ -149,6 +152,7 @@ const config = {
   },
   layerCalcs : {
     name : "Attributes",
+    name_ar : "سمات",
     schema : {
       name : {
         type : String,
@@ -213,6 +217,7 @@ return options
 },
 indicatorSections: {
   name : "Sections",
+  name_ar : "الأقسام",
   schema : {
     name : {
       type : String,
@@ -240,6 +245,7 @@ indicatorSections: {
 },
 indicatorBlocks : {
   name: "Modules",
+  name_ar:"وحدات",
   canPaste : true,
   schema : {
     type : {
@@ -318,6 +324,7 @@ indicatorBlocks : {
 },
 features: {
   name:'Features',
+  name_ar:'الميزات',
   schema:'layerAttributes',
   params : '/:collection',
   sort: 'feature.properties.year',
@@ -338,7 +345,8 @@ indicators: {
   canUpload: true,
 },
 areaLayers : {
-  name:'AreasLayers',
+  name:'Area Layers',
+  name_ar:'طبقات المنطقة',
   schema : {
     name : {
       type : String,
@@ -361,7 +369,8 @@ areas : {
   layerCollection: 'areaLayers'
 },
 areaAttributes : {
-  name:'AreaAttributes',
+  name:'Area Attributes',
+  name_ar: 'سمات المنطقة',
   schema : {
     name : {
       type : String,
@@ -386,7 +395,8 @@ areaAttributes : {
   },
 },
 indicatorAttributes : {
-  name : "IndicatorAttributes",
+  name : "Indicator Attributes",
+  name_ar: "سمات المؤشر",
   canPaste : true,
   _description_en : "For non-spatial attribute data that is directly associatied with the spatial area i.e data from JIIS relating to a statistical area",
   schema : {
@@ -428,7 +438,8 @@ indicatorAttributes : {
   },
 },
 surveyLayers : {
-  name: "SurveyLayers",
+  name: "Survey Layers",
+  name_ar: "طبقات المسح",
   schema : {
     name : {
       type : String,
@@ -448,6 +459,7 @@ surveyLayers : {
 },
 surveyLayerAttributes : {
   name : "Attributes",
+  name_ar : "سمات",
   canPaste : true,
   translate : ['_text'],
   schema : {
@@ -492,6 +504,7 @@ surveyLayerAttributes : {
 },
 surveyRecords: {
   name:'Survey Records',
+  name_ar:"سجلات المسح",
   schema:'surveyLayerAttributes',
   params : '/:collection',
   layerCollection:'surveyLayers',
@@ -535,6 +548,7 @@ surveyRecords: {
 },
 styles : {
   name:'Styles',
+  name_ar:'الأنماط',
   schema : {
     layer : {
       type : mongoose.Schema.Types.ObjectId,

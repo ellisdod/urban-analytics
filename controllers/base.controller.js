@@ -214,9 +214,13 @@ const Controller = function(model) {
   })();
 
   this.chainError = function(err,res) {
-    console.log('caught error',err)
-    if (res) res.status(500).send(err)
-    return Promise.reject(err)
+    console.log('caught error: ',err)
+    //console.log(res)
+    if (res) {
+      res.statusMessage = err
+      res.status(500).send(err)
+    }
+    //return Promise.reject(err)
   }
 
 }
