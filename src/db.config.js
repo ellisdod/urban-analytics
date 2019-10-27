@@ -366,7 +366,8 @@ areas : {
   schema:'areaAttributes',
   params : '/:collection',
   canUpload: true,
-  layerCollection: 'areaLayers'
+  layerCollection: 'areaLayers',
+  embedIds : 'feature.properties'
 },
 areaAttributes : {
   name:'Area Attributes',
@@ -509,6 +510,7 @@ surveyRecords: {
   params : '/:collection',
   layerCollection:'surveyLayers',
   storeByLayer:true,
+  embedIds : 'feature.properties',
   create: function(self) {
     const state = self.$store.state
     let coords
@@ -557,12 +559,27 @@ styles : {
     name : {
       type: String,
       required : true,
+      _text : "Key",
+    },
+    _text_en : {
+      type : String,
+      required : false,
+      _text : "Text (English)"
+    },
+    _text_ar : {
+      type : String,
+      required : false,
+      _text : "Text (Arabic)"
     },
     attribute : {
       type : String,
       required : true,
+      _text : "Attribute",
     },
-    color : String,
+    style : {
+      type: mongoose.Schema.Types.Mixed,
+      _text : "Style"
+    },
   }
 }
 /*

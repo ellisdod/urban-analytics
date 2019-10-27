@@ -33,13 +33,15 @@
         :search = "search"
         class="ejmap-border"
         >
+
         <template v-slot:items="props">
+
           <tr class="attribute-row" v-on:dblclick="openEditor(props.item)">
             <!--Array.isArray(getNested(nestedPath,props.item)[h.value])
             schema.schema[h.value]._options.filter(x=>x.name===h.value)[0].color
           -->
           <td v-for="(h,ind) in featureHeaders"
-            v-bind:class="[ind===0 ? 'font-weight-medium':'',h.type === Boolean ? 'text-xs-center':'' ]">
+            v-bind:class="[ind===0 ? 'ejmap-border-right text-xs-right font-weight-medium primary--text':'',h.type === Boolean || h.value === 'style' ? 'text-xs-center':'' ]">
 
             <template v-if="h.type === Array">
               <v-chip
@@ -56,7 +58,14 @@
            small
            color="primary">
            check_circle
-         </v-icon>
+          </v-icon>
+
+          <symbol-icon
+            v-else-if="h.value === 'style'"
+            :value="props.item.style"
+            width="20px"
+            >
+          </symbol-icon>
 
 
         <v-checkbox
@@ -158,6 +167,7 @@ import VueJsonPretty from 'vue-json-pretty'
 import Upload from './Upload.vue'
 import Editor from './Editor.vue'
 import api from '@/api.js'
+import SymbolIcon from './SymbolIcon.vue'
 const arrayUtils = require('../plugins/arrayUtils')
 const dbconfig = require('../db.config')
 const flatten = require('flatten-obj')()
@@ -166,7 +176,7 @@ const flatten = require('flatten-obj')()
 
 export default {
   components: {
-    VueJsonPretty, Upload, Editor
+    VueJsonPretty, Upload, Editor, SymbolIcon
   },
   props : ['collection','filter','datatable','listKey','nestedPath','cssclass','addtop','addbottom','multiselect','disabled','searchable','title'],
   data() {
@@ -310,10 +320,10 @@ methods: {
     //Promise.all(promises).then(x=>{console.log('updated store')})
 
   },
-  setMode() {
+  setMode () {
     this.$store.commit("UPDATE",{key:'mode',value: this.collection})
   },
-  select(index,id) {
+  select (index,id) {
     //console.log('index',index,id  );
     //console.log('feature data type',this.geoDataType)
     this.selected = index
@@ -327,7 +337,7 @@ methods: {
     //this.$forceUpdate()
   },
 
-  del(collection,id) {
+  del (collection,id) {
     this.loading = true
     confirm('Are you sure you want to delete this item?') && api.del(collection,id).then(x=>{
       this.updateCollection(true)
@@ -475,7 +485,7 @@ mounted () {
   top:0;
   margin-top:-50px;
 }
-.editable-datatable .v-list__tile--active{
+.editable-datatable .v-list__tile--active {
   border-right: 3px solid;
   background-color: var(--v-grey-lighten3);
   border-right-color: var(--v-primary-base);
@@ -496,7 +506,6 @@ mounted () {
 .editable-datatable th {
   color:#000 !important;
 }
-
 
 span.func-sum {
 }

@@ -17,10 +17,13 @@
       <v-card-text>
         <v-container grid-list-md>
           <v-layout wrap>
-            <v-flex v-for="(i,key) in schema.schema" xs12>
+            <v-flex v-for="(i,key,index) in schema.schema" xs12>
+
+              <styler v-if="key==='style'" v-model="edited[key]"></styler>
+
 
               <v-select
-              v-if="i._options&&Array.isArray(i._options)&&i._options.length>0"
+              v-else-if="i._options&&Array.isArray(i._options)&&i._options.length>0"
               v-model="edited[key]"
               :items="i._options"
               :label="i._text"
@@ -147,13 +150,15 @@ import VueJsonPretty from 'vue-json-pretty'
 import api from '@/api.js'
 import Calculator from './Calculator.vue'
 import NestedMenu from './NestedMenu.vue'
+import Styler from './StylePicker.vue'
+
 const dbconfig = require('../db.config')
 const arrayUtils = require('@/plugins/arrayUtils')
 
 
 export default {
   components: {
-    VueJsonPretty, Calculator, NestedMenu
+    VueJsonPretty,Calculator,NestedMenu,Styler
   },
   props : ['collection','filter','nestedPath','editItem','attributes','linkedFeature','permanent','title'],
   data() {
@@ -168,7 +173,7 @@ export default {
       uploadDialog:false,
       featureEdit:[],
       datatableTab:null,
-      selectAll:false,
+      selectAll: false,
       runedit : false,
       success : false,
     }
@@ -297,8 +302,8 @@ export default {
 
         api[func](this.collection,params,updateObj,{},colparams)
         .then(()=>{
-          this.edit()
-          this.$emit('update',true)
+          //this.edit()
+          this.$emit(func,true)
           this.saving = false
           this.success = true
           this.$forceUpdate()
