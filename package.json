@@ -62,6 +62,7 @@
     "vee-validate": "2.2.4",
     "vue": "2.6.10",
     "vue-chartjs": "3.4.2",
+    "vue-color": "2.7.0",
     "vue-json-pretty": "1.6.0",
     "vue-masonry-css": "1.0.3",
     "vue-material-design-icons": "3.1.0",

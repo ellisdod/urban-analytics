@@ -344,4 +344,9 @@ export default {
     color: rgba(0,0,0,0.2) !important;
 }
 
+.theme--light.v-text-field--box>.v-input__control>.v-input__slot {
+    border: 1px solid #e3e3e3;
+    /* background: rgba(0,0,0,.06); */
+}
+
 </style>

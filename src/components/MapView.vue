@@ -27,7 +27,7 @@
   <l-geo-json
   v-if="editable"
   :geojson="newSurveyFeatures"
-  :options="getGeoJsonOptions('','Point',true)"
+  :options="getGeoJsonOptions('','Point',false)"
   />
 
 
@@ -291,7 +291,7 @@ v-if="layers[key].on && layers[key].features"
 :options-style="geoJsonStyle(key)"
 />
 </l-map>
-<v-tabs>
+<v-tabs v-model="tab">
   <v-tab v-for="(item,index) in editItems" :key="index">
     Record {{index + 1}}
   </v-tab>
@@ -307,12 +307,11 @@ v-if="layers[key].on && layers[key].features"
     :editItem="item"
     :permanent="true"
     @close="close"
-    @update="function(){
-      updateCollection('surveyRecords',$store.state._col_surveyLayers_selected)
-      .then(()=>update())
-      }">
+    @update="updateSurvey(false)"
+    @del="updateSurvey(true)">
     </editor>
   </v-tab-item>
+
   <v-tab-item>
     <editor
     collection="surveyRecords"
@@ -322,12 +321,10 @@ v-if="layers[key].on && layers[key].features"
     :attributes="attributes"
     :permanent="true"
     @close="close"
-    @update="function(){
-      updateCollection('surveyRecords',$store.state._col_surveyLayers_selected)
-      .then(()=>update())
-      }">
+    @update="updateSurvey">
     </editor>
   </v-tab-item>
+
 </v-tabs>
 </v-dialog>
 
@@ -379,6 +376,7 @@ export default {
   },
   data () {
     return {
+      tab:0,
       mapMenu:false,
       newSurveyFeatures:[],
       featureClick: false,
@@ -512,7 +510,10 @@ export default {
         return data ? this.embedIds(data) : null
       },
       editItems () {
-        return this.$store.getters.surveyRecordsByFeature[this.$store.state._col_features_selected]
+        const linkedRecords = this.$store.getters.surveyRecordsByFeature[this.$store.state._col_features_selected]
+        console.log('linkedRecords', linkedRecords)
+        console.log()
+        return linkedRecords || this.$store.state._col_surveyRecords[this.$store.state._col_surveyLayers_selected].filter(x=>x._id===this.$store.state._col_features_selected)
       }
     },
     methods: {
@@ -597,6 +598,7 @@ export default {
         featureInteract (feature, layer) {
           const self = this;
           const p = feature.properties
+          if (!p) return null
           let html = Object.keys(p).reduce((acc,key)=>{
             if (key.indexOf('_')==0|| key === 'JIIS_stat_area' || key === 'data_type') return acc
             return acc + '<tr><td><b>' + key + '<b><td><td>' + p[key] + '</td><tr>'
@@ -629,11 +631,12 @@ export default {
         updateOnSelect (e) {
 
           const p = e.target.feature.properties
+          //console.log(e.target)
           //self.openEditor(p._id)
           const self = this
           self.$store.commit("UPDATE",{key:'_col_'+self.featuresCollection+'_selected',value:p._id})
-          self.$store.commit("UPDATE",{key:'neighbourhood',value:p.areaCode || p.JIIS_stat_area})
-          const center = {
+          //self.$store.commit("UPDATE",{key:'neighbourhood',value:p.areaCode || p.JIIS_stat_area})
+          const center = e.target._latlng || {
             lng:(e.target._bounds._northEast.lng + e.target._bounds._southWest.lng)/2,  //e.latlng.lng
             lat:(e.target._bounds._northEast.lat + e.target._bounds._southWest.lat)/2
           }
@@ -649,6 +652,7 @@ export default {
           self.$forceUpdate()
         },
         addNewSurveyFeature (latlng) {
+          console.log('adding survey feature')
           this.newSurveyFeatures.push({
             type:"Feature",
             geometry:{
@@ -658,6 +662,7 @@ export default {
           })
         },
         removeLastSurveyFeature () {
+          console.log('removing survey feature')
           this.newSurveyFeatures.splice(this.newSurveyFeatures.length-1,1)
         },
         geoJsonStyle (layerId) {
@@ -708,9 +713,13 @@ export default {
           if (!attribute) return style
 
           if (attribute.categories) {
-            style[colorKey] = attribute.categories[val].color
+            const s = attribute.categories[val].style || {}
+            style.fillColor = s.fillColor
+            style.color =  s.borderColor
+            style.weight = s.borderWidth
+            style.stroke = s.borderWidth ? true : false
           } else if (attribute.range) {
-            style[colorKey] = this.$store.state.colorScale( 1 - ((val - layer.colorRange[0])/layer.colorConstant)  ).hex()
+            style.color = style.fillColor = this.$store.state.colorScale( 1 - ((val - layer.colorRange[0])/layer.colorConstant)  ).hex()
           } else {
             style.fillOpacity = 0
             style.opacity = 0
@@ -966,6 +975,11 @@ openEditor (featureId) {
   if (this.editable) this.dialog = true
   //if (this.featuresCollection !== 'surveyFeatures') return null;
 },
+updateSurvey (del) {
+  console.log('update!!!')
+  if (del) this.dialog = false
+  this.loadSurveyLayer()
+},
 loadSurveyLayer () {
   console.log('loadsurveylayer')
   //this.zoomToArea()
@@ -980,13 +994,11 @@ loadSurveyLayer () {
 loadSurveyRecords () {
   console.log('loading survey records')
   if (this.editable) this.updateCollection('surveyRecords', this.$store.state._col_surveyLayers_selected)
-  .then(()=>this.addUnlinkedSurveyFeatures())
-},
-addUnlinkedSurveyFeatures () {
-  console.log('updating survey features')
-  if (!this.editable) return null
-  const records = this.$store.state._col_surveyRecords[this.$store.state._col_surveyLayers_selected]
-  this.newSurveyFeatures = records.filter(x=>!x.linkedFeature).map(x=>x.feature)
+  .then(()=>{
+    const unlinked = this.$store.getters.surveyRecordsByFeature.null
+    if (unlinked) this.newSurveyFeatures = unlinked.map(x=>x.feature)
+  })
+
 },
 resetClickTimer () {
   if (this.clickInterval) clearInterval(this.clickInterval)
@@ -1141,7 +1153,8 @@ mounted () {
     }
 
     if (this.editable) {
-      self.$refs.map.$el.style.cursor = 'crosshair'
+      this.loadSurveyLayer()
+      this.$refs.map.$el.style.cursor = 'crosshair'
       this.$refs.map.mapObject.on('contextmenu',function(e) {
         //console.log(e)
 
@@ -1166,7 +1179,6 @@ mounted () {
   }
 )
 
-//this.loadSurveyRecords()
 this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
 //this.$store.watch( (state) => state._col_layers_selected, this.checkForUpdate )
 //this.$store.watch( (state) => state._col_indicatorSections_selected, this.checkForUpdate )
