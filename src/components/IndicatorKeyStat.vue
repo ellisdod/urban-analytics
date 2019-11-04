@@ -1,6 +1,10 @@
 <template>
 
-  <v-card style="background:none" flat v-bind:class="[{selected : selected && $vuetify.breakpoint.smAndUp}]" @click="updateIndicator()">
+  <v-card
+    style="background:none"
+    flat
+    :class="[{selected : selected && $vuetify.breakpoint.smAndUp}]"
+    >
 
     <div v-if="type === 'List' && selectedIndicator">
       <v-list>
@@ -16,7 +20,7 @@
     </div>
 
     <!-- WITH CHART -->
-    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;background:white;">
+    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;">
 
       <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8 sm8 md8':compact,'sm4':!compact, }">
 
@@ -25,10 +29,12 @@
         </div>
 
         <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
-          <span v-bind:class="[{'display-1':!compact,'subheading':compact},'py-0']">
-            {{selectedIndicator[figure[0]]||0}}
+          <span
+          :style="{float:!compact ? 'left':'',clear:'both'}"
+          :class="[{'display-1':!compact,'subheading':compact},'py-0']">
+            {{ unit === 'dunum' ? (parseInt(selectedIndicator[figure[0]])/1000).toFixed(1) : selectedIndicator[figure[0]] ||0}}
           </span>
-          <span v-if="unit" v-bind:class="[{'subheading ml-1':!compact,'caption':compact}]">
+          <span v-if="unit" :style="{float:!compact ? 'left':''}" :class="[{'body-1 pt-1 ml-1':!compact,'caption':compact}]">
             {{unit}}
           </span>
         </div>
@@ -107,8 +113,8 @@ v-bind:chart-data="generateChartDataSets">
 <div v-if="selected" class="pa-3 ejmap-border-top" style="background-color:white">
 
   <v-flex xs12 class="grey--text text--darken-1">
-    <div><span>Source:</span><a :href="layer.sourceUrl">{{layer.sourceShort}}</a></div>
-    <div><span>Notes:</span>{{description}}</div>
+    <div class="body-1">{{description}}</div>
+    <div class="caption"><span>Source:</span><a :href="layer.sourceUrl">{{layer.sourceShort}}</a></div>
   </v-flex>
 
 
@@ -145,7 +151,7 @@ export default {
       selectedYear : '',
     }
   },
-  props: ['name','figure','description','unit','type','small','noChart','selected','compact'],
+  props: ['indicatorBlock','name','figure','description','unit','type','small','noChart','selected','compact'],
   methods : {
     makeSliderLabels (years) {
       const min = years[0]
@@ -165,11 +171,12 @@ export default {
     toggleRotate() {
       if (!this.selected) this.rotation = this.rotation === 0 ? 180 : 0
     },
-    updateIndicator() {
-      this.$emit('childClick')
-      if (!this.figure[0] || !this.selectedYear || this.figure[1]) return null
-      this.$store.commit("UPDATE",{key:['navigator','indicator'],value:{figure:this.figure[0],name:this.name}})
-      this.$store.commit("UPDATE",{key:'year',value:this.selectedYear})
+    updateIndicator () {
+      console.log('updating store: Indicator')
+      this.$nextTick(()=>{
+        this.$store.commit("UPDATE",{key:'_col_indicatorBlocks_selected',value:this.indicatorBlock})
+        this.$store.commit("UPDATE",{key:'year',value:this.selectedYear})
+      })
     },
     getNested (p, o) {
       p = typeof p === 'string' ? p.split('.') : p
@@ -268,17 +275,18 @@ export default {
     rotateStyle () {
       return {transform: 'rotate('+this.rotation+'deg)'}
     },
+    allDataYears () {
+      const d = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
+      //console.log('datayears',d,this.$store.getters.allIndicatorKeyYears,this.$store.getters.allIndicatorsByYear)
+      return d || []
+    },
     areaDataMatched () {
-      if (!this.dataYears) return null
-      return this.$store.getters.indicatorsForSelectedArea.filter(x=>this.dataYears.some(f=>x.year===f))
-      if (!areas) return null
-      const matched = areas.reduce((acc,x)=>{
-        if (this.figure.some(f=>x[f])) acc.push(x)
-        //acc.push(x)
-        return acc
-      },[])
-      //console.log('areaDataMatched',matched)
-      return matched
+      const dataYears = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
+      if (!dataYears) return null
+      return this.$store.getters.indicatorsForSelectedArea.filter(x=>dataYears.some(f=>x.year===f))
+    },
+    dataYears () {
+      if (this.areaDataMatched) return this.areaDataMatched.map(x=>x.year)
     },
     areaDataLatest () {
       if (!this.areaDataMatched) return null
@@ -295,11 +303,6 @@ export default {
         indicator[this.figure[0]] = 0
       }
       return indicator
-    },
-    dataYears () {
-      const d = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
-      //console.log('datayears',d,this.$store.getters.allIndicatorKeyYears,this.$store.getters.allIndicatorsByYear)
-      return d || []
     },
     generateChartDataSets() {
       if (this.type !== 'Chart' || !this.selectedIndicator) return null
@@ -361,6 +364,9 @@ export default {
 
   },
   watch : {
+    selected : function(newVal) {
+      if (newVal) this.updateIndicator()
+    },
     selectedYear : function(newVal,oldVal) {
       this.validateYear(newVal)
       //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
@@ -458,6 +464,11 @@ padding-top:3px;
 
 .v-slider .v-slider__track__container, .v-slider .v-slider__track, .v-slider .v-slider__track-fill {
   height:6px;
+}
+
+span.display-1 {
+  font-family:Montserrat !important;
+  font-weight:600;
 }
 
 

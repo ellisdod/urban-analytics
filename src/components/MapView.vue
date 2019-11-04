@@ -150,7 +150,7 @@
     <v-icon v-if="legendBottom" color="grey lighten-2">remove</v-icon>
     <area-select
     v-if="options&&options.areaSelect"
-    titleclass="pb-0 pt-3 px-3 font-weight-medium"
+    titleclass="pb-0 pt-3 px-3 font-weight-medium grey--text"
     class="ejmap-border-bottom px-3 py-1"
     style="flex: 0;">
   </area-select>
@@ -167,10 +167,10 @@
 </div>
 
 <div v-bind:style="{flex:2, maxHeight:'85vh', overflowY: allLayers ? 'none' : 'auto'}">
-  <v-expansion-panel expand v-model="layerPanels">
+  <v-expansion-panel :dark="dark" expand v-model="layerPanels">
     <v-expansion-panel-content v-for="(layer,key,index) in layers" v-show="layer.showLegend" :key="key">
       <template v-slot:header v-if="allLayers&&!legendBottom">
-        <div @click="">
+        <div @click="" class="body-1">
           {{layer.text_en}}
         </div>
       </template>
@@ -180,6 +180,7 @@
 
           <v-list>
             <v-list-tile
+            class="map-legend-tile"
             v-if="layer.on&&layer.features"
             v-for="(v,i,index) in layer.filters"
             :key="index"
@@ -191,7 +192,7 @@
             </template>
 
 
-            <v-list-tile-content>
+            <v-list-tile-content dark>
               <map-legend
               :key="index"
               :layer="layer"
@@ -358,7 +359,7 @@ const translate = require('@/plugins/translate')
 
 export default {
   name: 'MapView',
-  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapLink','minimiseLegend','hideControls','highlightColor','attribute'],
+  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapLink','minimiseLegend','hideControls','highlightColor','attribute','dark'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -389,11 +390,12 @@ export default {
       loading : false,
       language: 'ar',
       languages: ['ar','en'],
-      basemaps : {
+      basemapUrls : {
         url: 'https://{s}.basemaps.cartocdn.com/{z}/{x}/{y}.png',
         url2: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
         url3: 'http://a.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png ',
       },
+      baseMapLayer:'',
       center: L.latLng(31.778837,35.243452),
       attribution: this.$props.hideControls ? '':'&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
       currentZoom: 14,
@@ -423,8 +425,24 @@ export default {
       optionsDialog:false,
       selectedSurvey:null,
       baseMaps: [
-        {text:'Basic',type:'basic',selected:true},
-        {text:'Detailed',type:'detailed',selected:false}
+        {
+          text:'Grey',
+          url:'',
+          type:'basic',
+          selected:true
+        },
+        {
+          text:'Buildings',
+          url:'',
+          type:'detailed',
+          selected:false
+        },
+        {
+          text:'Streets',
+          url:'',
+          type:'detailed',
+          selected:false
+        }
       ],
       baseMap : 'basic',
       surveyKey : {
@@ -541,7 +559,8 @@ export default {
         }
 
         const layer = this.layers[layerId]
-        const features = this.$store.state['_col_'+this.featuresCollection][layerId]
+        const featureLayer = layer.featureLayer ? layer.featureLayer[0] : layerId
+        const features = this.$store.state['_col_'+this.featuresCollection][featureLayer]
 
         const filtered = Object.keys(layer.filters).reduce((acc,key)=>{
           const filter = layer.filters[key]
@@ -625,7 +644,9 @@ export default {
               self.updateOnSelect(e)
               self.openEditor(p._id)
             },
-            click : self.updateOnSelect
+            click : function(e) {
+              self.updateOnSelect
+            }
           });
         },
         updateOnSelect (e) {
@@ -677,27 +698,30 @@ export default {
           //console.log(feature.properties._id===this.$store.state._col_features_selected,feature.properties._id,this.$store.state._col_features_selected)
           style = Object.assign({
             radius: 4,
-            fillColor: this.$store.state.colors[0],
-            color: this.$store.state.colors[0],
+            fillColor: 'white',
+            color: 'grey',
             weight: 1,
             stroke: true,
           }, style )
 
           if (!layerId) return style
           const layer = this.layers[layerId]
+          const surveyLayer = layer.featureLayer
           const attributeKey = layer.attribute
           const attribute = layer.attributes[attributeKey]
-          const val = feature.properties[attributeKey]
+          const id = feature.properties._id
+          const surveyRecords = surveyLayer ? this.$store.getters.surveyRecordsByFeature[id] : null
+          const val = surveyLayer && surveyRecords ? surveyRecords[0].feature.properties[attributeKey] : feature.properties[attributeKey]
+          //if (surveyLayer&&!surveyRecords) console.log(id, val,surveyRecords)
 
           style.opacity = layer.strokeOpacity/100
           style.fillOpacity = layer.fillOpacity/100
 
           let colorKey = 'fillColor'
 
-          if (this.$store.getters.surveyRecordsByFeature[feature.properties._id]){
-            style.fillColor = style.color = this.$store.state.colors[1]
-          } else {
-            style.fillColor = style.color = this.$store.state.colors[2]
+          if (this.editable&&!surveyLayer) {
+            const surveyColorIndex = this.$store.getters.surveyRecordsByFeature[id] ? 1 : 2
+            style.fillColor = style.color = this.$store.state.colors[surveyColorIndex]
           }
 
           if (feature.geometry.type.indexOf('LineString')>-1) {
@@ -710,7 +734,7 @@ export default {
             style.weight = 3
           }
 
-          if (!attribute) return style
+          if (!attribute||!val) return style
 
           if (attribute.categories) {
             const s = attribute.categories[val].style || {}
@@ -756,6 +780,7 @@ export default {
           //console.log(map,on);
           this.baseMap = on ? map : '';
           this.baseMaps.forEach(x=> x.selected = x.type == map ? on :false )
+          this.toggleBaseMap()
         },
         zoomUpdate (zoom) {
           this.currentZoom = zoom;
@@ -883,10 +908,11 @@ export default {
             arr.push(new Promise((res,rej)=> {
               const returnObj = {}
               const filtered = layer.filtered
-              let featuresNo = featurecol[key] ? featurecol[key].length : 0;
+              const featureKey = layer.featureLayer ? layer.featureLayer[0] : key
+              const featuresNo = featurecol[featureKey] ? featurecol[featureKey].length : 0;
               if (!this.loading && (featuresNo === 0 || filtered ) ) {
                 this.loading = true
-                this.updateCollection(this.featuresCollection, key)
+                this.updateCollection(this.featuresCollection, featureKey)
                 .then((x,err)=>{
                   if (err) console.log('update error', err)
                   //console.log('dispatch return', x)
@@ -917,9 +943,13 @@ export default {
         setLayers () {
           const styles = this.$store.getters.styles
           const schema = dbconfig[this.featuresCollection||'features']
-          const allLayers = this.allLayers
+          const attributes = this.$store.state['_col_layerAttributes'].concat(this.$store.state['_col_surveyLayerAttributes'])
 
           let layers = this.$store.state['_col_'+schema.layerCollection]
+
+          if (this.featuresCollection === 'features') {
+            layers = layers.concat(this.$store.state['_col_surveyLayers'])
+          }
 
           console.log('running set layers. total layers: ' + layers.length )
 
@@ -942,7 +972,8 @@ export default {
             layer.showLegend = this.allLayers || this.layerPanels[index]
             //if (!layer.on) return
             //console.log('layerid',x._id,layer._id)
-            layer.attributes = this.$store.state['_col_layerAttributes'].reduce((acc,att)=>{
+
+            layer.attributes = attributes.reduce((acc,att)=>{
               if (att.legend&&att.layer===layer._id) acc[att.name] = att
               if (acc[att.name] && categoryStyle) acc[att.name].categories = categoryStyle[att.name]
               return acc
@@ -1012,6 +1043,17 @@ exportLayersAsCSV () {
       this.exportToCsv(this.layers[key])
     }
   })
+},
+toggleBaseMap () {
+  if (this.baseMaps[0].selected) {
+    const layer = L.mapboxGL({
+      accessToken: 'not-needed',
+      style: this.baseMapLink || 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
+    }).addTo(this.$refs.map.mapObject)
+    this.baseMapLayer = layer
+  } else {
+    this.$refs.map.mapObject.removeLayer(this.baseMapLayer )
+  }
 },
 exportToCsv (layer) {
   var processRow = function (row) {
@@ -1130,6 +1172,7 @@ watch: {
   }
 },
 
+
 mounted () {
   //console.log('layers on mount',this.layers)
   this.$nextTick(() => {
@@ -1143,11 +1186,7 @@ mounted () {
 
   const self = this
   this.$nextTick(()=>{
-    L.mapboxGL({
-      accessToken: 'not-needed',
-      style: this.baseMapLink || 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
-    }).addTo(this.$refs.map.mapObject)
-
+    this.toggleBaseMap()
     if (this.hideControls) {
       this.$refs.map.mapObject
     }
@@ -1218,7 +1257,7 @@ return acc;
 }
 
 .highlighted {
-  background-color:#e8e8e8;
+  background-color:rgb(60,60,60);
 }
 
 .v-label {
@@ -1244,6 +1283,22 @@ return acc;
 
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
   background: rgba(0,0,0,0.8);
+}
+
+/*#map-legend, #map-legend .v-expansion-panel__container {
+  background-color:rgb(47,47,47)!important;
+  color:#e3e3e3;
+}
+#map-legend .v-expansion-panel__container :hover {
+  background: rgb(60,60,60);
+}*/
+
+
+
+#map-legend div.v-expansion-panel__header {
+  padding-top:0;
+  padding-bottom:0;
+  min-height:30px;
 }
 
 .map-info-panel {

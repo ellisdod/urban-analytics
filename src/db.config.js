@@ -446,7 +446,19 @@ surveyLayers : {
       type : String,
       required : true,
       unique : true,
-      _text : "Name",
+      _text : "Key",
+    },
+    text_en : {
+      type : String,
+      required : true,
+      unique : true,
+      _text : "Name (English)",
+    },
+    text_ar : {
+      type : String,
+      required : false,
+      unique : true,
+      _text : "Name (Arabic)",
     },
     featureLayer : {
       type : Array,
@@ -496,6 +508,25 @@ surveyLayerAttributes : {
       _text : "Options",
       _categorised : true,
       _options:'dynamic'
+    },
+    func : {
+      type : Array,
+      _text : "Functions",
+      _multiple: true,
+      _options: [
+        {
+          name : 'count',
+          color: 'secondary'
+        },
+        {
+          name : 'sum',
+          color: 'tertiary'
+        }
+      ],
+    },
+    legend : {
+      type : Boolean,
+      _text : "Show in map",
     },
     layer : {
       type : mongoose.Schema.Types.ObjectId,

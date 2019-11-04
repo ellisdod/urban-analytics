@@ -30,9 +30,7 @@ export default {
   computed : {
     items () {
       if (!this.$store.getters.selectedAreas) return null;
-      return this.$store.getters.selectedAreas.map(x=>{
-        return {'name':x.feature.properties.name, 'value':x.feature.properties}
-      })
+      return this.$store.getters.selectedAreas.map(x=>this.makeListObject(x))
     }
   },
   methods : {
@@ -50,6 +48,17 @@ export default {
           lat:properties.centroid_lat
         }
       })
+    },
+    makeListObject(area) {
+      if (!area) return null
+      const p = area.feature.properties;
+      return {
+        'name':p['text_'+this.$store.state.language] || p.text_en,
+        'value':p
+      }
+    },
+    setArea(area) {
+      this.selected = this.makeListObject(area)
     }
   },
   watch: {
@@ -60,17 +69,13 @@ export default {
     }
   },
   created () {
-    const area = this.$store.getters.selectedArea
-    this.selected = {'name':area.feature.properties.name, 'value':area.feature.properties}
+    this.setArea(this.$store.getters.selectedArea)
   },
   mounted () {
+    const self = this
     this.$store.watch(
       (state, getters) => getters.selectedArea,
-      (newVal, oldVal) => {
-
-          this.selected = {'name':newVal.feature.properties.name, 'value':newVal.feature.properties}
-
-      }
+      (area) => self.setArea(area)
     )
   }
 

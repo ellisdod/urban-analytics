@@ -12,9 +12,9 @@
   <v-spacer></v-spacer>
 
   <v-btn
-    v-for="l in $store.state.languages"
-    v-if="l.name !== $store.state.language"
-    class="hidden-xs-only" @click="$store.commit('UPDATE',{key:'language',value:l.name})"
+    v-for="(l,key) in $store.state.languages"
+    v-if="key !== $store.state.language"
+    class="hidden-xs-only" @click="$store.commit('UPDATE',{key:'language',value:key}); $vuetify.rtl=$store.state.languages[key].rtl"
     flat
     >
     {{l.text}}

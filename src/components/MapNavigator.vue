@@ -4,7 +4,7 @@
       <tr id="navigator-header" class="hidden-xs-only">
         <td colspan="2">
           <div class="subheading grey--text text--darken-2">
-          {{$store.state.navigator.indicator.name}} - {{$store.state.year}}
+            {{ indicator['text_'+$store.state.language] }} - {{ $store.state.year }}
           </div>
           <div class="caption py-1">
           {{details.neighbourhood}}
@@ -38,11 +38,12 @@
     @click="log()"
     >
     <l-geo-json
+    v-if="$store.getters.indicatorsForSelectedYear"
     v-for="(item, i) in $store.state._col_areas.filter(x=>x.feature)"
     :key="item._id"
     :geojson="item.feature"
     :options="areasGeoJsonOptions"
-    v-bind:options-style="getAreaStyle(item.feature.properties.id)"
+    v-bind:options-style="getAreaStyle(item.feature.properties.areaCode)"
     >
   </l-geo-json>
 
@@ -100,8 +101,12 @@ export default {
       areasGeoJsonOptions:{
         onEachFeature: (feature, layer) => {
           var self = this
-          const n = self.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === feature.properties.id)[0]
-          layer.bindPopup('<p><b>'+feature.properties.name+'</b></p><p>'+self.$store.state.navigator.indicator.name +': '+n[self.$store.state.navigator.indicator.figure]+'</p>');
+          const n = self.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === feature.properties.areaCode)[0]
+          layer.bindPopup('<p><b>'+
+             feature.properties.name+'</b></p><p>'+
+             self.indicator['text_'+self.$store.state.langauge] +
+             ': '+n[self.indicator.figure[0]]+'</p>'
+           )
           layer.on({
             click : function(e) {
               console.log('nnnnn',n)
@@ -141,11 +146,14 @@ export default {
     }
   },
   computed: {
+    indicator() {
+      return this.$store.state._col_indicatorBlocks.filter(x=>x._id===this.$store.state._col_indicatorBlocks_selected)[0]
+    },
     scale () {
       const sorted = this.$store.getters.indicatorsForSelectedYear.map( x =>
-        parseInt(x[this.$store.state.navigator.indicator.figure])
+        parseInt(x[this.indicator.figure[0]])
       ).sort((a,b)=> a-b);
-      console.log('scale sorted', this.$store.state.navigator.indicator.figure, sorted)
+      console.log('scale sorted', this.indicator.figure[0], sorted)
       return {
         min : sorted[0] || 0,
         constant : sorted[sorted.length-1] - sorted[0] || 0,
@@ -163,7 +171,7 @@ export default {
         opacity: 0,
         fillOpacity: 0
       }
-      const val = area[this.$store.state.navigator.indicator.figure]
+      const val = area[this.indicator.figure[0]]
       const hex = f( (val - this.scale.min)/this.scale.constant )
       //console.log(id, this.scale,val,hex, (val - this.scale.min)/this.scale.max )
       const lineColor = this.$store.state.neighbourhood === id ? this.$vuetify.theme.tertiary :'#eee'

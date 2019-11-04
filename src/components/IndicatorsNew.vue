@@ -1,46 +1,46 @@
 <template>
   <div v-if="$vuetify.breakpoint.xsOnly">
     <div
-      class="pa-2 px-3 mt-0 ejmap-border-top ejmap-border-bottom"
-      style="z-index:4;top:56px;position:fixed;width:100%;display:flex;overlfow-y:hidden;height:50px;">
+    class="pa-2 px-3 mt-0 ejmap-border-top ejmap-border-bottom"
+    style="z-index:4;top:56px;position:fixed;width:100%;display:flex;overlfow-y:hidden;height:50px;">
     <layer-select
-     collection="indicatorSections"
-     text="text_en"
-     prepend-icon="bar_chart"
-     append-icon=""
-     v-bind:childStyle="{fontWeight:500,paddingTop:0,marginTop:0}"
-     >
-    </layer-select>
-    <area-select
-    :append-icon="''"
-    v-bind:childStyle="{fontWeight:300}"
-    ></area-select>
-    </div>
-    <v-carousel
-    id="indicators-carosel"
-    :cycle="false"
-    hide-controls
-    hide-delimiters
-    light
-    :height="400"
-    v-model="selected"
-    style="z-index:2;overflow-y:auto;"
+    collection="indicatorSections"
+    text="text_en"
+    prepend-icon="bar_chart"
+    append-icon=""
+    v-bind:childStyle="{fontWeight:500,paddingTop:0,marginTop:0}"
     >
-    <v-carousel-item
-    v-for="(item,i) in items"
-    :key="i"
-    >
-    <indicator-card :item="item" v-bind:selected="selected===i" lazy>
-    </indicator-card>
+  </layer-select>
+  <area-select
+  :append-icon="''"
+  v-bind:childStyle="{fontWeight:300}"
+  ></area-select>
+</div>
+<v-carousel
+id="indicators-carosel"
+:cycle="false"
+hide-controls
+hide-delimiters
+light
+:height="400"
+v-model="selected"
+style="z-index:2;overflow-y:auto;"
+>
+<v-carousel-item
+v-for="(item,i) in items"
+:key="i"
+>
+<indicator-card :item="item" v-bind:selected="selected===i" lazy>
+</indicator-card>
 
-  </v-carousel-item>
+</v-carousel-item>
 </v-carousel>
 <div style="top:106px;position:fixed;width:100% !important;height:44%">
 
-<map-navigator
-id="map-panel-navigator"
-style="height:100% !important;width:100% !important"
->
+  <map-navigator
+  id="map-panel-navigator"
+  style="height:100% !important;width:100% !important"
+  >
 </map-navigator>
 
 </div>
@@ -56,67 +56,65 @@ style="height:100% !important;width:100% !important"
   <editable-data-list v-bind:disabled="true" style="background:none" collection="indicatorSections"></editable-data-list>
 </v-navigation-drawer>
 <div style="flex:2;overflow-y:auto;">
-  <v-container fluid pa-0 pb-5>
+  <v-container pa-4 pb-5>
 
-    <v-layout row wrap fill-height pb5 pa-0 >
-
-      <v-flex xs12 pa-4 d-flex style="z-index:2;">
-        <div style="position:relative;display:block;width:100%;flex:1">
 
           <div class="title mb-4 pt-1 pb-3 hidden-xs-only ejmap-border-bottom">
             <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  {{section.text_en}} </div> <area-select class="title font-weight-light"></area-select>
           </div>
 
-           <!-- INDICATORS -->
-           <indicator-card
-            v-for="(item,index) in figures"
-            @childClick="updateSelected(item._id)"
-            style="margin-bottom:20px;"
-            :key="index"
-            :item="item"
-            :selected="selected===item._id"
-            class="indicator-hover ejmap-border">
-          </indicator-card>
-
-          <div v-if="charts">
-            <div class="title mb-4 pt-1 pb-3 ejmap-border-bottom"></div>
-            <v-flex xs12 sm6>
-            <indicator-card
-             v-for="(item,index) in charts"
-             @childClick="updateSelected(item._id)"
-             style="margin-bottom:20px;"
-             :key="index"
-             :item="item"
-             :selected="selected===item._id"
-             class="">
-           </indicator-card>
-           </v-flex>
-          </map-view>
-
-          </div>
-
-          <div v-if="map">
-            <div class="subheading mt-5 pt-4 pb-2 ejmap-border-top">
-              <span class="mr-3">Map</span><span class="font-weight-light">{{map.text}}</span>
-            </div>
-            <map-view
-            contextmenu=""
-            style="position:relative;"
-            featuresCollection="features"
-            zoomLevel="12"
-            height="400px"
-            :featureLayers="map.figure"
-            v-bind:areas="true"
-            class="ejmap-border"
-            >
-          </map-view>
-
-          </div>
-
-        </div>
-
+          <!-- INDICATORS -->
+          <v-layout row wrap>
+          <v-flex v-for="(item,index) in figures"
+          xs12 lg6>
+          <indicator-card
+          class="indicator-hover"
+          style="margin-bottom:20px;"
+          :key="index"
+          :item="item"
+          :selected="selected===item._id"
+          :indicatorBlock="item._id"
+          @click.native="updateSelected(item._id)"
+          >
+        </indicator-card>
       </v-flex>
-  </v-layout>
+    </v-layout>
+
+      <v-layout row wrap v-if="charts">
+        <div class="title mb-4 pt-1 pb-3 ejmap-border-bottom"></div>
+        <v-flex xs12 lg6>
+          <indicator-card
+          v-for="(item,index) in charts"
+          style="margin-bottom:20px;"
+          :key="index"
+          :item="item"
+          :selected="selected===item._id"
+          @click.native="updateSelected(item._id)"
+          class="">
+        </indicator-card>
+      </v-flex>
+    </v-layout>
+
+
+  <div v-if="map">
+    <div class="subheading mt-5 pt-4 pb-2 ejmap-border-top">
+      <span class="mr-3">Map</span><span class="font-weight-light">{{map.text}}</span>
+    </div>
+    <map-view
+    contextmenu=""
+    style="position:relative;"
+    featuresCollection="features"
+    zoomLevel="12"
+    height="400px"
+    :featureLayers="map.figure"
+    :attribute="map.attribute"
+    v-bind:areas="true"
+    class="ejmap-border"
+    :legendBottom="true"
+    >
+  </map-view>
+</div>
+
 </v-container>
 </div>
 <v-navigation-drawer
@@ -206,19 +204,24 @@ export default {
     }
   },
   methods: {
-    updateSelected(index){
-      this.selected = index
-      console.log('updated select',this.selected )
+    updateSelected(id){
+      console.log('updating selected', id)
+      this.selected = id
+      //this.$forceUpdate()
+      //const figure = this.figures.filter(x=>x._id === id)[0]
+      //if (!this.figure[0] || !this.selectedYear || this.figure[1]) return null
+      //console.log('updated select',this.selected )
     }
   },
   mounted () {
+    this.updateSelected(this.figures[0]._id)
 
     this.$store.watch(
       (state, getters) => getters.selectedIndicatorSection,
       (newValue, oldValue) => {
         console.log('section changed',newValue)
         // Do whatever makes sense now
-        this.selected = 0
+        this.updateSelected(this.figures[0]._id)
         if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
       })
 
@@ -289,39 +292,39 @@ export default {
     height:100%;
   }
   .ejmap-border {
-      border:1px solid var(--v-borderColor-base) !important;
+    border:1px solid var(--v-borderColor-base) !important;
   }
   .ejmap-border-right {
-      border-right:1px solid var(--v-borderColor-base) !important;
+    border-right:1px solid var(--v-borderColor-base) !important;
   }
 
   .ejmap-border-bottom {
-      border-bottom:1px solid var(--v-borderColor-base) !important;
+    border-bottom:1px solid var(--v-borderColor-base) !important;
   }
 
   .ejmap-border-top {
-      border-top:1px solid var(--v-borderColor-base) !important;
+    border-top:1px solid var(--v-borderColor-base) !important;
   }
 
   .ejmap-border-left {
-      border-left:1px solid var(--v-borderColor-base) !important;
+    border-left:1px solid var(--v-borderColor-base) !important;
   }
 
   .v-toolbar--clipped {
     z-index: 10 !important;
-}
+  }
 
-.flex-contents-sm {
-  height: calc(100vh - 56px)!important;
-}
+  .flex-contents-sm {
+    height: calc(100vh - 56px)!important;
+  }
 
-.flex-contents-md {
-  height: calc(100vh - 48px)!important;
-}
+  .flex-contents-md {
+    height: calc(100vh - 48px)!important;
+  }
 
-.flex-contents-lg {
-  height: calc(100vh - 64px)!important;
-}
+  .flex-contents-lg {
+    height: calc(100vh - 64px)!important;
+  }
 
   #indicators-carosel {
     position:absolute;

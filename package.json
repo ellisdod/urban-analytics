@@ -27,6 +27,8 @@
     "axios-debug-log": "0.4.0",
     "body-parser": "1.18.3",
     "chart.js": "2.8.0",
+    "chartjs-plugin-datalabels": "0.7.0",
+    "chartjs-plugin-piechart-outlabels": "0.1.4",
     "chroma-js": "2.0.3",
     "connect-history-api-fallback": "1.6.0",
     "cors": "2.8.5",

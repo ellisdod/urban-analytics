@@ -20,7 +20,7 @@ const Controller = function(model) {
 
 
   this.find = function (req, res, next) {
-    console.log('Controller this',this)
+    //console.log('Controller this',this)
     if (!model) return res.status(500).send('cannot find model')
     console.log(req.params)
     let query = req.params ? JSON.parse(req.params.query) || {} : {}
