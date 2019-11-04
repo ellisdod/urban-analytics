@@ -1,10 +1,16 @@
+import Chart from 'chart.js'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
+
+Chart.plugins.unregister(ChartDataLabels)
+
 export const chart = {
   props:{
     'title': String,
     'x-labels':Boolean,
     'y-labels':Boolean,
     'clickHandler':Boolean,
-    'showLegend':Boolean
+    'showLegend':Boolean,
+    'legendPosition':String,
   },
   data () {
     const self = this;
@@ -41,8 +47,9 @@ export const chart = {
         },
         legend: {
           display:self.$props.showLegend,
-          position:'left',
+          position:self.$props.legendPosition || 'bottom',
           fullWidth:false,
+          align:'start',
           labels: {
             boxWidth:12,
           }

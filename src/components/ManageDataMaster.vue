@@ -355,6 +355,14 @@ export default {
             },
             {
               type: 'datalist',
+              heading_en: 'Style',
+              collection:'styles',
+              filter:'surveyLayers',
+              searchable:true,
+              multiselect :true,
+            },
+            {
+              type: 'datalist',
               heading_en: 'Survey Results',
               multiselect :true,
               collection:'surveyRecords',

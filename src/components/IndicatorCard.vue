@@ -20,13 +20,13 @@
   :year="item.year"
   :type="item.type"
   :compact="compact"
-  @childClick="childClick"
+  :indicatorBlock="indicatorBlock"
   >
  </indicator-key-stat>
 
  <pie-chart
   v-else-if="item.type==='List'"
-  :figure="item.figure[0]"
+  :figure="item.figure"
  >{{item.text}}</pie-chart>
 
 <!-- MAP -->
@@ -41,6 +41,7 @@
     :featureLayers="item.figure"
     v-bind:areas="true"
     class="ejmap-border"
+    v-bind:legendBottom="true"
     >
   </map-view>
 </div>
@@ -56,14 +57,14 @@ export default {
   components: {
     MapView, IndicatorKeyStat, Timeline, PieChart
   },
-  props: ['selected', 'item','compact'],
+  props: ['selected', 'item','compact','indicatorBlock'],
   data () {
     return {
     }
   },
   methods: {
     childClick() {
-      this.$emit('childClick')
+      this.$emit('childClick','')
     }
   }
 }

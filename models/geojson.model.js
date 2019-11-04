@@ -202,6 +202,8 @@ function setLayerModels () {
     .then(arr=>{
       const layers = arr[0];
       const attributes = arr[1]
+      console.log('layers:',layers[0])
+      console.log('attributes:',attributes[0])
       if (layers.length===0) return null;
       for (var x=0;x<layers.length;x++){
         let schema = new geoSchema(layers[x]._id,'features')
@@ -221,17 +223,27 @@ function setLayerModels () {
 function setAreaModels () {
   console.log('creating area models')
   return new Promise((res,rej) => {
-    Models['areaAttributes'].find({}).then(attributes=>{
-      const layer = {_id:'areas',data_type:'multipolygon'}
-      let schema = new geoSchema('areas','areas')
-      schema.addPropertiesFromLayerAttrs(layer,attributes,'feature.properties')
-      delete schema.schema.feature.properties.year;
-      schema.exportModel()
-      //console.log('areas',schema.schema)
-      //console.log(Object.keys(exports))
+    Promise.all(['areaLayers','areaAttributes'].map(x => Models[x].find({})))
+    .then(arr=>{
+      const layers = arr[0];
+      const attributes = arr[1]
+      console.log('layers:',layers[0])
+      console.log('attributes:',attributes[0])
+      if (layers.length===0) return null;
+      for (var x=0;x<layers.length;x++){
+        let schema = new geoSchema(layers[x]._id,'areas')
+        schema.addPropertiesFromLayerAttrs(layers[x],attributes,'feature.properties')
+        //console.log('layer schema ' + layers[x]._id.toString(),schema.schema)
+        delete schema.schema.feature.properties.year;
+        //schema.addDataTypeVerifier(layers[x])
+        console.log(schema.schema.feature)
+        schema.exportModel()
+        //console.log('schema',schema.schema)
+        //console.log(Object.keys(exports))
+      }
       res()
-    })
   })
+})
 }
 
 
@@ -268,7 +280,7 @@ function setSurveyModels () {
         let schema = new surveySchema(layer._id,'surveyRecords')
         schema.addPropertiesFromLayerAttrs(layer,attributes,'feature.properties')
         schema.exportModel()
-        //console.log('schema',schema.schema)
+        //console.log('survey schema',schema.schema)
         //console.log(Object.keys(exports))
       })
       res()
@@ -284,6 +296,7 @@ exports.load = function() {
       setIndicatorModels(),
       setSurveyModels()
     ]).then(x=>{
+      console.log('loaded models')
       Object.keys(dbConfig).forEach(x=>{
         if (dbConfig[x].schema==='spatial') {
           let schema = new Schema(x,x)

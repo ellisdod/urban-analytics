@@ -165,7 +165,7 @@ div.vc-chrome-alpha-wrap {
     color: #000 !important;
 }
 .highlighted {
-  background-color:#e8e8e8;
+  background-color:rgb(60,60,60);
 }
 .v-label {
   font-size: 13px;
@@ -188,6 +188,19 @@ div.vc-chrome-alpha-wrap {
 }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
   background: rgba(0,0,0,0.8);
+}
+
+/*#map-legend, #map-legend .v-expansion-panel__container {
+  background-color:rgb(47,47,47)!important;
+  color:#e3e3e3;
+}
+#map-legend .v-expansion-panel__container :hover {
+  background: rgb(60,60,60);
+}*/
+#map-legend div.v-expansion-panel__header {
+  padding-top:0;
+  padding-bottom:0;
+  min-height:30px;
 }
 .map-info-panel {
   top:0;
@@ -333,6 +346,10 @@ padding-top:3px;
 }
 .v-slider .v-slider__track__container, .v-slider .v-slider__track, .v-slider .v-slider__track-fill {
   height:6px;
+}
+span.display-1 {
+  font-family:Montserrat !important;
+  font-weight:600;
 }
 
 
@@ -487,77 +504,77 @@ span.func-count {
 
 
 .small {
-    max-width: 600px;
-    margin: auto;
+  max-width: 600px;
+  margin: auto;
 }
 .btn-title div {
-    text-transform:none;
+  text-transform:none;
 }
 #map-panel-main{
-    left:40%;
-    height:100%;
-    width:40%;
-    top:0;
+  left:40%;
+  height:100%;
+  width:40%;
+  top:0;
 }
 #map-panel-navigator {
-    height:100%;
+  height:100%;
 }
 #map-panel-navigator.mobile {
-    height:50% !important;
-    top:106px;
-    position:fixed;
+  height:50% !important;
+  top:106px;
+  position:fixed;
 }
 #info-panel{
-    display:none;
-    left:75%;
-    height:50%;
-    width:25%;
-    background-color:#333;
+  display:none;
+  left:75%;
+  height:50%;
+  width:25%;
+  background-color:#333;
 }
 #map-panel-main, #info-panel{
-    position:fixed;
+  position:fixed;
 }
 #indicators-header,.indicators-content {
-    width:100%;
-    background-color:inherit;
-    margin:0;
+  width:100%;
+  background-color:inherit;
+  margin:0;
 }
 #indicators-header {
-    border-bottom: 1px solid #e3e3e3;
-    padding-bottom:0;
+  border-bottom: 1px solid #e3e3e3;
+  padding-bottom:0;
 }
 .indicators-content {
-    padding-top:0;
-    background-color:rgb(250, 250, 250);
-    flex:2;
+  padding-top:0;
+  background-color:rgb(250, 250, 250);
+  flex:2;
 }
 .indicators-content-wrapper {
-    overflow-x:hidden;
-    overflow-y:auto;
-    height:70vh;
+  overflow-x:hidden;
+  overflow-y:auto;
+  height:70vh;
 }
 #indicators-panel {
-    position:fixed;
-    width:40%;
-    height:100%;
+  position:fixed;
+  width:40%;
+  height:100%;
 }
 .ejmap-border {
-      border:1px solid var(--v-borderColor-base) !important;
+  border:1px solid var(--v-borderColor-base) !important;
 }
 .ejmap-border-right {
-      border-right:1px solid var(--v-borderColor-base) !important;
+  border-right:1px solid var(--v-borderColor-base) !important;
 }
 .ejmap-border-bottom {
-      border-bottom:1px solid var(--v-borderColor-base) !important;
+  border-bottom:1px solid var(--v-borderColor-base) !important;
 }
 .ejmap-border-top {
-      border-top:1px solid var(--v-borderColor-base) !important;
+  border-top:1px solid var(--v-borderColor-base) !important;
 }
 .ejmap-border-left {
-      border-left:1px solid var(--v-borderColor-base) !important;
+  border-left:1px solid var(--v-borderColor-base) !important;
 }
 .v-toolbar--clipped {
-    z-index: 10 !important;
+  z-index: 10 !important;
 }
 .flex-contents-sm {
   height: calc(100vh - 56px)!important;
@@ -569,31 +586,31 @@ span.func-count {
   height: calc(100vh - 64px)!important;
 }
 #indicators-carosel {
-    position:absolute;
-    top:55%;
-    bottom:0;
-    overflow-y:auto;
+  position:absolute;
+  top:55%;
+  bottom:0;
+  overflow-y:auto;
 }
 #indicators-carosel .v-responsive__content {
-    overflow-y:auto;
+  overflow-y:auto;
 }
 .indicator-hover {
-    margin-left:3px;
+  margin-left:3px;
 }
 .indicator-hover:hover {
-    border-left: 4px solid var(--v-primary-base) !important;
-    margin-left:0px;
+  border-left: 4px solid var(--v-primary-base) !important;
+  margin-left:0px;
 }
 .indicator-hover:hover, .indicator-hover:hover>div {
-    cursor:pointer;
-    background-color:var(--v-grey-lighten4);
+  cursor:pointer;
+  background-color:var(--v-grey-lighten4);
 }
 div.v-select__selection.v-select__selection--comma {
-    white-space: nowrap;
+  white-space: nowrap;
 }
 
 
-  
+
 
 body {
     width: 100%;

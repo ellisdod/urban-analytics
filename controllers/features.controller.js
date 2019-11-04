@@ -10,6 +10,7 @@ const geojson = require('../models/geojson.model')
 const functions = require('../src/api.functions')
 const arrayUtils = require('../src/plugins/arrayUtils.js')
 const flatten = require('flatten-obj')()
+//const building_survey_backup = require('../static/building_survey_backup.json')
 
 
 
@@ -140,12 +141,34 @@ function FeatureController (model) {
 
   this.updateAnalysis = function(req, res, next) {
     console.log('params',req.params)
-    let features = model.find({$and:[{layer:req.params.collection},{'feature.geometry.type':{$exists:true}}]},'',{lean: true})
-    let areaLayer = layers.areaLayers.find({ _id :req.params.areaLayerId},'',{lean: true})
-    let areas = geojson.areas.find({ layer :req.params.areaLayerId},'',{lean: true})
-    let layerAttributes = layers.layerAttributes.find({layer:req.params.collection},'',{lean: true})
+    //console.log('layers model', layers.surveyLayers.find)
+    //console.log('geojson.surveyRecords', Object.keys(geojson))
+    let surveyMode = layers.surveyLayers.countDocuments({_id:req.params.collection})
+    let areaMode = layers.areaLayers.countDocuments({_id:req.params.collection})
+    Promise.all([surveyMode,areaMode])
+    .then(arr=>{
+      console.log('modes',arr,req.params.collection)
+      surveyMode = arr[0] ? true : false
+      areaMode = arr[1] ? true : false
 
-    Promise.all([features,areaLayer,areas,layerAttributes])
+      //console.log('surveyMode', surveyMode)
+      let attributesModel = layers.layerAttributes
+
+      if (surveyMode) {
+        model = geojson[req.params.collection]
+        attributesModel = layers.surveyLayerAttributes
+      } else if (areaMode) {
+        model = geojson.areas
+        attributesModel = layers.areaAttributes
+      }
+
+      let layerAttributes = attributesModel.find({layer:req.params.collection},'',{lean: true})
+      let features = model.find({layer:req.params.collection},'',{lean: true})
+      let areaLayer = layers.areaLayers.find({ _id :req.params.areaLayerId},'',{lean: true})
+      let areas = geojson.areas.find({ layer :req.params.areaLayerId},'',{lean: true})
+
+      return Promise.all([features,areaLayer,areas,layerAttributes])
+    })
     .then(arr=>{
       features = arr[0]
       areaLayer = arr[1][0]
@@ -153,6 +176,8 @@ function FeatureController (model) {
       layerAttributes = arr[3]
 
       if (features.length===0) throw new Error('No features found for selected layer')
+      //features = building_survey_backup
+
       console.log('analysing ' + features.length + ' features...')
 
       const shape_area = layerAttributes.filter(x=>x.name==='shape_area')[0]
@@ -165,20 +190,21 @@ function FeatureController (model) {
 
       console.log('joined',joined[0])
 
-      const ops = features.map((x,index)=>{
+      features = features.map((x,index)=>{
         x.feature.properties = joined[index].properties
-        if (shape_area) x.feature.properties.shape_area = turf.area(x.feature)
-        if (shape_length) x.feature.properties.shape_length = turf.length(x.feature) * 1000
-        return this.createUpdateReq({_id:x._id},null,x)
+        if (!surveyMode&&shape_area) x.feature.properties.shape_area = turf.area(x.feature)
+        if (!surveyMode&&shape_length) x.feature.properties.shape_length = turf.length(x.feature) * 1000
+        return x
       })
-      console.log('updating ' + ops.length + ' features')
-
+      if (surveyMode) return null
+      const ops = features.map(x=>this.createUpdateReq({_id:x._id},null,x))
       return model.bulkWrite(ops)
     })
     .then(()=>{
       console.log('completed spatial join')
       //console.log(features[0].feature.properties)
-      return this.applyLayerFunctions(features,areaLayer)
+      return this.applyLayerFunctions(features,areaLayer,surveyMode)
+
     })
     .then(x => res.status(200).send(x) )
     .catch(err => {
@@ -362,18 +388,28 @@ this.computeLayerCalc = function (calc,ind) {
 
 }
 
-
-
-this.applyLayerFunctions = function(features,areaLayer) {
+/**
+* Aggregate feature properties to indicators
+* @param  {Array} features
+* @param  {Object} areaLayer
+* @param  {Boolean} surveyMode
+* @return {Promise}
+*/
+this.applyLayerFunctions = function(features,areaLayer,surveyMode) {
   const self = this
   const layerId = features[0].layer
-  //console.log('layerId',layerId)
-  //console.log('areaLayer',areaLayer)
-  //console.log('indquery',indquery)
 
-  let layerAttributes = layers.layerAttributes.find({layer:layerId},'',{lean: true})
+  let layerAttributes;
+  let layerCalcs
+  if (surveyMode) {
+    layerAttributes = layers.surveyLayerAttributes.find({layer:layerId},'',{lean: true})
+    layerCalcs = Promise.resolve()
+  } else {
+    layerAttributes = layers.layerAttributes.find({layer:layerId},'',{lean: true})
+    layerCalcs = layers.layerCalcs.find({$or:[{layer:layerId},{layer:areaLayer._id}]},'',{lean: true})
+  }
+
   let areas = geojson.areas.find({layer: areaLayer._id},'',{lean: true})
-  let layerCalcs = layers.layerCalcs.find({$or:[{layer:layerId},{layer:areaLayer._id}]},'',{lean: true})
   let indicators = geojson.indicators.find({layer: areaLayer._id },'',{lean: true})
   let styles = layers.styles.find({layer:layerId},'',{lean:true})
 
@@ -386,15 +422,16 @@ this.applyLayerFunctions = function(features,areaLayer) {
     layerCalcs = arr[2]
     indicators = arr[3]
 
-    layerCalcs.forEach(x=>{
-      //console.log('x.layer:areaLayer',x.layer,areaLayer._id)
-      x.key = x.layer.toString() === areaLayer._id.toString() ? 'attached' : layerId
-      return x
+    layerAttributes = layerAttributes.map(a=>{
+      if (a._options) {
+          a._options = a._options.reduce((acc,x)=>{
+            acc[x.value] = x
+            return acc
+          },{})
+      }
+      return a
     })
-
-    //console.log('layerCalcs',layerCalcs[0])
-    //console.log('indeicators',indicators[0])
-    //console.log('styles',arr[4][0])
+    console.log('layerAttributes',JSON.stringify(layerAttributes[0]) )
 
     styles = arr[4].reduce((acc,x)=>{
       //console.log(x.name)
@@ -402,23 +439,25 @@ this.applyLayerFunctions = function(features,areaLayer) {
       return acc
     },{}) || {}
 
+    if (surveyMode) return null
 
-    //console.log('found ' + indicators.length + ' indicators with areaLayer: ' + areaLayer._id )
-    //console.log('inds',indicators[0])
+    layerCalcs.forEach(x=>{
+      //console.log('x.layer:areaLayer',x.layer,areaLayer._id)
+      x.key = x.layer.toString() === areaLayer._id.toString() ? 'attached' : layerId
+      return x
+    })
 
     //check matching layer attribute exists for areaLayer
     const match = layerAttributes.filter(x=>x.name === areaLayer.code)
-    if (match.length === 0) {
-      const attribute = {
-        name : areaLayer.code,
-        type : "Number",
-        layer : layerId,
-        required : false
-      }
-      layerAttributes.push(attribute)
-      return layers.layerAttributes.findOneAndUpdate({}, attribute, {upsert:true})
+    if (match.length === 0) return null
+    const attribute = {
+      name : areaLayer.code,
+      type : "Number",
+      layer : layerId,
+      required : false
     }
-    return null
+    layerAttributes.push(attribute)
+    return layers.layerAttributes.findOneAndUpdate({}, attribute, {upsert:true})
 
   })
   .then(x=>{
@@ -428,6 +467,9 @@ this.applyLayerFunctions = function(features,areaLayer) {
     indicators.forEach(indicator=>{
       indicator[layerId] = {}
     })
+
+    //console.log('layerAttributes: ' + JSON.stringify(layerAttributes))
+    //console.log('feature sample: ' + JSON.stringify(features[10]))
 
     indicators = this.indicator.unflatten(indicators)
 
@@ -440,8 +482,6 @@ this.applyLayerFunctions = function(features,areaLayer) {
       acc[year][code] = acc[year][code] || self.indicator.create(year,code,areaLayer._id)// { 2019:{ 1113:{} }
       acc[year][code][layerId] = acc[year][code][layerId] || {}
       acc[year][code][layerId] = self.computeAttributeFunctions(acc[year][code][layerId], layerAttributes, x.feature)
-
-      //console.log('attrNames',attrNames)
       //console.log('styles',styles)
 
       return acc
@@ -486,24 +526,25 @@ this.applyLayerFunctions = function(features,areaLayer) {
     return geojson.indicators.find(query,'',{lean: true})
   },this.chainError)
   .then((inds,err)=>{
+    if (surveyMode) return null
     console.log(`calculating ${layerCalcs.length} for ${inds.length} indicators`)
 
-    const ops = inds.reduce((acc,x,i)=>{
+    const ops = inds.reduce((acc,ind,i)=>{
       //if (!inds[i][layerId]) return //why?
       let updateObj;
       layerCalcs.forEach(calc=>{
         //console.log(i, inds[i])
         //inds[i][layerId] = inds[i][layerId] || {} // null values exist for areas without features
-        const calcResult = self.computeLayerCalc(calc,x)
+        const calcResult = self.computeLayerCalc(calc,ind,inds)
         console.log('calcResult',calcResult)
         //if (calcResult !== null && calcResult !== undefined ) {
-          updateObj = updateObj || {}
-          updateObj[calc.key] = updateObj[calc.key] || {}
-          updateObj[calc.key][calc.name] = calcResult
+        updateObj = updateObj || {}
+        updateObj[calc.key] = updateObj[calc.key] || {}
+        updateObj[calc.key][calc.name] = calcResult
         //}
       })
       console.log('updateObj',updateObj)
-      if (updateObj) acc.push( this.createUpdateReq({'_id':x._id}, null, flatten(updateObj) ) )
+      if (updateObj) acc.push( this.createUpdateReq({'_id':ind._id}, null, flatten(updateObj) ) )
       //console.log('computed indicator', JSON.stringify(this.createUpdateReq({'_id':x._id}, null, flatten(updateObj) )))
       //acc.push( this.createUpdateReq({'_id':x._id}, null, flatten(updateObj) ) )
       return acc
@@ -541,6 +582,21 @@ this.createAttributeStyles = function(features,attributes) {
         const attr = a.name
         const val =  x.feature.properties[attr]
         acc[attr] = acc[attr] || {}
+
+        const uploadObj = {
+          layer:mongoose.Types.ObjectId(x.layer),
+          attribute:attr,
+          name:val
+        }
+
+        const valKey = parseInt(val)+1+''
+        if (a._options&&a._options[valKey]) {
+          uploadObj._text_en = a._options[valKey].text_en
+          uploadObj._text_ar = a._options[valKey].text_ar
+        }
+
+        console.log(uploadObj)
+
         if (!acc[attr][val]) {
           acc[attr][val] = true
           ops.push(this.createUpdateReq({
@@ -549,12 +605,7 @@ this.createAttributeStyles = function(features,attributes) {
               { attribute : attr },
               { name : val }
             ]
-          },null,
-          {
-            layer:mongoose.Types.ObjectId(x.layer),
-            attribute:attr,
-            name:val
-          },
+          },null,uploadObj,
           {upsert:true},
         ))
       }
@@ -571,9 +622,9 @@ this.createAttributeStyles = function(features,attributes) {
 
 //console.log(obj,features.length,layerAttributes.length)
 
- console.log('operations: ' + ops.length + '\nfeatures: ' + features.length + ' \nattributes: ' + attributes.length)
+console.log('operations: ' + ops.length + '\nfeatures: ' + features.length + ' \nattributes: ' + attributes.length)
 
- return ops.length ? layers.styles.bulkWrite(ops) : null
+return ops.length ? layers.styles.bulkWrite(ops) : null
 }
 
 this.spatialJoin = function (features, areas, code) {
@@ -581,6 +632,12 @@ this.spatialJoin = function (features, areas, code) {
   let tagged;
   areas = this.makeFeatureCollection(areas)
   if (features.type !== 'FeatureCollection') {
+    const nonfeatures = features.filter(x=>!x.feature || x.feature && !x.feature.geometry)
+    features = features.filter(x=>x.feature && x.feature.geometry)
+    console.log('featureCollection length:',  features.length, nonfeatures.length)
+    nonfeatures.forEach(x=>{
+      console.log(x)
+    })
     features = this.makeFeatureCollection(features)
   }
   //console.log('first feature',features.features[0])
@@ -648,7 +705,7 @@ const AreaController = function(model) {
           }
         })
 
-        //console.log('features',features[0]);
+        console.log('features',features[0]);
         return model.insertMany(features).then((x,err)=>{
           if (err) res.status(500).send(err)
           res.status(200).send('success')
@@ -802,10 +859,11 @@ const LayerController = function(collection) {
 module.exports = new Promise((res,rej)=>{
 
   geojson.load().then(()=> {
+    console.log(Object.keys(geojson))
     Controller.layers = new LayerController('layers')
     Controller.layerAttributes = new LayerController('layerAttributes')
     Controller.features = new GeoJsonWrapper(FeatureController)
-    Controller.areas = new AreaController(geojson.areas)
+    Controller.areas = new GeoJsonWrapper(AreaController)
     Controller.indicators = new IndicatorController(geojson.indicators)
     Controller.surveyLayers = new LayerController('surveyLayers')
     Controller.surveyLayerAttributes = new LayerController('surveyLayerAttributes')

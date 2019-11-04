@@ -30,7 +30,7 @@
 
 
     <div v-for="(val,index) in valueStyles" :key="index" style="background-color:none;!important" class="caption px-0">
-        <v-switch v-if="!small" :color="val.style ? val.style.fillColor : '#e3e3e3'" :input-value="val.on" @change="updateFilterObject('categories',val.name,$event)" :label="val.name"></v-switch>
+        <v-switch v-if="!small" :color="val.style ? val.style.fillColor : '#e3e3e3'" :input-value="val.on" @change="updateFilterObject('categories',val.name,$event)" :label="val['_text_'+$store.state.language] || val.name"></v-switch>
         <div v-else style="width:50%;display:inline-block;float:left;">
          <div v-bind:style="{
              display:'inline-block',
@@ -43,7 +43,7 @@
              borderColor:val.style ? val.style.borderColor : '#e3e3e3',
              marginRight:'5px',
              }"></div>
-         <span class="caption">{{val.name}}</span>
+         <span class="caption">{{val['_text_'+$store.state.language] || val.name}}</span>
         </div>
     </div>
 
