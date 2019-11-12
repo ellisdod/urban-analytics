@@ -266,9 +266,10 @@ module.exports = {
   controller : Controller,
   styles : new Controller(layers.styles),
   layerCalcs : new Controller(layers.layerCalcs),
+  layerTransformations : new Controller(layers.layerTransformations),
   indicatorAttributes : new Controller(layers.indicatorAttributes),
   indicatorBlocks: new Controller(layers.indicatorBlocks),
   indicatorSections: new Controller(layers.indicatorSections),
   areaLayers : new Controller(layers.areaLayers),
-  areaAttributes : new Controller(layers.areaAttributes)
+  areaAttributes : new Controller(layers.areaAttributes),
 }

@@ -151,6 +151,8 @@ import api from '@/api.js'
 import Calculator from './Calculator.vue'
 import NestedMenu from './NestedMenu.vue'
 import Styler from './StylePicker.vue'
+import Transformations from './Transformations.vue'
+
 
 const dbconfig = require('../db.config')
 const arrayUtils = require('@/plugins/arrayUtils')
@@ -158,7 +160,7 @@ const arrayUtils = require('@/plugins/arrayUtils')
 
 export default {
   components: {
-    VueJsonPretty,Calculator,NestedMenu,Styler
+    VueJsonPretty,Calculator,NestedMenu,Styler,Transformations
   },
   props : ['collection','filter','nestedPath','editItem','attributes','linkedFeature','permanent','title'],
   data() {
@@ -264,6 +266,15 @@ export default {
         const params = del ? id : { id:id }
         const self = this
         let updateObj = Object.assign({},this.edited)
+
+        //convert missing ObjectIds to null
+        Object.keys(updateObj).forEach(key=>{
+          if ((updateObj[key]===""|| updateObj[key]===null)&&
+              dbconfig[this.collection].schema[key]&&
+              dbconfig[this.collection].schema[key].type.toString().indexOf('function ObjectId')===0) {
+            delete updateObj[key]
+          }
+        })
 
         if (Array.isArray(updateObj._options)&&updateObj._options[0]&&Object.keys(updateObj._options[0]).indexOf('value')>-1) {
           updateObj._options.forEach((x,i)=>{

@@ -327,19 +327,19 @@ div.v-slider__track-fill {
   left: -4px;
 }
 .v-slider__thumb-container div.v-slider__thumb {
-    width: 6px;
-    height: 20px;
-    left: -4px;
-    border-radius:0;
+  width: 6px;
+  height: 20px;
+  left: -4px;
+  border-radius:0;
 }
 .v-slider__ticks-container .v-slider__ticks.v-slider__ticks--always-show {
   border-width: 1px !important;
-left: 50%;
-transform: translateY(2px) !important;
-height: 5px;
-width: 1px;
-border-left: none;
-padding-top:3px;
+  left: 50%;
+  transform: translateY(2px) !important;
+  height: 5px;
+  width: 1px;
+  border-left: none;
+  padding-top:3px;
 }
 .v-slider .v-slider__track__container {
   border: 1px solid #e3e3e3;

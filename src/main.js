@@ -1,4 +1,4 @@
-// The Vue build version to load with the `import` command
+//console.log// The Vue build version to load with the `import` command
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue'
 import App from './App.vue'
@@ -107,7 +107,7 @@ const store = new Vuex.Store({
       if (dbconfig[params.name].storeByLayer) {
         params.layer = params.layer || state._col_layers_selected
         if (!params.layer) rej('no feature layer defined')
-        console.log(params.layer)
+       //console.log(params.layer)
         const layer = state['_col_'+dbconfig[params.name].layerCollection].filter(x=>x._id === params.layer)[0]
         if (layer.filtered) {
           const areaLayerCode = state._col_areaLayers.filter(x=>x._id === state._col_areaLayers_selected )[0].code
@@ -123,7 +123,7 @@ const store = new Vuex.Store({
           commit('UPDATE_FEATURES',{
             collection: params.name,
             key: params.layer,
-            value: data,
+            value: data, //Object.freeze(data),
             nestedKey: params.nestedKey
           })
         } else {
@@ -132,7 +132,7 @@ const store = new Vuex.Store({
           //console.log('before commiting update',key,i.data.map(x=>x._id),i.data  )
           commit('UPDATE',{
             key: key,
-            value: data
+            value: data //Object.freeze(data)
           })
           if (!state[selKey]&&data[0]) {
             commit('UPDATE',{
@@ -150,11 +150,11 @@ const store = new Vuex.Store({
           update(col.data)
           return res(col.data)
         }
-        console.log('making api request',params.name,params.query,params.layer)
+       //console.log('making api request',params.name,params.query,params.layer)
         //update([])
         api.find(params.name,params.query,'',{lean: true},params.layer).then((i,err)=>{
           if (err) {
-            console.log('api error',err)
+           //console.log('api error',err)
             rej(err)
           }
           //console.log('data found: ',params.name,i.data.map(x=>x._id),i.data )
@@ -211,7 +211,7 @@ const store = new Vuex.Store({
         api.find('features',{}).then(x=>{
           state.geo.facilities = x.data
           state.facilities = x.data.map(x => x.feature.properties )
-          console.log('facilities',state.facilities)
+         //console.log('facilities',state.facilities)
           let edu = x.data.filter(x=>x.feature.properties.Use === 'Educational')
           state.geo.educational = edu;
 
@@ -229,7 +229,7 @@ const store = new Vuex.Store({
               //console.log('eduCity',Object.assign({},x,edu['total']))
             }
           })
-          console.log('cityindicators',state.cityIndicators)
+         //console.log('cityindicators',state.cityIndicators)
           //console.log('ind',state.indicators.filter(x=>x.year===2016))
 
         })
@@ -242,7 +242,7 @@ const store = new Vuex.Store({
 
   UPDATE_FEATURES (state, obj) {
 
-    console.log('updating feature', obj.nestedKey, obj.key, obj.value)
+    //console.log('updating feature', obj.nestedKey, obj.key, obj.value)
     const sortPath = dbconfig[obj.collection].sort
     const embedIdsPath = dbconfig[obj.collection].embedIds
     if (obj.value&&sortPath) obj.value = arrayUtils.sort(obj.value,false,sortPath)
@@ -277,7 +277,7 @@ UPDATE_FEATURE_PROPERTIES (state,obj) {
   //feature.feature.properties = obj.feature
   state._col_features[obj.layer].splice(obj.feature._index,1,obj.feature)
   let coords = getFirstCoordinates(obj.feature.feature.geometry.coordinates)
-  console.log('coords',coords)
+  //console.log('coords',coords)
   state.map.center = {lat:coords[1],lng:coords[0]}
 },
 SET_HIDDEN (state,obj) {
@@ -312,11 +312,11 @@ UPDATE (state, obj) {
       key = obj.key[obj.key.length - 1]
       //Vue.set(nested, obj.key[obj.key.length - 1], obj.value)
     }
-    console.log('updating store nested: ' + key, obj.value, base)
+    //console.log('updating store nested: ' + key, obj.value, base)
   } else {
     //console.log('is array', Array.isArray(obj.value), obj.value )
     //const ids = (obj.value[0] && obj.value[0]._id) ? obj.value.map(x=>x._id) : ''
-    console.log('updating store value: ' + obj.key, obj.value)
+    //console.log('updating store value: ' + obj.key, obj.value)
     base = state
     key = obj.key
   }
@@ -333,7 +333,7 @@ UPDATE (state, obj) {
 },
 UPDATE_AREA (state, code) {
   const e = state.geo.areas.filter(x=>x.feature.properties.id === code)[0]
-  console.log(e);
+  //console.log(e);
   state.neighbourhood = code
   state.map.center = {
     lon:e.feature.properties.Centroids_x,
@@ -412,20 +412,20 @@ getters : {
     return state.cityIndicators.filter(x=>x.year===state.year)[0] || {}
   },
   educationalByHood : state => {
-    console.log('edubyhood - init',state.geo.educational);
+    //console.log('edubyhood - init',state.geo.educational);
     const edu = state.geo.educational.reduce((acc,x)=>{
       if(x.feature.properties.mygeodat_5 === state.neighbourhood) {
         acc.push(x.feature.properties)
       }
       return acc;
     },[])
-    console.log('edubyhood',edu);
+    //console.log('edubyhood',edu);
     return edu
   },
   educationalGeoByHood : state => {
     if (!state.geo.educational) return []
     const d = state.geo.educational.filter(x=>x.feature.properties.mygeodat_5 === state.neighbourhood)
-    console.log('educational geo', d)
+    //console.log('educational geo', d)
     return d;
   },
   selectedAreas : state => {
@@ -576,7 +576,7 @@ getters : {
       .concat(layerCalcs)
       .concat(state._col_surveyLayerAttributes)
 
-      console.log('options attrs',attrs)
+     //console.log('options attrs',attrs)
 
       /*const filtered = layers.reduce((acc,x)=>{
       if(x.spatial_intersect.some(a=>edited.areaLayer.indexOf(a)>-1)) acc.push(x._id)
@@ -620,7 +620,7 @@ collectionSchema : state => {
         return acc
       },{})
 
-      console.log('collectionSchema translate', translate)
+     //console.log('collectionSchema translate', translate)
     }
     console.log('collectionSchema',schema)
     return schema || {}

@@ -168,9 +168,14 @@
 
 <div v-bind:style="{flex:2, maxHeight:'85vh', overflowY: allLayers ? 'none' : 'auto'}">
   <v-expansion-panel :dark="dark" expand v-model="layerPanels">
-    <v-expansion-panel-content v-for="(layer,key,index) in layers" v-show="layer.showLegend" :key="key">
+    <v-expansion-panel-content
+        v-for="(layer,key,index) in layers"
+        v-show="layer.showLegend"
+        :key="key"
+        @click.native="layerOn(key,layerPanels[index])"
+        >
       <template v-slot:header v-if="allLayers&&!legendBottom">
-        <div @click="" class="body-1">
+        <div class="body-1">
           {{layer.text_en}}
         </div>
       </template>
@@ -535,6 +540,9 @@ export default {
       }
     },
     methods: {
+      log(e){
+        console.log('click log', e)
+      },
       addFilter (layer) {
         let max = Object.keys(layer.filters).slice(-1)[0]
         max = (parseInt(max) + 1)
@@ -722,6 +730,7 @@ export default {
           if (this.editable&&!surveyLayer) {
             const surveyColorIndex = this.$store.getters.surveyRecordsByFeature[id] ? 1 : 2
             style.fillColor = style.color = this.$store.state.colors[surveyColorIndex]
+            return style
           }
 
           if (feature.geometry.type.indexOf('LineString')>-1) {
@@ -744,7 +753,10 @@ export default {
             style.stroke = s.borderWidth ? true : false
           } else if (attribute.range) {
             style.color = style.fillColor = this.$store.state.colorScale( 1 - ((val - layer.colorRange[0])/layer.colorConstant)  ).hex()
-          } else {
+          } else if (attribute.type === "Boolean") {
+            style.fillColor = 'yellow'
+            style.color = 'orange'
+          }else {
             style.fillOpacity = 0
             style.opacity = 0
           }
@@ -843,6 +855,7 @@ export default {
           }
           const index = Object.keys(this.layers).indexOf(key)
           this.$set(this.layerPanels, index, e);
+          if (e) this.checkForUpdate()
           //Object.assign(this.layers[key],{on:e})
         },
         updateLayer (layerId,e,path) {
@@ -1140,21 +1153,21 @@ watch: {
     this.layerOn(oldVal,false)
     this.layerOn(newVal,true)
   },
-  layerPanels: function(newVal,oldVal) {
+  /*layerPanels: function(newVal,oldVal) {
+    console.log('layerPanels',JSON.stringify(newVal),JSON.stringify(oldVal))
     this.$nextTick(()=>{
       for (var x=0;x<newVal.length;x++) {
         if (newVal[x] !== oldVal[x]) {
           this.layerOn(Object.keys(this.layers)[x],newVal[x])
+          if (newVal[x]) this.checkForUpdate()
           break
         }
       }
-      //console.log('layerPanels',newVal,oldVal)
     })
     //const layerIds = Object.keys(this.layers)
-    this.checkForUpdate()
     //this.layerOn(key,true)
     //if this panelIndex matches this component's index.. do stuff since we're selected
-  },
+  },*/
   layerPanelsSelected: function(newVal,oldVal) {
     oldVal.forEach(x=>{
       if (newVal.indexOf(x)===-1) this.layerOn(x,false)
@@ -1179,7 +1192,7 @@ mounted () {
     //if (window.screen.width < 800) this.updateBaseMap('basic',true);
     this.editFeatureDefaults = Object.assign({},this.editFeature)
     //this.resetDisplayKey()
-    //this.checkForUpdate()
+    this.checkForUpdate()
   })
   //console.log('map',this.$refs.myMap.mapObject)
   //
