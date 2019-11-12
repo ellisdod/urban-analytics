@@ -7,8 +7,8 @@
         :featureLayers="$store.state._col_layers_selected"
         featuresCollection="features"
         zoomLevel="12"
-        :editable="true"
-        v-bind:allLayers="true"
+        :editable="false"
+        :allLayers="true"
         :legendBottom="legendBottom"
         v-bind:options="{legendStyle:legendStyle,areaSelect:true,mapStyle:mapStyle}"
         >

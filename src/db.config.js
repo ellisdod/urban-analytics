@@ -56,6 +56,10 @@ const config = {
           {
             name :'MultiPolygon',
             icon : 'bubble_chart'
+          },
+          {
+            name :'Polygon',
+            icon : 'bubble_chart'
           }
         ]
       },
@@ -86,7 +90,11 @@ const config = {
         type : String,
         _text : "Source - Organisation",
         _hint : "e.g JIIS"
-      }
+      },
+      parent : {
+        type : mongoose.Schema.Types.ObjectId,
+        required : true,
+      },
     },
   },
   layerAttributes : {
@@ -130,6 +138,14 @@ const config = {
               return acc
             },baseOpts)
           }
+        }
+      },
+      intersect : {
+        type : Array,
+        _text : "Spatial Intersect",
+        _multiple:true,
+        _options : function(store) {
+          return store.state._col_layers
         }
       },
       required : {
@@ -177,450 +193,445 @@ const config = {
         _combobox:true,
         _categorised : true,
         _options: {component:'Calculator'}
-        /*  function(store,edited) {
-        //if(!edited.areaLayer)return {}
-        const layers = store.state._col_layers
-        const layersObj = layers.reduce((acc,x)=>{
-        acc[x._id]=x
-        return acc
-      },{})
-
-      const layerAttrs = store.state._col_layerAttributes
-      //console.log('options layerAttrs',layerAttrs)
-      const areaLayers = layersObj[store.state._col_layers_selected].spatial_intersect
-
-      const filtered = layers.reduce((acc,x)=>{
-      if(x.spatial_intersect.some(a=>areaLayers.indexOf(a)>-1)) acc.push(x._id)
-      return acc
-    },[])
-
-    const options = layerAttrs.reduce((acc,att)=>{
-    if (att.func.length > 0) {
-    const index = filtered.indexOf(att.layer)
-    if (index>-1) {
-    const id = filtered[index]
-    acc[id] = acc[id] || { name: layersObj[id].text_en, items : ['count'] }
-    att.func.forEach(func=>{
-    if (func) acc[id].items.push(att.name+'.'+func)
-  })
-}
-}
-return acc
-},{})
-
-//console.log('categorised options',options)
-return options
-
-} */
-}
-}
-},
-indicatorSections: {
-  name : "Sections",
-  name_ar : "الأقسام",
-  schema : {
-    name : {
-      type : String,
-      required: true,
-      _text : "Name"
-    },
-    text_en : {
-      type : String,
-      required : true,
-      _text : "Text (English)"
-    },
-    text_ar : {
-      type : String,
-      _text : "Text (Arabic)"
-    },
-    geodata : {
-      type : Array,
-      _text : "Feature Layers",
-      _multiple: true,
-      _options : function(store) {
-        return store.state._col_layers
-      }
-    },
-  },
-},
-indicatorBlocks : {
-  name: "Modules",
-  name_ar:"وحدات",
-  canPaste : true,
-  schema : {
-    type : {
-      type : String,
-      required : true,
-      _text : "Type",
-      _multiple: false,
-      _options : [
-        {
-          name : 'Figure',
-        },
-        {
-          name : 'Chart',
-        },
-        {
-          name :'Table',
-        },
-        {
-          name :'List',
-        },
-        {
-          name :'Map',
-        },
-        {
-          name :'Timeline',
-        }
-      ]
-    },
-    active : {
-      type : Boolean,
-      _text : "Active"
-    },
-    layer : {
-      type : mongoose.Schema.Types.ObjectId,
-      required: true,
-    },
-    text_en : {
-      type : String,
-      required : true,
-      _text : "Name (English)"
-    },
-    text_ar : {
-      type : String,
-      _text : "Name (Arabic)"
-    },
-    areaLayer : {
-      type : Array,
-      _text : "Spatial Intersect",
-      _multiple:true,
-      _options : function(store) {
-        return store.state._col_areaLayers
-      }
-    },
-    figure : {
-      type : Array,
-      _text : "Figure",
-      _categorised : true,
-      _options : function(store,edited) {
-        return store.getters.nestedAttributes(store,edited)
-      }
-    },
-    description_en : {
-      type : String,
-      _text : "Description (English)"
-    },
-    description_ar : {
-      type : String,
-      _text :  "Description (Arabic)"
-    },
-    unit : {
-      type : String,
-      _text :  "Unit"
-    }
-  }
-
-},
-features: {
-  name:'Features',
-  name_ar:'الميزات',
-  schema:'layerAttributes',
-  params : '/:collection',
-  sort: 'feature.properties.year',
-  canUpload: true,
-  storeByLayer : true,
-  embedIds : 'feature.properties',
-  layerCollection: 'layers',
-  layerAttributes: 'layerAttributes'
-},
-indicators: {
-  name:'Indicators',
-  schema : 'indicatorAttributes',
-  schemaOpts : {
-    strict: true
-  },
-  layerCollection : 'areaLayers',
-  params : '/:collection',
-  canUpload: true,
-},
-areaLayers : {
-  name:'Area Layers',
-  name_ar:'طبقات المنطقة',
-  schema : {
-    name : {
-      type : String,
-      required : true,
-      _text : "Name"
-    },
-    code : {
-      type : String,
-      required : true,
-      unique : true,
-      _text : "Column Name"
-    }
-  },
-},
-areas : {
-  name:'Areas',
-  schema:'areaAttributes',
-  params : '/:collection',
-  canUpload: true,
-  layerCollection: 'areaLayers',
-  embedIds : 'feature.properties'
-},
-areaAttributes : {
-  name:'Area Attributes',
-  name_ar: 'سمات المنطقة',
-  schema : {
-    name : {
-      type : String,
-      required : true,
-      _text : "Name"
-    },
-    type : {
-      type : String,
-      required : true,
-      _text : "Type",
-      _multiple: false,
-      _options : dataTypes
-    },
-    required : {
-      type : Boolean,
-      _text : "Required",
-    },
-    layer : {
-      type : String,
-      required : true,
-    }
-  },
-},
-indicatorAttributes : {
-  name : "Indicator Attributes",
-  name_ar: "سمات المؤشر",
-  canPaste : true,
-  _description_en : "For non-spatial attribute data that is directly associatied with the spatial area i.e data from JIIS relating to a statistical area",
-  schema : {
-    name : {
-      type : String,
-      required : true,
-      _text : "Name"
-    },
-    type : {
-      type : String,
-      required : true,
-      _text : "Type",
-      _multiple: false,
-      _options : dataTypes
-    },
-    required : {
-      type : Boolean,
-      _text : "Required",
-    },
-    source_ref : {
-      type : String,
-      _text : "Source - Reference",
-      _hint : "e.g Jerusalem Statistical Yearbook, Table IX/16"
-    },
-    source_org : {
-      type : String,
-      _text : "Source - Organisation",
-      _hint : "e.g JIIS"
-    },
-    source_url : {
-      type : String,
-      _text : "Source - Link",
-      _hint : "e.g https://jerusaleminstitute.org.il/en/yearbook/#/265/6868"
-    },
-    layer : {
-      type : mongoose.Schema.Types.ObjectId,
-      required : true,
-    },
-  },
-},
-surveyLayers : {
-  name: "Survey Layers",
-  name_ar: "طبقات المسح",
-  schema : {
-    name : {
-      type : String,
-      required : true,
-      unique : true,
-      _text : "Key",
-    },
-    text_en : {
-      type : String,
-      required : true,
-      unique : true,
-      _text : "Name (English)",
-    },
-    text_ar : {
-      type : String,
-      required : false,
-      unique : true,
-      _text : "Name (Arabic)",
-    },
-    featureLayer : {
-      type : Array,
-      _text : "Feature Layers",
-      _multiple: true,
-      _options : function(store) {
-        return store.state._col_layers
       }
     }
-  }
-},
-surveyLayerAttributes : {
-  name : "Attributes",
-  name_ar : "سمات",
-  canPaste : true,
-  translate : ['_text'],
-  schema : {
-    name : {
-      type : String,
-      required : true,
-      _text : "Name"
-    },
-    _text_en : {
-      type : String,
-      required : true,
-      _text : "Text (English)"
-    },
-    _text_ar : {
-      type : String,
-      required : true,
-      _text : "Text (Arabic)"
-    },
-    required : {
-      type : Boolean,
-      _text : "Required",
-    },
-    type : {
-      type : String,
-      required : true,
-      _text : "Type",
-      _multiple: false,
-      _options : dataTypes
-    },
-    _options : {
-      type : Array,
-      multiple: true,
-      _text : "Options",
-      _categorised : true,
-      _options:'dynamic'
-    },
-    func : {
-      type : Array,
-      _text : "Functions",
-      _multiple: true,
-      _options: [
-        {
-          name : 'count',
-          color: 'secondary'
-        },
-        {
-          name : 'sum',
-          color: 'tertiary'
-        }
-      ],
-    },
-    legend : {
-      type : Boolean,
-      _text : "Show in map",
-    },
-    layer : {
-      type : mongoose.Schema.Types.ObjectId,
-      required : true,
-    }
   },
-},
-surveyRecords: {
-  name:'Survey Records',
-  name_ar:"سجلات المسح",
-  schema:'surveyLayerAttributes',
-  params : '/:collection',
-  layerCollection:'surveyLayers',
-  storeByLayer:true,
-  embedIds : 'feature.properties',
-  create: function(self) {
-    const state = self.$store.state
-    let coords
-    console.log(typeof center)
-    if (self.linkedFeature) {
-      const featureLayers = state._col_surveyLayers.filter(x=>x._id===state._col_surveyLayers_selected)[0].featureLayer
-      coords = featureLayers.reduce((acc,i)=>{
-        const sel = state._col_features[i].filter(x=>x._id===self.linkedFeature)[0]
-        if (sel) {
-          acc = center(sel.feature.geometry.coordinates[0])
-          console.log('coords', sel.feature.geometry.coordinates, acc)
-        }
-        return acc
-      },null)
-    }  else {
-      coords = [self.$store.state.map.center.lng, self.$store.state.map.center.lat]
-    }
-
-    return {
-      feature: {
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: coords
-        },
-        properties : Object.assign({
-          year : new Date().getYear() + 1900,
-          _createdDate : new Date(),
-          _lastEditedDate : new Date(),
-          _createdBy : self.$store.state.activeUser.email,
-          _lastEditedBy : self.$store.state.activeUser.email,
-        }, self.edited)
+  layerTransformations : {
+    name : "Layer Transformations",
+    schema : {
+      name : {
+        type : String,
+        required : true,
+        _text: "Name"
       },
-      linkedFeature: self.linkedFeature || null
+      func : {
+        type : Array,
+        _text : "Functions",
+        _multiple: true,
+        _combobox:true,
+        _categorised : true,
+        _options: {component:'Transformations'}
+      },
+      layer : {
+        type : mongoose.Schema.Types.ObjectId,
+        required : true,
+      },
+      outputLayer : {
+        type : mongoose.Schema.Types.ObjectId,
+      }
+    }
+  },
+  indicatorSections: {
+    name : "Sections",
+    name_ar : "الأقسام",
+    schema : {
+      name : {
+        type : String,
+        required: true,
+        _text : "Name"
+      },
+      text_en : {
+        type : String,
+        required : true,
+        _text : "Text (English)"
+      },
+      text_ar : {
+        type : String,
+        _text : "Text (Arabic)"
+      },
+      geodata : {
+        type : Array,
+        _text : "Feature Layers",
+        _multiple: true,
+        _options : function(store) {
+          return store.state._col_layers
+        }
+      },
+    },
+  },
+  indicatorBlocks : {
+    name: "Modules",
+    name_ar:"وحدات",
+    canPaste : true,
+    schema : {
+      type : {
+        type : String,
+        required : true,
+        _text : "Type",
+        _multiple: false,
+        _options : [
+          {
+            name : 'Figure',
+          },
+          {
+            name : 'Chart',
+          },
+          {
+            name :'Table',
+          },
+          {
+            name :'List',
+          },
+          {
+            name :'Map',
+          },
+          {
+            name :'Timeline',
+          }
+        ]
+      },
+      active : {
+        type : Boolean,
+        _text : "Active"
+      },
+      layer : {
+        type : mongoose.Schema.Types.ObjectId,
+        required: true,
+      },
+      text_en : {
+        type : String,
+        required : true,
+        _text : "Name (English)"
+      },
+      text_ar : {
+        type : String,
+        _text : "Name (Arabic)"
+      },
+      areaLayer : {
+        type : Array,
+        _text : "Spatial Intersect",
+        _multiple:true,
+        _options : function(store) {
+          return store.state._col_areaLayers
+        }
+      },
+      figure : {
+        type : Array,
+        _text : "Figure",
+        _categorised : true,
+        _options : function(store,edited) {
+          return store.getters.nestedAttributes(store,edited)
+        }
+      },
+      date_range : {
+        type : Array,
+        _text : "Date Range",
+        _options : { component : 'datePicker'}
+      },
+      description_en : {
+        type : String,
+        _text : "Description (English)"
+      },
+      description_ar : {
+        type : String,
+        _text :  "Description (Arabic)"
+      },
+      unit : {
+        type : String,
+        _text :  "Unit"
+      }
+    }
+
+  },
+  features: {
+    name:'Features',
+    name_ar:'الميزات',
+    schema:'layerAttributes',
+    params : '/:collection',
+    sort: 'feature.properties.year',
+    canUpload: true,
+    storeByLayer : true,
+    embedIds : 'feature.properties',
+    layerCollection: 'layers',
+    layerAttributes: 'layerAttributes'
+  },
+  indicators: {
+    name:'Indicators',
+    schema : 'indicatorAttributes',
+    schemaOpts : {
+      strict: true
+    },
+    layerCollection : 'areaLayers',
+    params : '/:collection',
+    canUpload: true,
+  },
+  areaLayers : {
+    name:'Area Layers',
+    name_ar:'طبقات المنطقة',
+    schema : {
+      name : {
+        type : String,
+        required : true,
+        _text : "Name"
+      },
+      code : {
+        type : String,
+        required : true,
+        unique : true,
+        _text : "Column Name"
+      }
+    },
+  },
+  areas : {
+    name:'Areas',
+    schema:'areaAttributes',
+    params : '/:collection',
+    canUpload: true,
+    layerCollection: 'areaLayers',
+    embedIds : 'feature.properties'
+  },
+  areaAttributes : {
+    name:'Area Attributes',
+    name_ar: 'سمات المنطقة',
+    schema : {
+      name : {
+        type : String,
+        required : true,
+        _text : "Name"
+      },
+      type : {
+        type : String,
+        required : true,
+        _text : "Type",
+        _multiple: false,
+        _options : dataTypes
+      },
+      required : {
+        type : Boolean,
+        _text : "Required",
+      },
+      layer : {
+        type : String,
+        required : true,
+      }
+    },
+  },
+  indicatorAttributes : {
+    name : "Indicator Attributes",
+    name_ar: "سمات المؤشر",
+    canPaste : true,
+    _description_en : "For non-spatial attribute data that is directly associatied with the spatial area i.e data from JIIS relating to a statistical area",
+    schema : {
+      name : {
+        type : String,
+        required : true,
+        _text : "Name"
+      },
+      type : {
+        type : String,
+        required : true,
+        _text : "Type",
+        _multiple: false,
+        _options : dataTypes
+      },
+      required : {
+        type : Boolean,
+        _text : "Required",
+      },
+      source_ref : {
+        type : String,
+        _text : "Source - Reference",
+        _hint : "e.g Jerusalem Statistical Yearbook, Table IX/16"
+      },
+      source_org : {
+        type : String,
+        _text : "Source - Organisation",
+        _hint : "e.g JIIS"
+      },
+      source_url : {
+        type : String,
+        _text : "Source - Link",
+        _hint : "e.g https://jerusaleminstitute.org.il/en/yearbook/#/265/6868"
+      },
+      layer : {
+        type : mongoose.Schema.Types.ObjectId,
+        required : true,
+      },
+    },
+  },
+  surveyLayers : {
+    name: "Survey Layers",
+    name_ar: "طبقات المسح",
+    schema : {
+      name : {
+        type : String,
+        required : true,
+        unique : true,
+        _text : "Key",
+      },
+      text_en : {
+        type : String,
+        required : true,
+        unique : true,
+        _text : "Name (English)",
+      },
+      text_ar : {
+        type : String,
+        required : false,
+        unique : true,
+        _text : "Name (Arabic)",
+      },
+      featureLayer : {
+        type : Array,
+        _text : "Feature Layers",
+        _multiple: true,
+        _options : function(store) {
+          return store.state._col_layers
+        }
+      }
+    }
+  },
+  surveyLayerAttributes : {
+    name : "Attributes",
+    name_ar : "سمات",
+    canPaste : true,
+    translate : ['_text'],
+    schema : {
+      name : {
+        type : String,
+        required : true,
+        _text : "Name"
+      },
+      _text_en : {
+        type : String,
+        required : true,
+        _text : "Text (English)"
+      },
+      _text_ar : {
+        type : String,
+        required : true,
+        _text : "Text (Arabic)"
+      },
+      required : {
+        type : Boolean,
+        _text : "Required",
+      },
+      type : {
+        type : String,
+        required : true,
+        _text : "Type",
+        _multiple: false,
+        _options : dataTypes
+      },
+      _options : {
+        type : Array,
+        multiple: true,
+        _text : "Options",
+        _categorised : true,
+        _options:'dynamic'
+      },
+      func : {
+        type : Array,
+        _text : "Functions",
+        _multiple: true,
+        _options: [
+          {
+            name : 'count',
+            color: 'secondary'
+          },
+          {
+            name : 'sum',
+            color: 'tertiary'
+          }
+        ],
+      },
+      legend : {
+        type : Boolean,
+        _text : "Show in map",
+      },
+      layer : {
+        type : mongoose.Schema.Types.ObjectId,
+        required : true,
+      }
+    },
+  },
+  surveyRecords: {
+    name:'Survey Records',
+    name_ar:"سجلات المسح",
+    schema:'surveyLayerAttributes',
+    params : '/:collection',
+    layerCollection:'surveyLayers',
+    storeByLayer:true,
+    embedIds : 'feature.properties',
+    create: function(self) {
+      const state = self.$store.state
+      let coords
+      console.log(typeof center)
+      if (self.linkedFeature) {
+        const featureLayers = state._col_surveyLayers.filter(x=>x._id===state._col_surveyLayers_selected)[0].featureLayer
+        coords = featureLayers.reduce((acc,i)=>{
+          const sel = state._col_features[i].filter(x=>x._id===self.linkedFeature)[0]
+          if (sel) {
+            acc = center(sel.feature.geometry.coordinates[0])
+            console.log('coords', sel.feature.geometry.coordinates, acc)
+          }
+          return acc
+        },null)
+      }  else {
+        coords = [self.$store.state.map.center.lng, self.$store.state.map.center.lat]
+      }
+
+      return {
+        feature: {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: coords
+          },
+          properties : Object.assign({
+            year : new Date().getYear() + 1900,
+            _createdDate : new Date(),
+            _lastEditedDate : new Date(),
+            _createdBy : self.$store.state.activeUser.email,
+            _lastEditedBy : self.$store.state.activeUser.email,
+          }, self.edited)
+        },
+        linkedFeature: self.linkedFeature || null
+      }
+    }
+  },
+  styles : {
+    name:'Styles',
+    name_ar:'الأنماط',
+    schema : {
+      layer : {
+        type : mongoose.Schema.Types.ObjectId,
+        required : true,
+      },
+      name : {
+        type: String,
+        required : true,
+        _text : "Key",
+      },
+      _text_en : {
+        type : String,
+        required : false,
+        _text : "Text (English)"
+      },
+      _text_ar : {
+        type : String,
+        required : false,
+        _text : "Text (Arabic)"
+      },
+      attribute : {
+        type : String,
+        required : true,
+        _text : "Attribute",
+      },
+      style : {
+        type: mongoose.Schema.Types.Mixed,
+        _text : "Style"
+      },
     }
   }
-},
-styles : {
-  name:'Styles',
-  name_ar:'الأنماط',
+  /*
+  blocks: {
+  name:'Blocks',
+  canUpload: true,
   schema : {
-    layer : {
-      type : mongoose.Schema.Types.ObjectId,
-      required : true,
-    },
-    name : {
-      type: String,
-      required : true,
-      _text : "Key",
-    },
-    _text_en : {
-      type : String,
-      required : false,
-      _text : "Text (English)"
-    },
-    _text_ar : {
-      type : String,
-      required : false,
-      _text : "Text (Arabic)"
-    },
-    attribute : {
-      type : String,
-      required : true,
-      _text : "Attribute",
-    },
-    style : {
-      type: mongoose.Schema.Types.Mixed,
-      _text : "Style"
-    },
-  }
-}
-/*
-blocks: {
-name:'Blocks',
-canUpload: true,
-schema : {
-feature: mongoose.Schema.Types.Feature,
-number : Number,
-last_checked : Date,
+  feature: mongoose.Schema.Types.Feature,
+  number : Number,
+  last_checked : Date,
 },
 schemaOpts : {
 strict: false

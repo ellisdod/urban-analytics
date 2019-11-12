@@ -58,7 +58,13 @@ function Schema(name,collection) {
     //console.log('this.schema',this.schema)
     const schema = schemaPath ? arrayUtils.getNested(schemaPath,this.schema) : this.schema
     attributes.reduce((acc,i) => {
-      if (i.layer.toString() !== layer._id.toString()) return acc
+
+      const noMatch = [layer._id,layer.parent].every(x=> {
+        x = x ? x.toString() : ''
+        return i.layer.toString() !== x
+      })
+      if (noMatch) return acc
+
       acc[i.name] = {
         type : stringToType(i.type),
         required : i.required || false

@@ -80,18 +80,32 @@ export default {
   computed : {
     layers() {
       return this.$store.state['_col_'+this.layerCollection].map(x=>{
-        return {text:x.name, value:x._id}
+        return {
+          text:x['text_' + this.$store.state.language] || x.name,
+          value:x._id
+        }
       }) || []
     },
     areaLayers() {
       return this.$store.state._col_areaLayers.map(x=>{
-        return {text:x.name, value:x._id}
+        return {
+          text:x['text_' + this.$store.state.language] || x.name,
+          value:x._id
+        }
       }) || []
     }
   },
+  watch : {
+    layer : function (val) {
+      this.layerSelected = val
+    },
+    areaLayer : function (val) {
+      this.areaLayerSelected = val
+    }
+  },
   mounted () {
-    this.layerSelected =  this.$store.state['_col_' + this.layerCollection +'_selected']
-    this.areaLayerSelected = this.areaLayer || this.$store.state._col_areaLayers_selected
+      this.layerSelected = this.layer
+      this.areaLayerSelected = this.areaLayer
   }
 }
 </script>

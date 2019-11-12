@@ -287,30 +287,31 @@ methods: {
   updateCollection (force) {
     if (!force && !dbconfig[this.collection].storeByLayer && this.$store.state[`_col_${this.collection}_selected`]) {
       this.items = this.prepareItems()
-      console.log('rejecting')
-      return Promise.reject();
+      console.log('rejecting ' + this.collection)
+      return Promise.reject(this.collection +': already loaded data');
     }
-    const self = this
+
     //console.log('EDITABLEDATALIST updating collection ' + this.collection)
     return new Promise((res,rej)=>{
       let request = this.collection
       if (dbconfig[this.collection].storeByLayer) {
+        if (!this.filterId) return rej(this.collection +': no layer specified')
+        if (!force && this.$store.state['_col_' + this.collection][this.filterId].length) rej(this.collection +':already loaded filter data')
         request = {
           name : this.collection,
-          layer : self.filterId
+          layer : this.filterId
         }
-        if (!self.filterId || (!force && this.$store.state['_col_' + this.collection][self.filterId])) rej('No layer specified')
       }
-      self.$store.dispatch('UPDATE_COLLECTION',request)
+      this.$store.dispatch('UPDATE_COLLECTION',request)
       .then(x=>{
         console.log('updating items')
         this.items = this.prepareItems()
-        self.$forceUpdate()
+        this.$forceUpdate()
         res(x)
       })
       .catch(err=> {
         console.log('update failed',err)
-        rej()
+        rej(err)
       })
     })
 
@@ -426,7 +427,7 @@ created () {
     if (!this.$store.state['_col_'+this.collection+'_selected']) this.select(0,x[0]._id)
     console.log('firstid',x[0]._id)*/
   }) // update store with selected value
-  .catch(err=>console.log('failed to update store'))
+  .catch(err=>console.log('failed to update store',err))
   if (!this.datatable) this.setMode()
 },
 mounted () {

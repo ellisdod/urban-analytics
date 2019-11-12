@@ -1,107 +1,126 @@
 <template>
 
   <v-card
-    style="background:none"
-    flat
-    :class="[{selected : selected && $vuetify.breakpoint.smAndUp}]"
-    >
+  style="background:none"
+  flat
+  :class="[{selected : selected && $vuetify.breakpoint.smAndUp}]"
+  >
 
-    <div v-if="type === 'List' && selectedIndicator">
-      <v-list>
-        <v-list-item v-for="(val,key) in selectedIndicator[figure[0]]">
-          <v-list-tile-action>
-            {{key}}
-          </v-list-tile-action>
-          <v-list-tile-content>
-            {{val}}
-          </v-list-tile-content>
-        </v-list-item>
-      </v-list>
+  <div v-if="type === 'List' && selectedIndicator">
+    <v-list>
+      <v-list-item v-for="(val,key) in selectedIndicator[figure[0]]">
+        <v-list-tile-action>
+          {{key}}
+        </v-list-tile-action>
+        <v-list-tile-content>
+          {{val}}
+        </v-list-tile-content>
+      </v-list-item>
+    </v-list>
+  </div>
+
+  <!-- WITH CHART -->
+  <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;">
+
+    <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8 sm8 md8':compact,'sm4':!compact, }">
+
+      <div v-bind:style="{minWidth:compact ?'180px':0}" v-bind:class="[{'body-1':compact,'subheading':!compact },'font-weight-light']">
+        {{name}}
+      </div>
+
+      <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
+        <span
+        :style="{float:!compact ? 'left':'',clear:'both'}"
+        :class="[{'display-1':!compact,'subheading':compact},'py-0']">
+        {{ unit === 'dunum' ? (parseInt(selectedIndicator[figure[0]])/1000).toFixed(1) : selectedIndicator[figure[0]] ||0}}
+      </span>
+      <span v-if="unit" :style="{float:!compact ? 'left':''}" :class="[{'body-1 pt-1 ml-1':!compact,'caption':compact}]">
+        {{unit}}
+      </span>
     </div>
 
-    <!-- WITH CHART -->
-    <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;">
-
-      <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8 sm8 md8':compact,'sm4':!compact, }">
-
-        <div v-bind:style="{minWidth:compact ?'180px':0}" v-bind:class="[{'body-1':compact,'subheading':!compact },'font-weight-light']">
-          {{name}}
-        </div>
-
-        <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
-          <span
-          :style="{float:!compact ? 'left':'',clear:'both'}"
-          :class="[{'display-1':!compact,'subheading':compact},'py-0']">
-            {{ unit === 'dunum' ? (parseInt(selectedIndicator[figure[0]])/1000).toFixed(1) : selectedIndicator[figure[0]] ||0}}
-          </span>
-          <span v-if="unit" :style="{float:!compact ? 'left':''}" :class="[{'body-1 pt-1 ml-1':!compact,'caption':compact}]">
-            {{unit}}
-          </span>
-        </div>
-
-        <div v-bind:class="[{'caption pl-2':compact},'font-weight-light']">{{ selectedYear&&selectedYear!==$store.state.year ? '(' + selectedYear + ')' : '' }}</div>
-
-      </v-flex>
-
-      <v-flex order-xs3 order-sm2 sm-offset-4 pt-3 v-bind:class="{
-        'mb-5':selected && $vuetify.breakpoint.smOnly && !compact,
-        'my-3':selected && $vuetify.breakpoint.xsOnly && !compact,
-        'xs-offset2 sm8 md4':!compact,
-        'xs4 sm4 md4':compact }">
-
-        <div v-bind:style="chartWidthClass">
-
-          <comparative-chart v-if="type==='Figure'"
-          :name="name"
-          :figure="figure"
-          :year="selectedYear"
-          :selected="selected||compact"
-          :compact="compact"
-          >
-         </comparative-chart>
-
-    </div>
+    <div v-bind:class="[{'caption pl-2':compact},'font-weight-light']">{{ selectedYear&&selectedYear!==$store.state.year ? '(' + selectedYear + ')' : '' }}</div>
 
   </v-flex>
 
-  <v-flex v-if="!compact" order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4 v-bind:class="{'hidden-sm-and-down':!selected}">
+  <v-flex order-xs3 order-sm2 sm-offset-4 pt-3 v-bind:class="{
+    'mb-5':selected && $vuetify.breakpoint.smOnly && !compact,
+    'my-3':selected && $vuetify.breakpoint.xsOnly && !compact,
+    'xs-offset2 sm8 md4':!compact,
+    'xs4 sm4 md4':compact }">
 
-    <v-sparkline
-    :value="timeChartData"
-    :color="chartColor"
-    height="70"
-    smooth
-    stroke-linecap="square"
-    line-width="8"
-    width="700"
-    >
-  </v-sparkline>
+    <div v-bind:style="chartWidthClass">
 
-  <v-slider
-  style="width:100%;margin-top:0px;margin-bottom:-30px;"
-  track-color="transparent"
-  always-dirty
-  inverse-label
-  :tick-labels="makeSliderLabels(dataYears)"
-  v-model="selectedYear"
-  ticks="always"
-  v-bind:tick-size="2"
-  :min="dataYears[0]"
-  :max="dataYears[dataYears.length-1]"
-  z-index="500"
+      <comparative-chart v-if="type==='Figure'"
+      :name="name"
+      :figure="figure"
+      :year="selectedYear"
+      :selected="selected||compact"
+      :compact="compact"
+      >
+    </comparative-chart>
+
+  </div>
+
+</v-flex>
+
+<v-flex v-if="!compact" order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4 v-bind:class="{'hidden-sm-and-down':!selected}">
+
+  <v-sparkline
+  :value="timeChartData"
+  :color="chartColor"
+  height="70"
+  smooth
+  stroke-linecap="square"
+  line-width="8"
+  width="700"
   >
+</v-sparkline>
+
+<v-range-slider
+class="px-2 scale-gradient"
+style="width:100%;margin-top:0px;margin-bottom:-30px;"
+v-if="dateRange"
+v-model="dateRange"
+:min="dateRange[0]"
+:max="dateRange[1]"
+track-color="rgba(0,0,0,0)"
+>
+</v-range-slider>
+
+<v-slider
+v-else-if="dataYears.length>1"
+style="width:100%;margin-top:0px;margin-bottom:-30px;"
+track-color="transparent"
+always-dirty
+inverse-label
+:tick-labels="makeSliderLabels(dataYears)"
+v-model="selectedYear"
+ticks="always"
+v-bind:tick-size="2"
+:min="dateRange[0]||dataYears[0]"
+:max="dateRange[1]||dataYears[dataYears.length-1]"
+z-index="500"
+>
 </v-slider>
+
+<div
+v-else
+style="margin-top:-30px;"
+class="body-1 text-xs-right font-weight-light"
+>{{ selectedYear }}
+</div>
 
 </v-flex>
 </v-layout>
 
 <div v-else-if="type==='Chart'" class="pa-3" style="background:white;">
-<div class="subheading font-weight-light">{{name}}</div>
-<bar-vertical
-style="height:300px; margin-bottom:-40px;"
-v-bind:x-labels="true"
-v-bind:y-labels="true"
-v-bind:chart-data="generateChartDataSets">
+  <div class="subheading font-weight-light">{{name}}</div>
+  <bar-vertical
+  style="height:300px; margin-bottom:-40px;"
+  v-bind:x-labels="true"
+  v-bind:y-labels="true"
+  v-bind:chart-data="generateChartDataSets">
 </bar-vertical>
 </div>
 
@@ -120,12 +139,12 @@ v-bind:chart-data="generateChartDataSets">
 
 
   <v-tooltip bottom open-delay="100">
-      <template v-slot:activator="{ on }">
-        <v-btn style="position:absolute;bottom:5px;right:5px;" icon @click="exportToCsv"  v-on="on">
-          <v-icon color="grey">get_app</v-icon>
-        </v-btn>
-      </template>
-      <span>Download data</span>
+    <template v-slot:activator="{ on }">
+      <v-btn style="position:absolute;bottom:5px;right:5px;" icon @click="exportToCsv"  v-on="on">
+        <v-icon color="grey">get_app</v-icon>
+      </v-btn>
+    </template>
+    <span>Download data</span>
   </v-tooltip>
 
 </div>
@@ -198,69 +217,69 @@ export default {
       return true
     },
     exportToCsv() {
-        var processRow = function (row) {
-            var finalVal = '';
-            for (var j = 0; j < row.length; j++) {
-                var innerValue = row[j] === null ? '' : row[j].toString();
-                if (row[j] instanceof Date) {
-                    innerValue = row[j].toLocaleString();
-                };
-                var result = innerValue.replace(/"/g, '""');
-                if (result.search(/("|,|\n)/g) >= 0)
-                    result = '"' + result + '"';
-                if (j > 0)
-                    finalVal += ',';
-                finalVal += result;
-            }
-            return finalVal + '\n';
-        };
-
-        const figure = this.figure[0]
-        const title = this.unit ? `${this.name} (${this.unit})` : this.name
-        let indicators = this.$store.getters.allIndicatorsByAreaYear
-        let rows = [
-          [title],
-          ['Source', this.layer.sourceLong || '' ],
-          ['Link', this.layer.sourceUrl || '' ],
-          ['-'],
-          ['Name','Code',...this.dataYears],
-        ]
-        //console.log(figure)
-
-        rows = Object.keys(indicators).reduce((arr,areaCode)=>{
-          const areaName = this.$store.getters.areaNames[areaCode]
-          const row = [areaName, areaCode]
-          this.dataYears.forEach(year=>{
-            const val = indicators[areaCode][year][figure] || ''
-            row.push(val)
-          })
-          arr.push(row)
-          return arr
-        },rows)
-
-        const filename = this.name.toLowerCase().replace(/[\s\.]/g,'_') + '.csv'
-
-        var csvFile = '';
-        for (var i = 0; i < rows.length; i++) {
-            csvFile += processRow(rows[i]);
+      var processRow = function (row) {
+        var finalVal = '';
+        for (var j = 0; j < row.length; j++) {
+          var innerValue = row[j] === null ? '' : row[j].toString();
+          if (row[j] instanceof Date) {
+            innerValue = row[j].toLocaleString();
+          };
+          var result = innerValue.replace(/"/g, '""');
+          if (result.search(/("|,|\n)/g) >= 0)
+          result = '"' + result + '"';
+          if (j > 0)
+          finalVal += ',';
+          finalVal += result;
         }
+        return finalVal + '\n';
+      };
 
-        var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-        if (navigator.msSaveBlob) { // IE 10+
-            navigator.msSaveBlob(blob, filename);
-        } else {
-            var link = document.createElement("a");
-            if (link.download !== undefined) { // feature detection
-                // Browsers that support HTML5 download attribute
-                var url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", filename);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+      const figure = this.figure[0]
+      const title = this.unit ? `${this.name} (${this.unit})` : this.name
+      let indicators = this.$store.getters.allIndicatorsByAreaYear
+      let rows = [
+        [title],
+        ['Source', this.layer.sourceLong || '' ],
+        ['Link', this.layer.sourceUrl || '' ],
+        ['-'],
+        ['Name','Code',...this.dataYears],
+      ]
+      //console.log(figure)
+
+      rows = Object.keys(indicators).reduce((arr,areaCode)=>{
+        const areaName = this.$store.getters.areaNames[areaCode]
+        const row = [areaName, areaCode]
+        this.dataYears.forEach(year=>{
+          const val = indicators[areaCode][year][figure] || ''
+          row.push(val)
+        })
+        arr.push(row)
+        return arr
+      },rows)
+
+      const filename = this.name.toLowerCase().replace(/[\s\.]/g,'_') + '.csv'
+
+      var csvFile = '';
+      for (var i = 0; i < rows.length; i++) {
+        csvFile += processRow(rows[i]);
+      }
+
+      var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+      if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, filename);
+      } else {
+        var link = document.createElement("a");
+        if (link.download !== undefined) { // feature detection
+          // Browsers that support HTML5 download attribute
+          var url = URL.createObjectURL(blob);
+          link.setAttribute("href", url);
+          link.setAttribute("download", filename);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         }
+      }
     }
   },
   computed : {
@@ -324,68 +343,68 @@ export default {
           }
 
         }),
-       labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
+        labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
 
       }
       /*
       return {
-        datasets :[
-          {
-            //label:store.state.neighbourhood,
-            data: this.figure.map(x=>this.selectedIndicator[x]),
-            borderColor: color,
-            type:"line",
-            fill:false,
-          }
-        ],
-        labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
-      }
-      */
-    },
-    chartWidthClass(){
-      let style = {position:'relative',width:'95%'}
-      if (this.type !== 'Chart') {
-        style.marginTop = '-60px'
-      }
-      if (this.type !== 'Chart' && this.$vuetify.breakpoint.smAndUp) {
-        style.marginTop = '-60px'
-        style.width ='100%'
-        style.paddingLeft = '0'
-      }
-      return style
-    },
-    timeChartData () {
-      const figure = this.figure[0]
-      const indicators = this.$store.getters.indicatorsForSelectedArea
-      const filtered = indicators.filter(x=>this.dataYears.indexOf(x.year)>-1)
-
-      return filtered.map(x=>x[figure])
+      datasets :[
+      {
+      //label:store.state.neighbourhood,
+      data: this.figure.map(x=>this.selectedIndicator[x]),
+      borderColor: color,
+      type:"line",
+      fill:false,
     }
-
-  },
-  watch : {
-    selected : function(newVal) {
-      if (newVal) this.updateIndicator()
-    },
-    selectedYear : function(newVal,oldVal) {
-      this.validateYear(newVal)
-      //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
-    },
-    areaDataLatest : function(newVal) {
-      this.selectedYear = newVal.year
-    }
-  },
-  mounted (){
-    this.$nextTick(()=>{
-      if (this.areaDataLatest) {
-        this.selectedYear = this.areaDataLatest.year
-      } else {
-        this.selectedYear = this.dataYears[this.dataYears.length -1]
-      }
-      if (this.selected) this.updateIndicator()
-    })
-    //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])
+  ],
+  labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
+}
+*/
+},
+chartWidthClass(){
+  let style = {position:'relative',width:'95%'}
+  if (this.type !== 'Chart') {
+    style.marginTop = '-60px'
   }
+  if (this.type !== 'Chart' && this.$vuetify.breakpoint.smAndUp) {
+    style.marginTop = '-60px'
+    style.width ='100%'
+    style.paddingLeft = '0'
+  }
+  return style
+},
+timeChartData () {
+  const figure = this.figure[0]
+  const indicators = this.$store.getters.indicatorsForSelectedArea
+  const filtered = indicators.filter(x=>this.dataYears.indexOf(x.year)>-1)
+
+  return filtered.map(x=>x[figure])
+}
+
+},
+watch : {
+  selected : function(newVal) {
+    if (newVal) this.updateIndicator()
+  },
+  selectedYear : function(newVal,oldVal) {
+    this.validateYear(newVal)
+    //this.$store.commit('UPDATE',{key:['navigator','center'],value:this.$store.state.navigator.defaultCenter})
+  },
+  areaDataLatest : function(newVal) {
+    this.selectedYear = newVal.year
+  }
+},
+mounted (){
+  this.$nextTick(()=>{
+    if (this.areaDataLatest) {
+      this.selectedYear = this.areaDataLatest.year
+    } else {
+      this.selectedYear = this.dataYears[this.dataYears.length -1]
+    }
+    if (this.selected) this.updateIndicator()
+  })
+  //  if (this.selectedIndicator) console.log('selected data:',this.selectedIndicator[this.figure[0]])
+}
 
 }
 </script>
@@ -442,20 +461,20 @@ div.v-slider__track-fill {
   left: -4px;
 }
 .v-slider__thumb-container div.v-slider__thumb {
-    width: 6px;
-    height: 20px;
-    left: -4px;
-    border-radius:0;
+  width: 6px;
+  height: 20px;
+  left: -4px;
+  border-radius:0;
 }
 
 .v-slider__ticks-container .v-slider__ticks.v-slider__ticks--always-show {
   border-width: 1px !important;
-left: 50%;
-transform: translateY(2px) !important;
-height: 5px;
-width: 1px;
-border-left: none;
-padding-top:3px;
+  left: 50%;
+  transform: translateY(2px) !important;
+  height: 5px;
+  width: 1px;
+  border-left: none;
+  padding-top:3px;
 }
 
 .v-slider .v-slider__track__container {

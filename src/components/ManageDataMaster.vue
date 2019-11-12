@@ -106,7 +106,20 @@ v-for="(val,key,index) in tabs"
        </map-view>
        </v-flex>
 
-        <template v-for="(item,index) in val.tables">
+       <v-tabs
+       v-model="tableTabs"
+       color="background"
+       slider-color="primary"
+       class="mt-2 mx-4 manage-data"
+       show-arrows
+       >
+
+       <v-tab
+       v-for="(item,tableIndex) in val.tables"
+       :key="tableIndex" ripple @click=""
+       >{{item.heading}}</v-tab>
+
+       <v-tab-item lazy v-for="(item,tableIndex) in val.tables" :key="tableIndex" class="pt-4">
 
     <v-flex v-if="item.type==='datalist' && item.collection" :key="index" xs12>
       <div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2"></div>
@@ -143,7 +156,11 @@ v-for="(val,key,index) in tabs"
     </v-tab-item>
   </v-tabs>
 </v-flex>
-</template>
+</v-tab-item>
+
+</v-tabs>
+
+
 
 </v-layout>
 
@@ -164,6 +181,7 @@ v-for="(val,key,index) in tabs"
 <v-dialog v-model="analysisDialog" max-width="600">
   <analysis
   :layerCollection="tabs[tab].uploadLayerCol"
+  :layer="$store.state['_col_layers_selected']"
   :areaLayer="$store.state['_col_areaLayers_selected']"
   v-on:close="analysisDialog=false"
   ></analysis>
@@ -248,7 +266,13 @@ export default {
             },
             {
               type: 'datalist',
-              heading_en: 'Features Table',
+              heading_en: 'Transformations',
+              collection:'layerTransformations',
+              filter:'layers',
+            },
+            {
+              type: 'datalist',
+              heading_en: 'Features',
               multiselect :true,
               collection:'features',
               filter:'layers',
@@ -257,7 +281,7 @@ export default {
             },
             {
               type: 'datalist',
-              heading_en: 'Style',
+              heading_en: 'Styles',
               collection:'styles',
               filter:'layers',
               searchable:true,
