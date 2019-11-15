@@ -5,7 +5,7 @@
       <!-- DATA TABLE -->
       <div v-if="datatable" >
         <!--<div style="margin-top:-43px;float:right;">-->
-        <v-toolbar flat color="rgba(0,0,0,0)">
+        <v-toolbar flat color="rgba(0,0,0,0)" class="ejmap-border-bottom">
           <v-toolbar-title class="grey--text text--darken-2 font-weight-light">{{title}}</v-toolbar-title>
            <v-spacer></v-spacer>
            <v-text-field v-if="searchable" label="Search" v-model="search" class="mt-2 mr-3">
@@ -31,7 +31,7 @@
         :rows-per-page-items="[20,50,100]"
         v-bind:class="cssclass"
         :search = "search"
-        class="ejmap-border"
+        class="ejmap-border-bottom ejmap-border-right ejmap-border-left"
         >
 
         <template v-slot:items="props">
@@ -153,7 +153,7 @@
 -->
 </div>
 
-<v-dialog v-if="schema&&dialog" v-model="dialog" max-width="700px">
+<v-dialog v-if="schema&&dialog" v-model="dialog" max-width="700px" persistent>
   <editor
   :collection="collection" :filter="filter" :editItem="editItem" :nestedPath="nestedPath" v-on:close="close()" v-on:update="updateCollection(true)">
 </editor>

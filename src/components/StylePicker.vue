@@ -30,7 +30,7 @@
         v-model="style.borderWidth"
         min="0"
         max="8"
-        @change="update"
+        @change="update(style)"
         />
       </div>
     </div>

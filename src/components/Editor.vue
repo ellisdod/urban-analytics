@@ -21,6 +21,21 @@
 
               <styler v-if="key==='style'" v-model="edited[key]"></styler>
 
+            <v-combobox
+              v-else-if="i._options&&Array.isArray(i._options)&&i._combobox"
+              v-model="edited[key]"
+              :items="i._options"
+              :label="i._text"
+              :small-chips="i._multiple"
+              :multiple="i._multiple"
+              clearable
+              :item-text="Object.keys(i._options[0]).filter(x=>x.indexOf('text')>-1||x.indexOf('name')>-1)[0]"
+              item-value="value"
+              :rules="[validateItem(edited[key],i)]"
+              box
+              validate-on-blur>
+            </v-combobox>
+
 
               <v-select
               v-else-if="i._options&&Array.isArray(i._options)&&i._options.length>0"
@@ -37,7 +52,7 @@
               validate-on-blur>
             </v-select>
 
-            <component v-else-if="i._options&&i._options.component" :is="i._options.component" :value="edited[key]" @change="function(e){edited[key]=e}"/>
+            <component v-else-if="i._options&&i._options.component" :is="i._options.component" :items="i._options.items?i._options.items($store,edited):null" :type="i._options.type" :value="edited[key]" @change="function(e){edited[key]=e}"/>
 
             <div v-else-if="i._options&&i._options==='dynamic'" style="display:flex;flex-direction:column;" >
             <p class="subheading"> {{ Object.keys(edited[key]).length ? 'Choices' : '' }} </p>
@@ -226,7 +241,7 @@ export default {
   },
   methods : {
     validateItem(v,i) {
-      if (i.required && !v && v!==0 ) return i['_text_en'] + ' is required'
+      if (i.required && !i._hasDefault && !v && v!==0 ) return i['_text_en'] + ' is required'
       return true
     },
     addItem (object) {
@@ -289,7 +304,7 @@ export default {
             if (typeof value === 'string' && value.trim() === '' ) {
               value = null
             } else if (value && this.schema.schema[key]) {
-              if (this.schema.schema[key].type === 'Number') value = parseInt(value)
+              if (this.schema.schema[key].type === 'Number') value = parseFloat(value)
               else if (this.schema.schema[key].type === 'Text') value = value.toString()
             }
             acc[ self.nestedPath+'.'+key] = value
@@ -303,7 +318,7 @@ export default {
           console.log('updated object',updateObj)
         }
 
-        if (this.filter) updateObj.layer = this.filterId
+        if (this.filter) updateObj.layer = updateObj.layer || this.filterId
 
         const colparams = dbconfig[this.collection].params ? this.filterId : ''
 

@@ -552,7 +552,7 @@ getters : {
         return acc
       },{})
 
-      if (edited.type==='Map') {
+      if (edited&&edited.type==='Map') {
         return layers.reduce((acc,x)=>{
           acc.push({'name': x.text_en,'value':x._id})
           return acc
@@ -622,7 +622,7 @@ collectionSchema : state => {
 
      //console.log('collectionSchema translate', translate)
     }
-    console.log('collectionSchema',schema)
+    //console.log('collectionSchema',schema)
     return schema || {}
   }
 },

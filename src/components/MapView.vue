@@ -3,7 +3,7 @@
     <l-map
     v-if="layersSet"
     ref="map"
-    :zoom="$store.state.map.zoom"
+    :zoom="mapZoom"
     :zoomControl="false"
     :center="$store.state.map.center"
     :options="mapOptions"
@@ -169,80 +169,81 @@
 <div v-bind:style="{flex:2, maxHeight:'85vh', overflowY: allLayers ? 'none' : 'auto'}">
   <v-expansion-panel :dark="dark" expand v-model="layerPanels">
     <v-expansion-panel-content
-        v-for="(layer,key,index) in layers"
-        v-show="layer.showLegend"
-        :key="key"
-        @click.native="layerOn(key,layerPanels[index])"
-        >
-      <template v-slot:header v-if="allLayers&&!legendBottom">
-        <div class="body-1">
-          {{layer.text_en}}
+    v-for="(layer,key,index) in layers"
+    v-show="layer.showLegend"
+    :key="key"
+    @click.native="layerOn(key,layerPanels[index])"
+    >
+    <template v-slot:header v-if="allLayers&&!legendBottom">
+      <div class="body-1">
+        {{layer.text_en}}
+      </div>
+    </template>
+    <v-card class="pt-2">
+      <v-card-text class="pa-0">
+        <div v-if="!minimiseLegend" class="pt-1 px-3 grey--text text-uppercase">Filter</div>
+
+        <v-list class="py-0">
+          <v-list-tile
+          class="map-legend-tile"
+          v-if="layer.on&&layer.features"
+          v-for="(v,i,index) in layer.filters"
+          :key="index"
+          @click="updateLayer(layer._id,{key:'attribute',value:v.attribute})">
+
+          <template v-if="index!==0">
+            <v-select :items="['AND','OR']" value="AND" class="caption" style="flex:3; margin-top: -20px;"></v-select>
+            <v-btn icon @click="removeFilter(layer,i)" style="margin:0px -10px -10px 10px"><v-icon small>close</v-icon></v-btn>
+          </template>
+
+
+          <v-list-tile-content dark>
+            <map-legend
+            :key="index"
+            :layer="layer"
+            :attributes="layer.attributes"
+            :attributeName="layer.filters[i].attribute"
+            :small="minimiseLegend"
+            :hideControls="hideControls"
+            @filterChange="function(e){updateLayer(layer._id, e, `filters.${i}`);updateLayer(layer._id, e)}"
+            @layerChange="function(e){updateLayer(layer._id, e)}"
+            @toggleFeature="function(e){filterFeatures(key,e)}"
+            :class="{'ejmap-border-bottom':allLayers}"
+            style="width:100%;"
+            ></map-legend>
+
+          </v-list-tile-content>
+        </v-list-tile>
+      </v-list>
+      <template v-if="!minimiseLegend">
+        <div class="text-xs-right" style="width:100%;">
+          <v-btn depressed color="rgba(0,0,0,0)" @click="addFilter(layer)" class="caption grey--text">Add filter<v-icon small>add</v-icon></v-btn>
+        </div>
+        <div class="px-3 grey--text text-uppercase">Opacity</div>
+        <div class="px-3 caption grey--text text--darken-2" style="display:flex;flex-wrap:wrap;">
+          <div style="flex:1;" class="caption mt-2">Fill</div>
+          <v-slider
+          class="px-2 mt-0"
+          v-model="layer.fillOpacity"
+          min="0"
+          max="100"
+          track-color="rgba(0,0,0,0)"
+          ></v-slider>
+          <div style="flex-basis:100%"></div>
+          <div style="flex:1" class="caption mt-2">Stroke</div>
+          <v-slider
+          class="px-2 mt-0"
+          v-model="layer.strokeOpacity"
+          min="0"
+          max="100"
+          track-color="rgba(0,0,0,0)"
+          ></v-slider>
         </div>
       </template>
-      <v-card class="pt-2">
-        <v-card-text class="pa-0">
-          <div v-if="!minimiseLegend" class="pt-1 px-3 grey--text text-uppercase">Filter</div>
 
-          <v-list>
-            <v-list-tile
-            class="map-legend-tile"
-            v-if="layer.on&&layer.features"
-            v-for="(v,i,index) in layer.filters"
-            :key="index"
-            @click="updateLayer(layer._id,{key:'attribute',value:v.attribute})">
-
-            <template v-if="index!==0">
-              <v-select :items="['AND','OR']" value="AND" class="caption" style="flex:3; margin-top: -20px;"></v-select>
-              <v-btn icon @click="removeFilter(layer,i)" style="margin:0px -10px -10px 10px"><v-icon small>close</v-icon></v-btn>
-            </template>
-
-
-            <v-list-tile-content dark>
-              <map-legend
-              :key="index"
-              :layer="layer"
-              :attributes="layer.attributes"
-              :attributeName="layer.filters[i].attribute"
-              :small="minimiseLegend"
-              @filterChange="function(e){updateLayer(layer._id, e, `filters.${i}`);updateLayer(layer._id, e)}"
-              @layerChange="function(e){updateLayer(layer._id, e)}"
-              @toggleFeature="function(e){filterFeatures(key,e)}"
-              class="ejmap-border-bottom"
-              style="width:100%;"
-              ></map-legend>
-
-            </v-list-tile-content>
-          </v-list-tile>
-        </v-list>
-        <template v-if="!minimiseLegend">
-          <div class="text-xs-right" style="width:100%;">
-            <v-btn depressed color="rgba(0,0,0,0)" @click="addFilter(layer)" class="caption grey--text">Add filter<v-icon small>add</v-icon></v-btn>
-          </div>
-          <div class="px-3 grey--text text-uppercase">Opacity</div>
-          <div class="px-3 caption grey--text text--darken-2" style="display:flex;flex-wrap:wrap;">
-            <div style="flex:1;" class="caption mt-2">Fill</div>
-            <v-slider
-            class="px-2 mt-0"
-            v-model="layer.fillOpacity"
-            min="0"
-            max="100"
-            track-color="rgba(0,0,0,0)"
-            ></v-slider>
-            <div style="flex-basis:100%"></div>
-            <div style="flex:1" class="caption mt-2">Stroke</div>
-            <v-slider
-            class="px-2 mt-0"
-            v-model="layer.strokeOpacity"
-            min="0"
-            max="100"
-            track-color="rgba(0,0,0,0)"
-            ></v-slider>
-          </div>
-        </template>
-
-      </v-card-text>
-    </v-card>
-  </v-expansion-panel-content>
+    </v-card-text>
+  </v-card>
+</v-expansion-panel-content>
 </v-expansion-panel>
 </div>
 <!--
@@ -315,21 +316,21 @@ v-if="layers[key].on && layers[key].features"
     @close="close"
     @update="updateSurvey(false)"
     @del="updateSurvey(true)">
-    </editor>
-  </v-tab-item>
+  </editor>
+</v-tab-item>
 
-  <v-tab-item>
-    <editor
-    collection="surveyRecords"
-    filter="surveyLayers"
-    nestedPath="feature.properties"
-    :linkedFeature="$store.state._col_features_selected"
-    :attributes="attributes"
-    :permanent="true"
-    @close="close"
-    @update="updateSurvey">
-    </editor>
-  </v-tab-item>
+<v-tab-item>
+  <editor
+  collection="surveyRecords"
+  filter="surveyLayers"
+  nestedPath="feature.properties"
+  :linkedFeature="$store.state._col_features_selected"
+  :attributes="attributes"
+  :permanent="true"
+  @close="close"
+  @update="updateSurvey">
+</editor>
+</v-tab-item>
 
 </v-tabs>
 </v-dialog>
@@ -364,7 +365,7 @@ const translate = require('@/plugins/translate')
 
 export default {
   name: 'MapView',
-  props: ['featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapLink','minimiseLegend','hideControls','highlightColor','attribute','dark'],
+  props: ['attributes','northArrow','scaleBar','featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapOff','baseMapLink','minimiseLegend','hideControls','highlightColor','dark'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -459,10 +460,15 @@ export default {
 
   },
   computed: {
+    mapZoom () {
+      const base = this.zoomLevel || this.$store.state.map.zoom
+      const factor = this.$store.getters.selectedArea.feature.properties.zoom || 0
+      return base + factor
+    },
     surveyorAuth () {
       return arrayUtils.getNested('state.activeUser.groups.Surveyor',this.$store)
     },
-    attributes () {
+    layerAttributes () { // used to be 'attributes'
       if (!this.featureLayers) return null
       return this.layers[this.featureLayers[0]] ? this.layers[this.featureLayers[0]].attributes : null
     },
@@ -480,8 +486,8 @@ export default {
       return Object.assign(
         {
           padding: this.legendBottom ? '0 0 40px 0' : '0',
-          height: this.legendBottom ? '200px' : 'auto',
-          maxHeight: this.legendBottom ? '200px':'none',
+          height: this.legendBottom ? '400px' : 'auto',
+          maxHeight: this.legendBottom ? '400px':'none',
           maxWidth: this.legendBottom ? '100%' : '300px',
           width: this.legendBottom ? '100%' : 'auto',
           overflowY:this.legendBottom ? 'visible':'auto',
@@ -644,6 +650,9 @@ export default {
           }
 
           layer.bindPopup(html);
+          if (feature.properties.number) {
+            layer.bindTooltip(feature.properties.number, {permanent: true, className: "detailed-plan-label", offset: [0, 0] });
+          }
           layer.on({
             contextmenu : function(e) {
               self.featureClick = true
@@ -743,7 +752,16 @@ export default {
             style.weight = 3
           }
 
-          if (!attribute||!val) return style
+          if (!attribute) {
+            const s = layer.defaultStyle
+            style.fillColor = s.fillColor
+            style.color =  s.borderColor
+            style.weight = s.borderWidth
+            style.stroke = s.borderWidth ? true : false
+            return style
+          }
+
+          if (!val) return style
 
           if (attribute.categories) {
             const s = attribute.categories[val].style || {}
@@ -769,7 +787,7 @@ export default {
           const style = {
             weight: 2,
             color: 'grey',
-            opacity: 0.4,
+            opacity: 0,
             fillColor: 'grey',
             fillOpacity: outline ? 0 : 0.2
           }
@@ -777,7 +795,9 @@ export default {
           return function(feature){
             if (self.$store.state.neighbourhood === feature.properties.areaCode) {
               const selectStyle = {
-                weight: 4,
+                weight: 3,
+                opacity: 1,
+                color: '#999',
                 fillColor: 'orange'
               }
               if (self.highlightColor) selectStyle.color = self.highlightColor
@@ -914,8 +934,9 @@ export default {
         checkForUpdate () {
           if (!this.layers) return null
           console.log('checking for update')
-          const featurecol = this.$store.state['_col_'+this.featuresCollection]
+          const featurecol = this.$store.state['_col_'+(this.featuresCollection||'features')]
           let promises = Object.keys(this.layers).reduce((arr,key)=>{
+            //console.log('map layers', featurecol, key, this.layers, this.layers[key])
             const layer = this.layers[key]
             if (!layer.on) return arr
             arr.push(new Promise((res,rej)=> {
@@ -965,10 +986,11 @@ export default {
           }
 
           console.log('running set layers. total layers: ' + layers.length )
+          let onIndex = -1
+          layers.forEach((layer,index)=>{
+            const categoryStyle = styles[layer._id]
 
-          layers.forEach((x,index)=>{
-
-            const layer = Object.assign({
+            layer = Object.assign({
               features:'',
               legend:'',
               fillOpacity:60,
@@ -976,13 +998,15 @@ export default {
               filters: {'0': {} },
               colorRange:null,
               colorConstant:null,
-            },x)
-            const categoryStyle = styles[layer._id]
+              defaultStyle : categoryStyle && categoryStyle.__default && categoryStyle.__default.__d ? categoryStyle.__default.__d.style : null
+            },layer)
+
             const status = this.featureLayersArray.indexOf(layer._id) > -1 ? true : false
             this.layerPanels.push(status)
             if (status) this.layerPanelsSelected.push(layer._id)
             layer.on = this.layerPanels[index]
             layer.showLegend = this.allLayers || this.layerPanels[index]
+            if (this.layerPanels[index]) onIndex ++
             //if (!layer.on) return
             //console.log('layerid',x._id,layer._id)
 
@@ -991,8 +1015,8 @@ export default {
               if (acc[att.name] && categoryStyle) acc[att.name].categories = categoryStyle[att.name]
               return acc
             },{})
-            layer.attribute = this.attribute || Object.keys(layer.attributes)[0]
-            layer.filters['0'].attribute = layer.attribute
+            layer.attribute = this.attributes ? this.attributes[onIndex] : '__default'// || Object.keys(layer.attributes)[0]
+            layer.filters['0'].attribute = layer.attribute// ???
 
             this.$set(this.layers, layer._id, layer)
 
@@ -1035,6 +1059,18 @@ loadSurveyLayer () {
   this.update()
   this.loadSurveyRecords()
 },
+addNorthArrow () {
+  var north = L.control({position: "topright"});
+  north.onAdd = function(map) {
+    var div = L.DomUtil.create("div", "legend");
+    div.innerHTML = '<img style="opacity: 0.5;width:30px;margin:20px;" src="/static/img/north_arrow.svg">';
+    return div;
+  }
+  north.addTo(this.$refs.map.mapObject);
+},
+addScaleBar () {
+  L.control.scale({position: "bottomright"}).addTo(this.$refs.map.mapObject);
+},
 loadSurveyRecords () {
   console.log('loading survey records')
   if (this.editable) this.updateCollection('surveyRecords', this.$store.state._col_surveyLayers_selected)
@@ -1058,7 +1094,7 @@ exportLayersAsCSV () {
   })
 },
 toggleBaseMap () {
-  if (this.baseMaps[0].selected) {
+  if (!this.baseMapOff&&this.baseMaps[0].selected) {
     const layer = L.mapboxGL({
       accessToken: 'not-needed',
       style: this.baseMapLink || 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
@@ -1154,35 +1190,35 @@ watch: {
     this.layerOn(newVal,true)
   },
   /*layerPanels: function(newVal,oldVal) {
-    console.log('layerPanels',JSON.stringify(newVal),JSON.stringify(oldVal))
-    this.$nextTick(()=>{
-      for (var x=0;x<newVal.length;x++) {
-        if (newVal[x] !== oldVal[x]) {
-          this.layerOn(Object.keys(this.layers)[x],newVal[x])
-          if (newVal[x]) this.checkForUpdate()
-          break
-        }
-      }
-    })
-    //const layerIds = Object.keys(this.layers)
-    //this.layerOn(key,true)
-    //if this panelIndex matches this component's index.. do stuff since we're selected
-  },*/
-  layerPanelsSelected: function(newVal,oldVal) {
-    oldVal.forEach(x=>{
-      if (newVal.indexOf(x)===-1) this.layerOn(x,false)
-    })
-    newVal.forEach(x=>{
-      if (oldVal.indexOf(x)===-1) this.layerOn(x,true)
-    })
-  },
-  legendBottom: function(val) {
-    this.$nextTick(()=>this.$refs.map.mapObject.invalidateSize())
-  },
-  editable: function(val) {
-    if (!val) return null
-    this.loadSurveyRecords()
-  }
+  console.log('layerPanels',JSON.stringify(newVal),JSON.stringify(oldVal))
+  this.$nextTick(()=>{
+  for (var x=0;x<newVal.length;x++) {
+  if (newVal[x] !== oldVal[x]) {
+  this.layerOn(Object.keys(this.layers)[x],newVal[x])
+  if (newVal[x]) this.checkForUpdate()
+  break
+}
+}
+})
+//const layerIds = Object.keys(this.layers)
+//this.layerOn(key,true)
+//if this panelIndex matches this component's index.. do stuff since we're selected
+},*/
+layerPanelsSelected: function(newVal,oldVal) {
+  oldVal.forEach(x=>{
+    if (newVal.indexOf(x)===-1) this.layerOn(x,false)
+  })
+  newVal.forEach(x=>{
+    if (oldVal.indexOf(x)===-1) this.layerOn(x,true)
+  })
+},
+legendBottom: function(val) {
+  this.$nextTick(()=>this.$refs.map.mapObject.invalidateSize())
+},
+editable: function(val) {
+  if (!val) return null
+  this.loadSurveyRecords()
+}
 },
 
 
@@ -1193,12 +1229,16 @@ mounted () {
     this.editFeatureDefaults = Object.assign({},this.editFeature)
     //this.resetDisplayKey()
     this.checkForUpdate()
+    this.update()
   })
   //console.log('map',this.$refs.myMap.mapObject)
   //
 
   const self = this
   this.$nextTick(()=>{
+
+    if (this.scaleBar) this.addScaleBar()
+    if (this.northArrow) this.addNorthArrow()
     this.toggleBaseMap()
     if (this.hideControls) {
       this.$refs.map.mapObject
@@ -1266,7 +1306,7 @@ return acc;
 }
 
 .map-menu i.theme--light.v-icon {
-    color: #000 !important;
+  color: #000 !important;
 }
 
 .highlighted {
@@ -1299,11 +1339,11 @@ return acc;
 }
 
 /*#map-legend, #map-legend .v-expansion-panel__container {
-  background-color:rgb(47,47,47)!important;
-  color:#e3e3e3;
+background-color:rgb(47,47,47)!important;
+color:#e3e3e3;
 }
 #map-legend .v-expansion-panel__container :hover {
-  background: rgb(60,60,60);
+background: rgb(60,60,60);
 }*/
 
 
@@ -1337,6 +1377,14 @@ return acc;
   left:20px;
   top:20px;
   z-index:500;
+}
+
+.detailed-plan-label {
+  color: blue;
+background: rgba(250,250,250,0.3);
+font-size: 9px;
+border: none;
+box-shadow: none;
 }
 
 </style>

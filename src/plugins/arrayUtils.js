@@ -16,7 +16,7 @@ const sort = function(arr,descending,key) {
 
 
 const res = arr.sort(sortFunc)
-console.log('arrayUtils',res)
+//console.log('arrayUtils',res)
 return res
 
 }
@@ -45,7 +45,7 @@ const sortNumbers = function (arr, key) {
     }
   }
   result.constant = result.max - result.min
-  console.log('sorted',sorted, result)
+  //console.log('sorted',sorted, result)
   return result
 }
 

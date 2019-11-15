@@ -11,6 +11,7 @@ const functions = require('../src/api.functions')
 const arrayUtils = require('../src/plugins/arrayUtils.js')
 const flatten = require('flatten-obj')()
 const transConfig = require('../src/transformations.config')
+const calculator = require('../src/plugins/calculator.js')
 //const building_survey_backup = require('../static/building_survey_backup.json')
 
 
@@ -203,13 +204,20 @@ function FeatureController (model) {
       return this.calculateSpatialIntersects(features, layerAttributes)
 
       //return Promise.reject('testing')
-
       //
-
     })
     .then(x=>{
       features = x
       console.log('features intersect joined', features[0])
+
+      //Field Calculations
+      layerAttributes.forEach(att=>{
+        if (!att.calculation||!att.calculation.length) return null
+        for (let x=0;x<features.length;x++) {
+          features[x].feature.properties[att.name] = calculator.process(att.calculation, features[x].feature.properties, layerAttributes)
+        }
+      })
+      console.log('example feature',features[0])
       const ops = features.map(x=>this.createUpdateReq({_id:x._id},null,x))
       return model.bulkWrite(ops)
     })
@@ -604,11 +612,13 @@ this.applyLayerFunctions = function(features,areaLayer,surveyMode) {
 
     //reset existing indicators for this layer to avoid adding to exisitng numbers
     indicators.forEach(indicator=>{
-      indicator[layerId] = {}
+      indicator[layerId.toString()] = {}
     })
 
     //console.log('layerAttributes: ' + JSON.stringify(layerAttributes))
     //console.log('feature sample: ' + JSON.stringify(features[10]))
+
+    console.log('feature before indicators', areaLayer.code, features[0])
 
     indicators = this.indicator.unflatten(indicators)
 
@@ -619,12 +629,15 @@ this.applyLayerFunctions = function(features,areaLayer,surveyMode) {
       if (!year) return acc
       acc[year] = acc[year] || {} //{2019:{}}
       acc[year][code] = acc[year][code] || self.indicator.create(year,code,areaLayer._id)// { 2019:{ 1113:{} }
-      acc[year][code][layerId] = acc[year][code][layerId] || {}
-      acc[year][code][layerId] = self.computeAttributeFunctions(acc[year][code][layerId], layerAttributes, x.feature)
-      //console.log('styles',styles)
+      acc[year][code][layerId.toString()] = acc[year][code][layerId.toString()] || {}
+      attFuncs = self.computeAttributeFunctions(acc[year][code][layerId.toString()], layerAttributes, x.feature)
+      acc[year][code][layerId.toString()] = attFuncs
+      //console.log('attFuncs',attFuncs)
 
       return acc
     },indicators)
+
+    console.log('indicator sample:', indObj['2019']['2211'][layerId.toString()] )
 
     //Flatten and create update docs
     let newCount = 0
@@ -636,7 +649,7 @@ this.applyLayerFunctions = function(features,areaLayer,surveyMode) {
         const id = indObj[year][code]._id
         if (id) {
           updateCount++
-          insertDoc = this.createUpdateReq({'_id':id}, layerId, indObj[year][code][layerId])
+          insertDoc = this.createUpdateReq({'_id':id}, layerId, indObj[year][code][layerId.toString()])
           //console.log(insertDoc.updateOne.update)
         } else {
           //console.log('insert',indObj[year][code])
@@ -644,7 +657,7 @@ this.applyLayerFunctions = function(features,areaLayer,surveyMode) {
           insertDoc.insertOne = {document: indObj[year][code]}
           newCount ++
         }
-        if (indObj[year][code][layerId] &&indObj[year][code][layerId]!=={}) acc.push(insertDoc)
+        if (indObj[year][code][layerId.toString()] &&indObj[year][code][layerId.toString()]!=={}) acc.push(insertDoc)
 
       })
       return acc
@@ -801,17 +814,17 @@ return ops.length ? layers.styles.bulkWrite(ops) : null
 * @param  {String} areaAttribute
 * @return {Array}
 */
-this.spatialJoin = function (features, areas, featureAttribute, areaAttribute) {
+this.spatialJoin = function (features, areas, featureAtt, areaAtt) {
   //confirm areas are polygons
   if (areas[0].feature.geometry.type.indexOf('Polygon') === -1 ) {
     return null
   }
 
-  //add proxy areaAttribute
-  if (!areaAttribute) {
-    areaAttribute = '__p'
+  //add proxy areaAtt
+  if (!areaAtt) {
+    areaAtt = '__p'
     areas = areas.map(x=>{
-      x.feature.properties[areaAttribute] = true
+      x.feature.properties[areaAtt] = true
       return x
     })
   }
@@ -822,16 +835,17 @@ this.spatialJoin = function (features, areas, featureAttribute, areaAttribute) {
   let tagged;
 
   if (features[0].feature.geometry.type === 'Point') {
-    tagged = turf.tag(this.makeFeatureCollection(features), areas, areaAttribute, featureAttribute)
+    tagged = turf.tag(this.makeFeatureCollection(features), areas, areaAtt, featureAtt)
   } else {
     const centroids = features.map(x=>turf.centroid(x.feature))
     console.log('centroids',centroids.length,centroids[0])
-    tagged = turf.tag( this.makeFeatureCollection(centroids), areas, areaAttribute, featureAttribute)
-    console.log('tagged',tagged.features.length, tagged.features.filter(x=>x.properties[featureAttribute]).length, tagged.features[0])
+    tagged = turf.tag( this.makeFeatureCollection(centroids), areas, areaAtt, featureAtt)
+    console.log('tagged',tagged.features.length, tagged.features.filter(x=>x.properties[featureAtt]).length, tagged.features[0])
     //console.log('total tagged',tagged.features.filter(x=>x.properties.JIIS_stat_area).length )
   }
   return features.map((x,i)=>{
-    x.feature.properties[featureAttribute] = tagged.features[i].properties[featureAttribute]
+    const val = tagged.features[i].properties[featureAtt]
+    x.feature.properties[featureAtt] = areaAtt === '__p' ? val || false : val
     return x
   })
   //return tag(features, areas, 'id', code)

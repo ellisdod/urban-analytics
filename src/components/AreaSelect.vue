@@ -44,7 +44,7 @@ export default {
       this.$store.commit('UPDATE',{
         key:['map','center'],
         value: {
-          lon:properties.centroid_lng,
+          lng:properties.centroid_lng,
           lat:properties.centroid_lat
         }
       })

@@ -55,7 +55,7 @@ export default {
     },
     colors () {
       return this.keyNames.map(x=>{
-        return this.style[x] ? this.style[x].style.fillColor : ''
+        return this.style[x] ? this.style[x].style.fillColor : '#999'
       })
     },
     labels () {

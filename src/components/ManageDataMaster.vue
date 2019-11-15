@@ -106,11 +106,13 @@ v-for="(val,key,index) in tabs"
        </map-view>
        </v-flex>
 
+       <v-flex xs12>
+
        <v-tabs
        v-model="tableTabs"
        color="background"
        slider-color="primary"
-       class="mt-2 mx-4 manage-data"
+       class="mt-2 manage-data"
        show-arrows
        >
 
@@ -119,15 +121,12 @@ v-for="(val,key,index) in tabs"
        :key="tableIndex" ripple @click=""
        >{{item.heading}}</v-tab>
 
-       <v-tab-item lazy v-for="(item,tableIndex) in val.tables" :key="tableIndex" class="pt-4">
+       <v-tab-item lazy v-for="(item,tableIndex) in val.tables" :key="tableIndex" class="pt-2">
 
-    <v-flex v-if="item.type==='datalist' && item.collection" :key="index" xs12>
-      <div class="subheading font-weight-light ejmap-border-bottom pl-3 py-2"></div>
       <editable-data-list
       v-if="item.type==='datalist' && item.collection"
       :collection="item.collection"
       :filter="item.filter"
-      :title="item.heading"
       v-bind:datatable="item.datatable===false ? false : true"
       :multiselect="item.multiselect"
       :nestedPath="item.nestedPath"
@@ -138,7 +137,6 @@ v-for="(val,key,index) in tabs"
       v-bind:areas="item.collection==='areas'"
       >
     </editable-data-list>
-  </v-flex>
 
   <v-flex v-else-if="item.type==='json'" class="py-5" :key="index" xs12>
     <div class="py-2 subheading font-weight-light  ejmap-border-bottom">Indicators </div>
@@ -156,10 +154,12 @@ v-for="(val,key,index) in tabs"
     </v-tab-item>
   </v-tabs>
 </v-flex>
+
+
 </v-tab-item>
 
 </v-tabs>
-
+</v-flex>
 
 
 </v-layout>
@@ -341,6 +341,7 @@ export default {
             },
             {
               type: 'json',
+              heading_en: 'JSON',
             }
           ]
         },
