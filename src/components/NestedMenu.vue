@@ -8,11 +8,10 @@
       </template>
 
     <v-list dense>
-      <template v-for="(val,name) in items">
+      <template v-for="(val,name,index) in items">
 
-        <v-list-tile v-if="val.value" :key="name" @click="change(val.value)">
+        <v-list-tile v-if="val.value" :key="index" @click="change(val.value)">
           {{val.name}}
-
         </v-list-tile>
 
         <v-menu v-else-if="val.items" full-width offset-x max-height="500" :key="name" open-on-hover >

@@ -1,6 +1,7 @@
 <template>
   <div>
     <v-select
+    v-if="!hideControls&&attributes"
     style="width:100%;margin-top:-10px;"
     class="caption grey--text pt-1"
     color="grey"
@@ -28,22 +29,31 @@
 
     </div>
 
-
+    <div v-if="valueStyles&&Object.keys(valueStyles).length>1" class="caption font-weight-medium">{{layer.text_en}}</div>
     <div v-for="(val,index) in valueStyles" :key="index" style="background-color:none;!important" class="caption px-0">
-        <v-switch v-if="!small" :color="val.style ? val.style.fillColor : '#e3e3e3'" :input-value="val.on" @change="updateFilterObject('categories',val.name,$event)" :label="val['_text_'+$store.state.language] || val.name"></v-switch>
-        <div v-else style="width:50%;display:inline-block;float:left;">
+        <v-switch
+        v-if="!small"
+        :color="val.style ? val.style.fillColor : '#e3e3e3'"
+        :input-value="val.on"
+        @change="updateFilterObject('categories',val.name,$event)"
+        :label="val.name === '__d' ? layer.text_en : val['_text_'+$store.state.language] || val.name">
+      </v-switch>
+        <div v-else style="width:100%;display:inline-block;float:left;">
          <div v-bind:style="{
              display:'inline-block',
              height:'8px',
-             width:'8px',
-             borderRadius:'50%',
-             backgroundColor:val.style ? val.style.fillColor : '#e3e3e3',
+             width: isLine ? '16px' : '8px',
+             borderRadius: isLine ? 0 : '50%',
+             background: val.style&&!isLine ? val.style.fillColor : 'none',
              border:'solid',
+             borderTop : isLine ? 'none' : 'inherit',
+             borderLeft : isLine ? 'none' : 'inherit',
+             borderRight : isLine ? 'none' : 'inherit',
              borderWidth:(val.style.borderWidth||0)+'px',
              borderColor:val.style ? val.style.borderColor : '#e3e3e3',
              marginRight:'5px',
              }"></div>
-         <span class="caption">{{val['_text_'+$store.state.language] || val.name}}</span>
+         <span class="caption">{{ val.name === '__d' ? layer.text_en : (val['_text_'+$store.state.language] || val.name ) }}</span>
         </div>
     </div>
 
@@ -54,7 +64,7 @@
 <script>
 
 export default {
-  props: ['layer','attributeName','attributes','small'],
+  props: ['layer','attributeName','attributes','small','hideControls'],
   data () {
     return {
       range : [],
@@ -68,8 +78,11 @@ export default {
     attribute () {
       return this.attributes[this.attributeName]
     },
+    isLine () {
+      return this.layer.data_type.indexOf('Line') > -1
+    },
     valueStyles () {
-      if (!this.$store.getters.styles[this.layer._id]) return null
+      if (!this.$store.getters.styles[this.layer._id]) return {}
       return this.$store.getters.styles[this.layer._id][this.attributeName]
     }
   },
@@ -196,8 +209,8 @@ export default {
   background:none;
 }
 #map-legend .v-expansion-panel__container--active {
-  border-top:1px solid #e3e3e3;
-  border-bottom:1px solid #e3e3e3;
+  /*border-top:1px solid #e3e3e3;
+  border-bottom:1px solid #e3e3e3;*/
 }
 #map-legend .v-expansion-panel__container--active .v-expansion-panel__header{
   color:var(--v-primary-base);
@@ -220,5 +233,6 @@ export default {
 .leaflet-bar a:hover {
     background-color: #0000001c !important;
 }
+
 
 </style>

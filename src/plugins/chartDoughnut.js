@@ -43,7 +43,7 @@ export default {
             weight : 'bold'
           },
           formatter : function(value, context) {
-            console.log('context.dataset.data', context.dataset)
+            //console.log('context.dataset.data', context.dataset)
             const total = context.dataset.data.reduce((acc,x)=>acc + x,0)
             const pc = context.dataset.data[context.dataIndex]/total * 100
             return pc > 2 ? pc.toFixed(0)+'%' : ''

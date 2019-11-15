@@ -20,11 +20,22 @@
   </div>
 
   <!-- WITH CHART -->
-  <v-layout align-center wrap v-else-if="type === 'Figure' && selectedIndicator" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;">
+  <v-layout align-center wrap v-else-if="selectedIndicator && type === 'FigureHighlight'">
+    <v-flex pl-5>
+      <div class="subheading">
+        {{name}}
+      </div>
+      <div class="display-2 font-weight-bold grey--text text-align-right">
+    {{selectedIndicator[figure[0]] || 0}}
+  </div>
+    </v-flex>
+  </v-layout>
 
-    <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8 sm8 md8':compact,'sm4':!compact, }">
+  <v-layout align-center wrap v-else-if="selectedIndicator && type === 'Figure'" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;">
 
-      <div v-bind:style="{minWidth:compact ?'180px':0}" v-bind:class="[{'body-1':compact,'subheading':!compact },'font-weight-light']">
+    <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8 sm8 md8':compact,'sm4 md4':!compact, }">
+
+      <div v-bind:style="{minWidth:compact ?'180px':0}" v-bind:class="[{'body-1':compact,'subheading':!compact }]">
         {{name}}
       </div>
 
@@ -43,11 +54,66 @@
 
   </v-flex>
 
+  <v-flex v-if="!compact&&dataYears.length>1" v-bind:class="['pr-2 mt-1',{'hidden-sm-and-down':!selected,'order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4':!print, 'xs4 order-xs3' : print}]">
+
+    <v-sparkline
+    v-if="dataYears.length>1"
+    :value="timeChartData"
+    :color="chartColor"
+    height="70"
+    smooth
+    stroke-linecap="square"
+    line-width="8"
+    width="700"
+    >
+  </v-sparkline>
+
+  <v-range-slider
+  class="px-2 scale-gradient"
+  style="width:100%;margin-top:0px;margin-bottom:-30px;"
+  v-if="dateRange"
+  v-model="dateRange"
+  :min="dateRange[0]"
+  :max="dateRange[1]"
+  track-color="rgba(0,0,0,0)"
+  >
+  </v-range-slider>
+
+  <v-slider
+  v-else-if="!print&&dataYears.length>1"
+  style="width:100%;margin-top:0px;margin-bottom:-30px;"
+  track-color="transparent"
+  always-dirty
+  inverse-label
+  :tick-labels="makeSliderLabels(dataYears)"
+  v-model="selectedYear"
+  ticks="always"
+  v-bind:tick-size="2"
+  :min="dataYears[0]"
+  :max="dataYears[dataYears.length-1]"
+  z-index="500"
+  >
+  </v-slider>
+
+  <div
+  v-else-if="!print"
+  style="margin-top:-30px;"
+  class="body-1 text-xs-right font-weight-light"
+  >{{ selectedYear }}
+  </div>
+
+  <div class="pt-3 text--grey" style="font-size:7pt" v-if="print&&dataYears.length>1">
+    <span style="float:left">{{dataYears[0]}}</span>
+    <span style="float:right">{{dataYears[dataYears.length-1]}}</span>
+  </div>
+
+  </v-flex>
+
   <v-flex order-xs3 order-sm2 sm-offset-4 pt-3 v-bind:class="{
     'mb-5':selected && $vuetify.breakpoint.smOnly && !compact,
     'my-3':selected && $vuetify.breakpoint.xsOnly && !compact,
-    'xs-offset2 sm8 md4':!compact,
-    'xs4 sm4 md4':compact }">
+    'sm8 md8':!compact && dataYears.length<2,
+    'xs4 sm4 md4':compact || print }">
 
     <div v-bind:style="chartWidthClass">
 
@@ -64,54 +130,7 @@
 
 </v-flex>
 
-<v-flex v-if="!compact" order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4 v-bind:class="{'hidden-sm-and-down':!selected}">
 
-  <v-sparkline
-  :value="timeChartData"
-  :color="chartColor"
-  height="70"
-  smooth
-  stroke-linecap="square"
-  line-width="8"
-  width="700"
-  >
-</v-sparkline>
-
-<v-range-slider
-class="px-2 scale-gradient"
-style="width:100%;margin-top:0px;margin-bottom:-30px;"
-v-if="dateRange"
-v-model="dateRange"
-:min="dateRange[0]"
-:max="dateRange[1]"
-track-color="rgba(0,0,0,0)"
->
-</v-range-slider>
-
-<v-slider
-v-else-if="dataYears.length>1"
-style="width:100%;margin-top:0px;margin-bottom:-30px;"
-track-color="transparent"
-always-dirty
-inverse-label
-:tick-labels="makeSliderLabels(dataYears)"
-v-model="selectedYear"
-ticks="always"
-v-bind:tick-size="2"
-:min="dateRange[0]||dataYears[0]"
-:max="dateRange[1]||dataYears[dataYears.length-1]"
-z-index="500"
->
-</v-slider>
-
-<div
-v-else
-style="margin-top:-30px;"
-class="body-1 text-xs-right font-weight-light"
->{{ selectedYear }}
-</div>
-
-</v-flex>
 </v-layout>
 
 <div v-else-if="type==='Chart'" class="pa-3" style="background:white;">
@@ -129,16 +148,16 @@ class="body-1 text-xs-right font-weight-light"
 <!--<v-flex xs12 class="text-xs-right" style="margin-top:-40px;height:0;">
 <v-btn icon><v-icon color="grey" :style="rotateStyle">keyboard_arrow_down</v-icon></v-btn>
 </v-flex>-->
-<div v-if="selected" class="pa-3 ejmap-border-top" style="background-color:white">
+<div v-if="selected||showAll" class="pa-3 ejmap-border-top" style="background-color:white">
 
   <v-flex xs12 class="grey--text text--darken-1">
     <div class="body-1">{{description}}</div>
-    <div class="caption"><span>Source:</span><a :href="layer.sourceUrl">{{layer.sourceShort}}</a></div>
+    <div class="caption"><span class="mr-1">Source:</span><a :href="layer.sourceUrl">{{layer.source_org +", " +layer.source_ref}}</a></div>
   </v-flex>
 
 
 
-  <v-tooltip bottom open-delay="100">
+  <v-tooltip v-if="!print" bottom open-delay="100">
     <template v-slot:activator="{ on }">
       <v-btn style="position:absolute;bottom:5px;right:5px;" icon @click="exportToCsv"  v-on="on">
         <v-icon color="grey">get_app</v-icon>
@@ -170,7 +189,7 @@ export default {
       selectedYear : '',
     }
   },
-  props: ['indicatorBlock','name','figure','description','unit','type','small','noChart','selected','compact'],
+  props: ['indicatorBlock','name','figure','description','unit','type','small','noChart','selected','compact','showAll','dateRange','print'],
   methods : {
     makeSliderLabels (years) {
       const min = years[0]
@@ -191,7 +210,7 @@ export default {
       if (!this.selected) this.rotation = this.rotation === 0 ? 180 : 0
     },
     updateIndicator () {
-      console.log('updating store: Indicator')
+      //console.log('updating store: Indicator')
       this.$nextTick(()=>{
         this.$store.commit("UPDATE",{key:'_col_indicatorBlocks_selected',value:this.indicatorBlock})
         this.$store.commit("UPDATE",{key:'year',value:this.selectedYear})
@@ -287,8 +306,15 @@ export default {
       return this.selected ? this.$vuetify.theme.primary : colors.grey.lighten2
     },
     layer () {
-      const layerId = this.figure[0].split('.')[0]
-      const layer = this.$store.state._col_layers.filter(x=>x._id===layerId)[0]
+      const figureArr = this.figure[0].split('.')
+      const layerId = figureArr[0]
+      let layer;
+      if (layerId==='attached') {
+        const name = figureArr.slice(-1)[0]
+        layer = this.$store.state._col_indicatorAttributes.filter(x=>x.name===name)[0]
+      } else {
+        layer = this.$store.state._col_layers.filter(x=>x._id===layerId)[0]
+      }
       return layer || {}
     },
     rotateStyle () {
@@ -306,6 +332,11 @@ export default {
     },
     dataYears () {
       if (this.areaDataMatched) return this.areaDataMatched.map(x=>x.year)
+    },
+    dataYearLabels () {
+      if (!this.dataYears) return null
+      //const mid = Math.floor(this.dataYears.length/2)
+      return [this.dataYears[0],this.dataYears[this.dataYears.length-1] ]
     },
     areaDataLatest () {
       if (!this.areaDataMatched) return null
@@ -327,7 +358,7 @@ export default {
       if (this.type !== 'Chart' || !this.selectedIndicator) return null
       const latestYear = this.dataYears.slice(-1)[0]
       const color = this.selected ? this.$vuetify.theme.primary : this.$vuetify.theme.grey
-      console.log('this.$store.getters.allIndicatorsByAreaYear',this.$store.getters.allIndicatorsByAreaYear)
+      //console.log('this.$store.getters.allIndicatorsByAreaYear',this.$store.getters.allIndicatorsByAreaYear)
       return {
         datasets : Object.keys(this.$store.getters.allIndicatorsByAreaYear).map(area=>{
           const selectedArea = this.$store.state.neighbourhood === parseInt(area)

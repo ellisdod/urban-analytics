@@ -148,6 +148,24 @@ const config = {
           return store.state._col_layers
         }
       },
+      calculation : {
+        type : Array,
+        _text : "Calculation",
+        _multiple: true,
+        _combobox:true,
+        _categorised : true,
+        _options: {
+          component:'Calculator',
+          type: 'conditional',
+          items : (store) => store.state._col_layerAttributes
+            .reduce((acc,x)=> {
+              if (x.layer!==store.state._col_layers_selected) return acc
+              x.value = '$'+x._id
+              acc.push(x)
+              return acc
+            },[])
+        }
+    },
       required : {
         type : Boolean,
         _text : "Required",
@@ -192,7 +210,13 @@ const config = {
         _multiple: true,
         _combobox:true,
         _categorised : true,
-        _options: {component:'Calculator'}
+        _options: {
+          component:'Calculator',
+          type: 'calculator',
+          items : function(store,edited) {
+            return store.getters.nestedAttributes(store,edited)
+          }
+        }
       }
     }
   },
@@ -264,6 +288,9 @@ const config = {
             name : 'Figure',
           },
           {
+            name : 'FigureHighlight',
+          },
+          {
             name : 'Chart',
           },
           {
@@ -287,6 +314,11 @@ const config = {
       layer : {
         type : mongoose.Schema.Types.ObjectId,
         required: true,
+        _options : function(store) {
+          return store.state._col_indicatorSections
+        },
+        _text: "Section",
+        _hasDefault:true,
       },
       text_en : {
         type : String,
@@ -312,6 +344,25 @@ const config = {
         _options : function(store,edited) {
           return store.getters.nestedAttributes(store,edited)
         }
+      },
+      zoom : {
+        type : Number,
+        _text : "Zoom"
+      },
+      mapAttributes : {
+        type : Array,
+        _multiple:true,
+        _combobox:true,
+        _text : "Map Attributes",
+        _options: [
+          {
+            name : '',
+          },
+        ]
+      },
+      hideBaseMap : {
+        type : Boolean,
+        _text : "Hide Base Map"
       },
       date_range : {
         type : Array,

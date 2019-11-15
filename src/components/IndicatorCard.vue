@@ -11,7 +11,7 @@
 
   <!-- KEYSTAT -->
   <indicator-key-stat
-  v-else-if="item.type==='Figure' || item.type==='Chart'"
+  v-else-if="item.type==='Figure' || item.type==='Chart' || item.type==='FigureHighlight'"
   :selected="selected"
   :name="item.text"
   :figure="item.figure"
@@ -20,7 +20,10 @@
   :year="item.year"
   :type="item.type"
   :compact="compact"
+  :dateRange="dateRange"
   :indicatorBlock="indicatorBlock"
+  :showAll="showAll"
+  :print="print"
   >
  </indicator-key-stat>
 
@@ -57,7 +60,7 @@ export default {
   components: {
     MapView, IndicatorKeyStat, Timeline, PieChart
   },
-  props: ['selected', 'item','compact','indicatorBlock'],
+  props: ['selected', 'item','compact','indicatorBlock','showAll','dateRange', 'print'],
   data () {
     return {
     }

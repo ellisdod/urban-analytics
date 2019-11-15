@@ -39,7 +39,7 @@ v-for="(item,i) in items"
 
   <map-navigator
   id="map-panel-navigator"
-  style="height:100% !important;width:100% !important"
+  style="height:100% !important;width:100% !important; background:rgba(0,0,0,0.02)"
   >
 </map-navigator>
 

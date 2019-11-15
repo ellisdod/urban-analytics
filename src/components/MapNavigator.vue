@@ -1,6 +1,6 @@
 <template>
-  <v-card flat style="background:rgba(0,0,0,0.02);border:none;">
-    <table id="navigator-key" v-bind:class="{mobile:$vuetify.breakpoint.xsOnly}">
+  <v-card flat style="border:none;">
+    <table v-if="showLegend" id="navigator-key" v-bind:class="{mobile:$vuetify.breakpoint.xsOnly}">
       <tr id="navigator-header" class="hidden-xs-only">
         <td colspan="2">
           <div class="subheading grey--text text--darken-2">
@@ -31,12 +31,13 @@
     </table>
 
     <l-map ref="map"
-    :zoom="$store.state.navigator.zoom"
-    :center="$store.state.navigator.center"
+    :zoom="zoom || $store.state.navigator.zoom"
+    :center="center || $store.state.navigator.center"
     :options="mapOptions"
     id="navigation-map"
     @click="log()"
     >
+
     <l-geo-json
     v-if="$store.getters.indicatorsForSelectedYear"
     v-for="(item, i) in $store.state._col_areas.filter(x=>x.feature)"
@@ -47,11 +48,8 @@
     >
   </l-geo-json>
 
+
 </l-map>
-
-
-</v-menu>
-</div>
 
 </v-card>
 </template>
@@ -70,7 +68,30 @@ import mapbox from 'mapbox-gl-leaflet'
 //const vectorTileStyling = require('../../public/mapStyle.js');
 
 export default {
-  name: 'MapView',
+  props: {
+    zoom : {
+      type : Number
+    },
+    center : {
+      type : Object,
+    },
+    showBaseMap : {
+      default : true,
+      type : Boolean
+    },
+    showLegend : {
+      default : true,
+      type : Boolean
+    },
+    showControls : {
+      default : true,
+      type: Boolean
+    },
+    showData : {
+      default : true,
+      type : Boolean
+    }
+  },
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
@@ -82,8 +103,7 @@ export default {
   },
   data () {
     return {
-      zoom: 15,
-      attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+      attribution: '',
       showParagraph: false,
       details:{
         neighbourhood : '',
@@ -97,6 +117,8 @@ export default {
       },
       mapOptions: {
         zoomSnap: 0.5,
+        zoomControl: this.$props.showControls ? true : false,
+        attributionControl:false
       },
       areasGeoJsonOptions:{
         onEachFeature: (feature, layer) => {
@@ -165,6 +187,7 @@ export default {
     log() {
     },
     getAreaStyle(id){
+      const selected = this.$store.state.neighbourhood === id
       const f = chroma.scale(['#eaeaea', this.$vuetify.theme.primary]);
       const area = this.$store.getters.indicatorsForSelectedYear.filter(x=>x.areaCode === id)[0]
       if (!area) return {
@@ -172,10 +195,18 @@ export default {
         fillOpacity: 0
       }
       const val = area[this.indicator.figure[0]]
-      const hex = f( (val - this.scale.min)/this.scale.constant )
+      let hex,lineColor;
+      if (this.showData) {
+        hex = f( (val - this.scale.min)/this.scale.constant )
+        lineColor = selected ? this.$vuetify.theme.tertiary :'#eee'
+      } else if (selected) {
+        hex = this.$vuetify.theme.primary
+      } else {
+        hex = '#fff'
+        lineColor = '#555'
+      }
       //console.log(id, this.scale,val,hex, (val - this.scale.min)/this.scale.max )
-      const lineColor = this.$store.state.neighbourhood === id ? this.$vuetify.theme.tertiary :'#eee'
-      const lineWeight = this.$store.state.neighbourhood === id ? 1:1
+      const lineWeight = selected ? 1:1
       return {
         weight: lineWeight,
         color: lineColor,
@@ -227,7 +258,7 @@ export default {
       topPane.style.pointerEvents = 'none';
       map.getPanes().popupPane.style.zIndex=1010;
       //topPane.appendChild(tileLayer.getPane());
-      L.mapboxGL({
+      if (this.showBaseMap) L.mapboxGL({
             attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
             accessToken: 'not-needed',
             pane:'leaflet-top-pane',

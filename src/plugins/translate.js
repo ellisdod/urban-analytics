@@ -4,6 +4,7 @@
 export function translate(data,keys,language) {
 
   function translateObject (obj) {
+    if (!obj) return null
      keys.forEach(key=>{
           if (obj[key+"_"+language]) {
             obj[key] = obj[key+"_"+language];
