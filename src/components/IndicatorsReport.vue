@@ -85,7 +85,7 @@
         </v-flex>
 
         <v-flex xs6
-        v-if="section.charts.length&&section.map"
+        v-if="section.charts.length"
         v-for="(item,index) in section.charts">
 
           <indicator-card
@@ -268,7 +268,7 @@ export default {
       demographics : "5d00efa283de38f9b2719f7e",
       mobility: "5d20b415258be4666124df6c"
     }
-      const filterId = filters.conflict
+      const filterId = filters.mobility
       const filtered = {}
       filtered[filterId] = sections[filterId]
       return filtered
