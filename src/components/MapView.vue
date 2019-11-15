@@ -486,8 +486,8 @@ export default {
       return Object.assign(
         {
           padding: this.legendBottom ? '0 0 40px 0' : '0',
-          height: this.legendBottom ? '400px' : 'auto',
-          maxHeight: this.legendBottom ? '400px':'none',
+          height: this.legendBottom ? '350px' : 'auto',
+          maxHeight: this.legendBottom ? '350px':'none',
           maxWidth: this.legendBottom ? '100%' : '300px',
           width: this.legendBottom ? '100%' : 'auto',
           overflowY:this.legendBottom ? 'visible':'auto',

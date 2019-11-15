@@ -54,7 +54,7 @@
 
   </v-flex>
 
-  <v-flex v-if="!compact&&dataYears.length>1" v-bind:class="['pr-2 mt-1',{'hidden-sm-and-down':!selected,'order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4':!print, 'xs4 order-xs3' : print}]">
+  <v-flex v-if="!compact&&dataYears&&dataYears.length>1" v-bind:class="['pr-2 mt-1',{'hidden-sm-and-down':!selected,'order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4':!print, 'xs4 order-xs3' : print}]">
 
     <v-sparkline
     v-if="dataYears.length>1"
@@ -331,7 +331,7 @@ export default {
       return this.$store.getters.indicatorsForSelectedArea.filter(x=>dataYears.some(f=>x.year===f))
     },
     dataYears () {
-      if (this.areaDataMatched) return this.areaDataMatched.map(x=>x.year)
+      return this.areaDataMatched ? this.areaDataMatched.map(x=>x.year) : []
     },
     dataYearLabels () {
       if (!this.dataYears) return null
