@@ -16,14 +16,14 @@ require('dotenv').config();
 
 
 const oktaJwtVerifier = new OktaJwtVerifier({
-    clientId: process.env.VUE_APP_OKTA_CLIENT_ID || '***REMOVED***',
-    issuer: 'https://dev-160658.okta.com/oauth2/default'
+    clientId: process.env.VUE_APP_OKTA_CLIENT_ID,
+    issuer: process.env.VUE_APP_OKTA_URI
   })
 
 
 // Set up mongoose connection
 //use test instead of ejmap for testing
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://general:***REMOVED***@cluster0-hn3xl.mongodb.net/ejmap?retryWrites=true', { useNewUrlParser: true });
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -53,21 +53,6 @@ function requireAuth(req, res, next) {
 let app = express()
 
 if (process.env.NODE_ENV !== 'production') {
-  /*
-
-  const webpack = require('webpack')
-  const webpackDevMiddleware = require('webpack-dev-middleware')
-  const webpackHotMiddleware = require('webpack-hot-middleware')
-  const config = require('./webpack.dev.config.js')
-
-  // Set up webpack compiler
-  const compiler = webpack(config)
-  app.use(webpackDevMiddleware(compiler, {
-    publicPath: config.output.publicPath
-  }));
-  app.use(webpackHotMiddleware(compiler));
-  */
-
 
   const cors = require('cors');
   app.use(cors());
@@ -134,10 +119,25 @@ controllers.then(controllers=>{
 
 
 function planMonitorFeed (req, res, next) {
-  console.log('getting plan data')
-  planMonitor.mavatScraper.fixIndicators()
+  /*console.log('getting plan data')
+  //planMonitor.mavatScraper.fixIndicators()
+  planMonitor.mavatScraper.init([30788,
+30786,
+30792,
+31242,
+31251,
+31239,
+31249,
+30921,
+30919,
+30898,
+30899,
+29988]).then(x=>{
+      console.log('logdata',x)
+      res.status(200).send(x)
+  })
 
-  /*planMonitor.mavatScraper.init().then(x=>{
+planMonitor.mavatScraper.init().then(x=>{
       console.log('logdata',x)
       planMonitor.downloadMissingGeodata()
       res.status(200).send(x)
@@ -154,12 +154,6 @@ app.post('/test',testFeed)
 
 
 
-//console.log('features controller', dbControl.areas)
-//console.log('features controller', dbControl.features.find)
-
-
-
-
 app.listen(process.env.PORT || 8081, () => {
   console.log({ ENV: process.env.NODE_ENV, ID: process.env.VUE_APP_OKTA_CLIENT_ID, PORT: process.env.PORT });
   console.log('running on port ' + (process.env.PORT || 8081));
@@ -173,60 +167,10 @@ var cron = require('node-cron');
 function scrapePlans() {
   request({
     method: 'POST',
-    uri : 'https://script.google.com/macros/s/AKfycby0tzlcXaVgv36LRsVKN1NvxkUgo8XCv_3jpHhxSKE_lCkB41Q/exec',
-    body : {key:'asdfkjf8934jklaweruioer89234'},
+    uri : process.env.GOOGLE_SCRIPT_URI,
+    body : {key:process.env.GOOGLE_SCRIPT_KEY},
     json: true
   }, function(err,x) {
     console.log('scrapePlans')
   })
 }
-
-/*
-collections.forEach(x=>{
-  UrlHandler(x.name,x.controller,x.middleware)
-})
-
-
-app.post('/create/Buildings', requireAuth, formidableMiddleware(), building_controller.building_create);
-
-
-app.get('/building/:id', requireAuth, building_controller.building_details);
-app.get('/neighbourhood/:name', requireAuth, building_controller.building_neighbourhood);
-app.put('/building/:id', requireAuth, building_controller.building_update);
-app.get('/survey/buildings', requireAuth, building_controller.surveys);
-
-//indicators
-app.post('/indicators/create', requireAuth, formidableMiddleware(), indicators_controller.create);
-app.get('/indicators',indicators_controller.getAll);
-
-//areas
-app.post('/areas/create', requireAuth, formidableMiddleware(), areas_controller.create);
-app.get('/areas',verifyLayer(), spatialjoin_controller.getAll);
-
-//features
-app.post('/features/create', verifyLayer(), requireAuth, formidableMiddleware(), features_controller.create);
-app.post('/features/:layer', verifyLayer(), features_controller.update);
-app.get('/features/:params', verifyLayer(), features_controller.getSubset)
-
-//layers
-app.post('/layers/delete/:id',layers_controller.delete);
-app.post('/layers/update/:id',layers_controller.update);
-app.get('/layers',layers_controller.getAll)
-
-function UrlHandler(path, controller, middleware) {
-  app.get(`/${path}/getAll`, middleware, controller.getAll)
-  app.get(`/${path}/find/:query`, middleware, controller.find)
-  app.get(`/${path}/unique/:key`, middleware, controller.unique)
-  app.post(`/${path}/create`, requireAuth, formidableMiddleware(), middleware, controller.create)
-  app.post(`/${path}/update`, middleware, controller.update)
-  app.post(`/${path}/delete/:id`, requireAuth, controller.delete)
-  app.post(`/${path}/update/:id`, requireAuth, controller.update)
-}
-UrlHandler('layers',layers_controller)
-UrlHandler('features',features_controller,verifyLayer())
-UrlHandler('areas',areas_controller)
-UrlHandler('indicators',indicators_controller)
-
-*/
-
-//app.use(express.static(__dirname));

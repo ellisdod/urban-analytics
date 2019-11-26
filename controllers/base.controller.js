@@ -97,6 +97,7 @@ const Controller = function(model) {
       return model.bulkWrite(ops)
     })
     .then(x=>{
+      geojson.load()
       if (res) res.status(200).send(x);
     })
     .catch(err => {
@@ -110,6 +111,7 @@ const Controller = function(model) {
     console.log(data)
     model.insertMany(data).then((x,err)=>{
       if (err) return next(err);
+      geojson.load()
       res.send(x)
     })
   }
@@ -140,6 +142,7 @@ const Controller = function(model) {
   this.del = function (req, res, next) {
     model.findOneAndDelete({ _id :req.params.id}, function (err, x) {
       if (err) return next(err);
+      geojson.load()
       res.send(x);
     })
   }
@@ -226,42 +229,6 @@ const Controller = function(model) {
 }
 
 
-
-
-
-/*
-const buildingsController = function(model) {
-Controller.call(this,model)
-
-this.create = function(req, res, next) {
-fs.readFile(req.files.file.path,
-function(err, data) {
-const jsonParsed = JSON.parse(data);
-//console.log(jsonParsed);
-
-const features = jsonParsed.features.reduce((acc,x) => {
-x.properties.neighbourhood = req.fields.neighbourhood || '';
-const obj = {};
-obj[x.type.toLowerCase()] = x;
-acc[x.type] = acc[x.type] || [];
-acc[x.type].push(obj);
-return acc;
-},{});
-
-(async function(){
-const insertMany = await model.buildings.insertMany(features.Feature);
-res.status(200).send('Ok');
-})();
-
-})
-
-}
-
-}
-*/
-
-//console.log('geojson model', JSON.stringify(geojson))
-//console.log('geojson keys', Object.keys(geojson))
 module.exports = {
   controller : Controller,
   styles : new Controller(layers.styles),

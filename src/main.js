@@ -93,11 +93,13 @@ const store = new Vuex.Store({
       features: [],
       selected: null,
     },
-    layers : []
+    layers : [],
+    status : {},
   },collections),
   actions : {
     UPDATE_COLLECTION ({state, commit}, col) {
       //console.log('1. update collection',col)
+
       const params = {
         name : col.name || col,
         query : col.query || {},
@@ -120,6 +122,7 @@ const store = new Vuex.Store({
 
       function update(data){
         if (dbconfig[params.name].storeByLayer) {
+          commit('UPDATE_STATUS',params.layer)
           commit('UPDATE_FEATURES',{
             collection: params.name,
             key: params.layer,
@@ -240,6 +243,9 @@ const store = new Vuex.Store({
     state.neighbourhoodsTest = i.data
   })*/
 
+  UPDATE_STATUS (state, id) {
+    Vue.set( state.status, id, 'loading' )
+  },
   UPDATE_FEATURES (state, obj) {
 
     //console.log('updating feature', obj.nestedKey, obj.key, obj.value)
@@ -251,6 +257,7 @@ const store = new Vuex.Store({
       return x
     })
     Vue.set( state['_col_'+obj.collection], obj.key, obj.value )
+    Vue.set( state.status, obj.key, 'loaded' )
     /*
     if (obj.nestedKey) {
     state._col_features[obj.key] = state._col_features[obj.key] || {}
@@ -461,17 +468,23 @@ getters : {
   allIndicatorKeyYears: (state,getters) => {
     const ind = getters.allIndicatorsByYear;
     if (!ind) return null;
-    return Object.keys(ind).reduce((acc,year)=>{
+    const indYears = Object.keys(ind).reduce((acc,year)=>{
       const y = parseInt(year)
       ind[year].forEach(area=>{
         Object.keys(area).forEach(key=>{
-          acc[key] = acc[key] || []
-          if (area[key] && acc[key].indexOf(y)===-1) acc[key].push(y)
+          const layer = key.split('.')[0]
+          const attribute = key.split('.').slice(0,2).join('.')
+          acc[attribute] = acc[attribute] || {}
+          acc[layer] = acc[layer] || {}
+          acc[attribute][year] = acc[layer][year] = true
         })
-
       })
       return acc
     },{})
+    for (let key in indYears){
+      indYears[key] = Object.keys(indYears[key]).map(x=>parseInt(x))
+    }
+    return indYears
   },
   allIndicatorsByYear : state => {
     if (!state._col_indicators) return null;

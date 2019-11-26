@@ -269,6 +269,19 @@ exports.mavatScraper = (function () {
 
       this.blocks = []
 
+      this.loadByCode = function(codes) {
+        this.blocks = codes.map(x=>{
+          return {
+            feature : {
+              properties : {
+                number : x
+              }
+            }
+          }
+        })
+        return Promise.resolve()
+      }
+
       this.load = function(daysSinceLastChecked) {
         daysSinceLastChecked = daysSinceLastChecked || 7
         const today = new Date();
@@ -401,7 +414,7 @@ exports.mavatScraper = (function () {
       return min + Math.floor(Math.random() * Math.floor(max-min));
     }
 
-    var init = function() {
+    var init = function(blockCodes) {
 
       var testUrl =  'http://localhost:8081'
       var base = 'http://mavat.moin.gov.il'
@@ -413,7 +426,13 @@ exports.mavatScraper = (function () {
       //console.log(dynamicModels[BLOCKS_LAYER_ID])
       //console.log(dynamicModels[BLOCKS_LAYER_ID].find({},'',{lean:true}))
       blockstore = new BlockStore()
-      return blockstore.load(0).then(()=>{
+
+      const loadMethod = blockCodes ?
+         blockstore.loadByCode(blockCodes) : blockstore.load(0)
+
+      return loadMethod
+      .then(()=>{
+        if (blockCodes) blockstore.loadByCode(blockCodes)
         return rp(url)
       })
       .then(html =>{
@@ -503,7 +522,7 @@ exports.mavatScraper = (function () {
     }
 
     return {
-      init:init, // gets adds new plans from mavat website (searches by block)
+      init:init, // adds new plans from mavat website (searches by block)
       downloadFile : downloadFile,
       downloadMissingGeodata : downloadMissingGeodata, // adds geodata attached to mavat plans
       uploadLayerId : uploadLayerId,

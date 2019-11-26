@@ -2,7 +2,7 @@
   <v-app id="keep" app >
 
 <v-toolbar v-if="!$store.state.hideToolbar" app light clipped-left flat color="#fff" class="ejmap-border-bottom">
-  <img src="../public/ejmap-logo.svg" @click="log()">
+  <img src="../static/img/icons/ejmap-logo.svg" @click="log()">
 
   <v-toolbar-title>
   <div style="margin-bottom:-5px;">Urban Analytics</div>

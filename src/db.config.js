@@ -300,10 +300,16 @@ const config = {
             name :'List',
           },
           {
+            name :'Pie Chart',
+          },
+          {
             name :'Map',
           },
           {
             name :'Timeline',
+          },
+          {
+            name: 'Percentage'
           }
         ]
       },
@@ -354,20 +360,53 @@ const config = {
         _multiple:true,
         _combobox:true,
         _text : "Map Attributes",
-        _options: [
-          {
-            name : '',
-          },
-        ]
+        _options: {
+          component : 'ArrayInput',
+          items : function(){
+            return []
+          }
+      }
       },
       hideBaseMap : {
         type : Boolean,
         _text : "Hide Base Map"
       },
+      useDateRange : {
+        type : Boolean,
+        _text : "Use date range"
+      },
       date_range : {
         type : Array,
         _text : "Date Range",
-        _options : { component : 'datePicker'}
+        _multiple:true,
+        _combobox:true,
+        _options: {
+          component : 'v-range-slider',
+          items : function(){
+            return []
+          },
+          defaultValue : function(store,edited) {
+            const range = getIndicatorYears(store,edited.figure)
+            return range ? [range[0], range.slice(-1)[0]] : []
+          },
+          hide : function(store,edited) {
+            return !edited.useDateRange
+          },
+          min : function(store,edited) {
+            const range = getIndicatorYears(store,edited.figure)
+            return range ? range[0] : 2000
+          },
+          max : function(store,edited) {
+            const range = getIndicatorYears(store,edited.figure)
+            return range ? range.slice(-1)[0] : new Date().getFullYear()
+          },
+      },
+        /*
+        _options : function(store,edited) {
+          if (!edited.figure||!edited.figure.length) return
+          return store.getters.allIndicatorKeyYears[edited.figure[0]]
+        },*/
+        _process : {},
       },
       description_en : {
         type : String,
@@ -705,6 +744,12 @@ schemaOpts : {
 strict: false
 }
 }*/
+}
+
+function getIndicatorYears(store,figure) {
+  if (!figure||!figure.length) return
+  const attributeFigure = figure[0].split('.').slice(0,2).join('.')
+  return store.getters.allIndicatorKeyYears[attributeFigure]
 }
 
 module.exports = config

@@ -109,8 +109,62 @@
     <v-icon>add</v-icon>Add
   </v-btn>
   <v-list dense v-bind:class="cssclass">
-    <v-list-tile class="attribute-row"
-    v-for="(x, index) in listItems"
+    <template v-for="(x, index) in listItems">
+      <v-list-group v-model="x.active" v-if="x.linked">
+
+        <template v-slot:activator>
+          <v-list-tile class="attribute-row"
+          :key="index"
+          v-model="x.active"
+          @click="select(index, x._id)"
+          v-on:dblclick="openEditor(x)"
+          >
+          <v-list-tile-action v-if="listKey&&schema.schema[listKey]._options&&schema.schema[listKey]._options[0]">
+            <v-icon>{{schema.schema[listKey]._options.filter(i => i.name === x[listKey])[0].icon}} </v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>
+            <div v-if="x._id" class="attribute-controls-wrapper">
+              {{x.text || x.text_en || x.name}}
+              <!--
+              <div v-if="!disabled" class="attribute-controls">
+                <v-btn small fab color="grey" outline @click="openEditor(x)">
+                  <v-icon>edit</v-icon>
+                </v-btn>
+                <v-btn small fab color="grey" outline @click="del(collection, x._id)">
+                  <v-icon>delete</v-icon>
+                </v-btn>
+              </div>
+            -->
+            </div>
+          </v-list-tile-content>
+          <div v-if="x.active" style="height:100%;"></div>
+        </v-list-tile>
+        </template>
+
+
+        <v-list-tile class="attribute-row"
+        v-for="(subItem, index) in x.linked"
+        :key="index"
+        v-model="subItem.active"
+        @click="select(index, subItem._id)"
+        v-on:dblclick="openEditor(subItem)"
+        >
+        <v-list-tile-action class="pl-2" v-if="listKey&&schema.schema[listKey]._options&&schema.schema[listKey]._options[0]">
+          <v-icon>
+            {{schema.schema[listKey]._options.filter(i => i.name === subItem[listKey])[0].icon}}
+          </v-icon>
+        </v-list-tile-action>
+        <v-list-tile-content class="pl-2">
+          <div v-if="subItem._id" class="attribute-controls-wrapper">
+            {{subItem.text || subItem.text_en || subItem.name}}
+          </div>
+        </v-list-tile-content>
+        <div v-if="subItem.active" style="height:100%;"></div>
+      </v-list-tile>
+
+      </v-list-group>
+
+    <v-list-tile v-else class="attribute-row"
     :key="index"
     v-model="x.active"
     @click="select(index, x._id)"
@@ -134,9 +188,9 @@
       -->
       </div>
     </v-list-tile-content>
-
     <div v-if="x.active" style="height:100%;"></div>
   </v-list-tile>
+</template>
 </v-list>
 <v-btn v-if="addbottom" @click="openEditor()" color="grey" style="float:right" class="mb-2" flat>
   <v-icon>add</v-icon>Add
@@ -211,10 +265,17 @@ export default {
       return this.$store.state[`_col_${this.filter}_selected`]
     },
     listItems (){
-      const items = this.items.map((x,i)=>{
+      let items = this.items.reduce((acc,x,i)=>{
         x.active = this.selected === i ? true : false
-        return x
-      })
+        if (x.parent&&acc[x.parent]) {
+          acc[x.parent].linked = acc[x.parent].linked || {}
+          acc[x.parent].linked[x._id] = x
+        } else {
+          acc[x._id] = x
+        }
+        return acc
+      },{})
+
       //console.log('listitems',items)
       return items
     },
@@ -263,7 +324,7 @@ methods: {
       items = Array.from(this.$store.state[`_col_${this.collection}`])
       if (this.filter &&items[0]) items = items.filter(x=>x.layer === this.filterId)
     }
-    console.log('items',items)
+    //console.log('items',items)
     //if (this.nestedPath) items = items.map(x=>flatten(x))
     return this.multiselect ? this.addSelects(items) : items || []
   },
@@ -486,10 +547,17 @@ mounted () {
   top:0;
   margin-top:-50px;
 }
-.editable-datatable .v-list__tile--active {
-  border-right: 3px solid;
+
+.editable-datatable .theme--light.v-list .v-list__tile--link:hover, .editable-datatable .v-list__tile--active:hover,  .editable-datatable .v-list__group__header--active:hover{
+  background-color: var(--v-grey-lighten3) !important;
+}
+.editable-datatable .v-list__group__header--active{
   background-color: var(--v-grey-lighten3);
-  border-right-color: var(--v-primary-base);
+}
+.editable-datatable .v-list__tile--active {
+  border-left: 3px solid;
+  border-left-color: var(--v-primary-base);
+  background-color: var(--v-grey-lighten3);
 }
 .editable-datatable .v-list__tile--active .v-list__tile__content {
   font-weight:500;

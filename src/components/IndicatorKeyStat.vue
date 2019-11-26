@@ -31,12 +31,16 @@
     </v-flex>
   </v-layout>
 
+
   <v-layout align-center wrap v-else-if="selectedIndicator && type === 'Figure'" v-bind:class="{'pa-3':!compact,'pa-2':compact}" style="position:relative;">
 
     <v-flex align-center order-xs1 xs4 v-bind:style="{display:compact ? 'flex':'block'}" v-bind:class="{'xs8 sm8 md8':compact,'sm4 md4':!compact, }">
 
       <div v-bind:style="{minWidth:compact ?'180px':0}" v-bind:class="[{'body-1':compact,'subheading':!compact }]">
         {{name}}
+      </div>
+      <div class="caption" v-if="dateRangeFormatted">
+        {{dateRangeFormatted[0] + " - " + dateRangeFormatted.slice(-1)[0]}}
       </div>
 
       <div v-if="type==='Figure'" style="overflow-x: visible; display: inline-block; white-space: nowrap;">
@@ -54,7 +58,7 @@
 
   </v-flex>
 
-  <v-flex v-if="!compact&&dataYears&&dataYears.length>1" v-bind:class="['pr-2 mt-1',{'hidden-sm-and-down':!selected,'order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4':!print, 'xs4 order-xs3' : print}]">
+  <v-flex v-if="!compact&&dataYears&&dataYears.length>1" v-bind:class="['pl-3 pr-2 mt-1',{'hidden-sm-and-down':!selected&&!print,'order-xs2 xs8 offset-xs0 order-sm3 offset-md1 md3 mt4':!print, 'xs4 order-xs3' : print}]">
 
     <v-sparkline
     v-if="dataYears.length>1"
@@ -63,7 +67,7 @@
     height="70"
     smooth
     stroke-linecap="square"
-    line-width="8"
+    line-width="20"
     width="700"
     >
   </v-sparkline>
@@ -71,10 +75,10 @@
   <v-range-slider
   class="px-2 scale-gradient"
   style="width:100%;margin-top:0px;margin-bottom:-30px;"
-  v-if="dateRange"
-  v-model="dateRange"
-  :min="dateRange[0]"
-  :max="dateRange[1]"
+  v-if="!print&&dateRangeFormatted&&dateRangeFormatted.length>1"
+  v-model="dateRangeFormatted"
+  :min="dataYears[0]"
+  :max="dataYears[dataYears.length-1]"
   track-color="rgba(0,0,0,0)"
   >
   </v-range-slider>
@@ -102,9 +106,9 @@
   >{{ selectedYear }}
   </div>
 
-  <div class="pt-3 text--grey" style="font-size:7pt" v-if="print&&dataYears.length>1">
+  <div class="pt-3 grey--text text--darken-1" style="font-size:7pt" v-if="print&&dataYears.length>1">
     <span style="float:left">{{dataYears[0]}}</span>
-    <span style="float:right">{{dataYears[dataYears.length-1]}}</span>
+    <span style="float:right">{{dataYears.slice(-1)[0]}}</span>
   </div>
 
   </v-flex>
@@ -132,16 +136,6 @@
 
 
 </v-layout>
-
-<div v-else-if="type==='Chart'" class="pa-3" style="background:white;">
-  <div class="subheading font-weight-light">{{name}}</div>
-  <bar-vertical
-  style="height:300px; margin-bottom:-40px;"
-  v-bind:x-labels="true"
-  v-bind:y-labels="true"
-  v-bind:chart-data="generateChartDataSets">
-</bar-vertical>
-</div>
 
 
 
@@ -175,21 +169,23 @@
 
 <script>
 import ComparativeChart from './ComparativeChart.vue'
-import BarVertical from '../plugins/barVertical.js'
+//import BarVertical from '../plugins/barVertical.js'
+import BarHorizontal from '../plugins/barHorizontal.js'
 import colors from 'vuetify/es5/util/colors'
 
 export default {
   components: {
-    BarVertical, ComparativeChart
+    BarHorizontal, ComparativeChart
   },
   data () {
     return {
       expand : false,
       rotation : 0,
       selectedYear : '',
+      dateRangeProxy : null,
     }
   },
-  props: ['indicatorBlock','name','figure','description','unit','type','small','noChart','selected','compact','showAll','dateRange','print'],
+  props: ['indicatorBlock','name','figure','description','unit','type','small','noChart','selected','compact','showAll','dateRange','print','attributes'],
   methods : {
     makeSliderLabels (years) {
       const min = years[0]
@@ -320,15 +316,31 @@ export default {
     rotateStyle () {
       return {transform: 'rotate('+this.rotation+'deg)'}
     },
+    dateRangeFormatted : {
+      get () {
+        if (!this.dateRange||this.dateRange.length<2) return
+        const dr = this.dateRangeProxy === null ? this.dateRange : this.dateRangeProxy
+        return dr.map(x=>{
+          if (typeof x === 'number') return x
+          else if (typeof x === 'string' && x.length===4) return parseInt(x)
+          else if (x.getFullYear) return x.getFullYear()
+        }).sort((a,b)=>a-b)
+        },
+        set (val) {
+					this.dateRangeProxy = val
+        }
+
+    },
+    attributeFigure () {
+      if (this.figure&&this.figure[0]) return this.figure[0].split('.').slice(0,2).join('.')
+    },
     allDataYears () {
-      const d = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
+      return this.$store.getters.allIndicatorKeyYears[this.attributeFigure] || []
       //console.log('datayears',d,this.$store.getters.allIndicatorKeyYears,this.$store.getters.allIndicatorsByYear)
-      return d || []
     },
     areaDataMatched () {
-      const dataYears = this.$store.getters.allIndicatorKeyYears[this.figure[0]]
-      if (!dataYears) return null
-      return this.$store.getters.indicatorsForSelectedArea.filter(x=>dataYears.some(f=>x.year===f))
+      if (!this.allDataYears||!this.allDataYears.length) return null
+      return this.$store.getters.indicatorsForSelectedArea.filter(x=>this.allDataYears.some(f=>x.year===f))
     },
     dataYears () {
       return this.areaDataMatched ? this.areaDataMatched.map(x=>x.year) : []
@@ -346,7 +358,20 @@ export default {
       if (!this.dataYears || !this.selectedYear) {
         return {}
       }
-      let indicator =  this.areaDataMatched[this.dataYears.indexOf(this.selectedYear)]
+      let indicator;
+      const dr = this.dateRangeFormatted
+      if (dr) {
+        const years = this.dataYears.slice(this.dataYears.indexOf(dr[0]),this.dataYears.indexOf(dr[dr.length-1])+1)
+        console.log('daterange', years, this.dataYears)
+        indicator = years.reduce((acc,year)=> {
+          const val = this.areaDataMatched[this.dataYears.indexOf(year)][this.figure[0]] || 0
+          acc[this.figure[0]] = acc[this.figure[0]] || 0
+          acc[this.figure[0]] = acc[this.figure[0]] + val
+          return acc
+        },{})
+      } else {
+        indicator = this.areaDataMatched[this.dataYears.indexOf(this.selectedYear)]
+      }
       //console.log('selectedIndicator',indicator)
       if (!indicator) {
         indicator = {}
@@ -354,44 +379,6 @@ export default {
       }
       return indicator
     },
-    generateChartDataSets() {
-      if (this.type !== 'Chart' || !this.selectedIndicator) return null
-      const latestYear = this.dataYears.slice(-1)[0]
-      const color = this.selected ? this.$vuetify.theme.primary : this.$vuetify.theme.grey
-      //console.log('this.$store.getters.allIndicatorsByAreaYear',this.$store.getters.allIndicatorsByAreaYear)
-      return {
-        datasets : Object.keys(this.$store.getters.allIndicatorsByAreaYear).map(area=>{
-          const selectedArea = this.$store.state.neighbourhood === parseInt(area)
-          return {
-            //label:store.state.neighbourhood,
-            data: this.figure.map(x=>this.$store.getters.allIndicatorsByAreaYear[area][latestYear][x]),
-            borderColor: selectedArea ? color : this.$vuetify.theme.grey_lighten1,
-            borderWidth: selectedArea ? 1 : 0.5,
-            borderOpacity: 0.2,
-            type:"line",
-            fill:false,
-            pointRadius: selectedArea ? 1 : 0,
-          }
-
-        }),
-        labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
-
-      }
-      /*
-      return {
-      datasets :[
-      {
-      //label:store.state.neighbourhood,
-      data: this.figure.map(x=>this.selectedIndicator[x]),
-      borderColor: color,
-      type:"line",
-      fill:false,
-    }
-  ],
-  labels:this.figure.map(x=> x.split('.').slice(-1)[0] )
-}
-*/
-},
 chartWidthClass(){
   let style = {position:'relative',width:'95%'}
   if (this.type !== 'Chart') {
@@ -409,7 +396,7 @@ timeChartData () {
   const indicators = this.$store.getters.indicatorsForSelectedArea
   const filtered = indicators.filter(x=>this.dataYears.indexOf(x.year)>-1)
 
-  return filtered.map(x=>x[figure])
+  return filtered.map(x=>x[figure]||0)
 }
 
 },

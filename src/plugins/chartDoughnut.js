@@ -1,23 +1,40 @@
 import { chart } from './ejmapChart.js'
 import { Doughnut, mixins } from  'vue-chartjs'
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import ChartOutLabels from 'chartjs-plugin-piechart-outlabels';
 const {reactiveProp} = mixins
+
 
 export default {
   extends: Doughnut,
   mixins: [reactiveProp,chart],
+  props:{
+    'outlabels' : Boolean,
+    'padding' : Array
+  },
+  computed : {
+    paddingStyle () {
+      let style = {
+        top:50,
+        right: 50,
+        bottom: 100,
+        left: 50,
+      }
+      if (Array.isArray(this.padding)) Object.keys(style).reduce((acc,key,index)=>{
+         acc[key] = this.padding[index] === 'undefined' ? acc[key] : parseInt(this.padding[index])
+         return acc
+      },style)
+      return style
+    }
+  },
   mounted () {
+    let self = this
     this.addPlugin(ChartDataLabels)
     // this.chartData is created in the mixin.
     // If you want to pass options please create a local options object
     const options = Object.assign(this.options, {
       layout: {
-        padding: {
-          top: 50,
-          right:50,
-          bottom:100,
-          left:50,
-        },
+        padding: this.paddingStyle,
       },
       plugins : {
         outlabels : {
@@ -34,7 +51,7 @@ export default {
             size : '18'
           },
           display : function(context) {
-            return context.dataset.data[context.dataIndex] ? true : false
+            return  self.outlabels&&context.dataset.data[context.dataIndex] ? true : false
           }
         },
         datalabels : {
@@ -51,7 +68,7 @@ export default {
         }
       }
     })
-    this.renderChart(this.chartData, this.options)
+    this.renderChart(this.chartData, options)
     //console.log(this);
   }
 }

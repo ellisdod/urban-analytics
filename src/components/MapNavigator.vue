@@ -34,6 +34,7 @@
     :zoom="zoom || $store.state.navigator.zoom"
     :center="center || $store.state.navigator.center"
     :options="mapOptions"
+    :zoomControl="false"
     id="navigation-map"
     @click="log()"
     >
@@ -63,7 +64,7 @@ import chroma from 'chroma-js'
 import L from 'leaflet'
 import mapbox from 'mapbox-gl-leaflet'
 
-//const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
+//const Vue2LeafletVectorGridProtobuf = require('../../Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');
 //const vectorTileStyling = require('../../public/mapStyle.js');
 
@@ -236,22 +237,20 @@ export default {
     }
   },
   mounted(){
-    this.$refs.map.mapObject.on('click', function(e) {  console.log(e) })
-    this.$refs.map.mapObject.zoomControl.setPosition('bottomright')
-
-
-    this.$refs.map.mapObject.eachLayer(function(l){
-        console.log('maplayer2',l)
-        //l.sendToBack()
-      })
-
-
 
     this.$nextTick(()=>{
       const map = this.$refs.map.mapObject
+
+      map.on('click', function(e) {  console.log(e) })
+      if (map.zoomControl) map.zoomControl.setPosition('bottomright')
+
+      map.eachLayer(function(l){
+          console.log('maplayer2',l)
+          //l.sendToBack()
+        })
       //const tileLayer = map._layers[tileLayerId]
       //console.log('tilelayer',tileLayer)
-      console.log('panes',map.getPanes())
+      //console.log('panes',map.getPanes())
       map.createPane('leaflet-top-pane', map.getPanes().mapPane)
       var topPane = map.getPane('leaflet-top-pane')
       topPane.style.zIndex=1000;
@@ -263,7 +262,7 @@ export default {
             accessToken: 'not-needed',
             pane:'leaflet-top-pane',
             style: 'https://api.maptiler.com/maps/2785ad5b-ec8f-4c26-b65b-0fd7a95f2a2e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
-          }).addTo(this.$refs.map.mapObject)
+          }).addTo(map)
 
       //console.log('maplayers',this.$refs.map.mapObject._layers)
     })
