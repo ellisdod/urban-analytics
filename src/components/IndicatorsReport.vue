@@ -1,14 +1,15 @@
 <template>
+  <div>
   <div class="page" style="padding-top:100px;" ref="page">
     <div class="pa-2 pl-5"
-    :style="{backgroundColor:$vuetify.theme.primary, color:'white', width:'220px',marginLeft:'-20px'}" >
+    :style="{backgroundColor:$vuetify.theme.primary, color:'white', width:'220px'}" >
     <div class="title font-weight-light">Neighbourhood Profile</div>
     <div class="title mt-2">{{$store.state.year}}</div>
-  </div>
+    </div>
   <v-container fluid pa-4>
-    <v-layout row wrap fill-height >
+    <v-layout row wrap >
       <v-flex xs8 offset-xs4 style="margin-top:-110px;">
-        <area-select class="display-1"></area-select>
+        <area-select class="display-1 font-weight-medium"></area-select>
         <div class="title">East Jerusalem</div>
       </v-flex>
       <v-flex xs12 pt-4> </v-flex>
@@ -53,13 +54,14 @@
 <!--  <v-flex xs12 style="" class="text-xs-center">International Peace and Cooperation Center </v-flex>-->
 </v-layout>
 </v-container>
+</div>
 
-<div style="flex:2;overflow-y:auto;">
-  <v-container fluid pa-0 pb-5>
+<!--<div style="flex:2;overflow-y:auto;">-->
+  <template v-for="(section,key) in sections">
+  <div class="page section">
+   <v-container pa-4>
 
-    <template v-for="(section,index) in sections" >
-
-      <v-layout row wrap pb5 pa-4 :key="index" class="section">
+      <v-layout row wrap pb5 pa-4  align-content-start>
 
         <v-flex xs12 class="title mb-4 pt-3 pb-3 ejmap-border-bottom">
           <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  {{ section.section ? section.section.text_en : ''}} </div>
@@ -68,7 +70,7 @@
         <!--<v-flex xs7 d-flex style="z-index:2;">
           <div style="position:relative;display:block;width:100%;flex:1">-->
 
-          <v-flex xs6 v-for="(item,index) in section.figures">
+          <v-flex xs6 v-for="(item,index) in section.figure">
 
             <!-- INDICATORS -->
             <indicator-card
@@ -77,7 +79,6 @@
             :key="index"
             :item="item"
             :print="true"
-            :dateRange="item.dateRange"
             :selected="selected===item._id"
             class="indicator-hover">
           </indicator-card>
@@ -85,8 +86,8 @@
         </v-flex>
 
         <v-flex xs6
-        v-if="section.charts.length"
-        v-for="(item,index) in section.charts">
+        v-if="section.chart.length"
+        v-for="(item,index) in section.chart">
 
           <indicator-card
           @childClick="updateSelected(item._id)"
@@ -97,7 +98,57 @@
           :selected="selected===item._id"
           class="mt-4">
         </indicator-card>
-    </v-flex>
+       </v-flex>
+
+       <v-flex xs6
+       v-if="section['pie chart'].length"
+       v-for="(item,index) in section['pie chart']">
+
+         <indicator-card
+         @childClick="updateSelected(item._id)"
+         style="margin-bottom:20px;"
+         :key="index"
+         :item="item"
+         :print="true"
+         :selected="selected===item._id"
+         class="mt-4">
+       </indicator-card>
+      </v-flex>
+
+       <v-flex v-if="section.percentage&&section.percentage.length" xs3>
+         <v-layout row wrap>
+         <v-flex xs12  v-for="(item,index) in section.percentage">
+
+         <indicator-card
+         @childClick="updateSelected(item._id)"
+         style="margin-bottom:20px;"
+         :key="index"
+         :item="item"
+         :print="true"
+         :selected="selected===item._id"
+         class="mt-4">
+       </indicator-card>
+     </v-flex>
+   </v-layout>
+
+      </v-flex>
+
+     <v-spacer></v-spacer>
+
+     <v-flex xs6
+     v-if="section.list.length"
+     v-for="(item,index) in section.list">
+
+       <indicator-card
+       @childClick="updateSelected(item._id)"
+       style="margin-bottom:20px;"
+       :key="index"
+       :item="item"
+       :print="true"
+       :selected="selected===item._id"
+       class="mt-4">
+     </indicator-card>
+   </v-flex>
 
   <!--  <v-flex xs4 d-flex style="z-index:2;">
   <div style="position:relative;display:block;width:100%;flex:1">
@@ -112,42 +163,55 @@
     </indicator-card>
 </div>
 </v-flex>-->
-
-
 </v-layout>
-<!-- MAP PAGE -->
-<v-layout v-if="section.map" class="map-page">
 
-  <v-flex xs12 pl-4 pt-5>
+</v-container>
+<div class="pagenum">{{section.page}}</div>
+</div>
+
+<div v-if="section.map" class="page map-page">
+<!-- MAP PAGE -->
+<v-container pa-5>
+<v-layout wrap row>
+
+  <v-flex xs12 pt-5>
 
     <map-view
     v-if="section.map"
     contextmenu=""
     style="position:relative;"
     featuresCollection="features"
-    :zoomLevel="section.map.zoom||15"
+    :zoomLevel="section.map[0].zoom||15"
     height="682px"
-    :featureLayers="section.map.figure"
+    :featureLayers="section.map[0].figure"
     v-bind:areas="true"
     :minimiseLegend="true"
     :legendBottom="true"
     :hideControls="true"
-    :hideBaseMap="section.map.hideBaseMap"
-    :attributes="section.map.mapAttributes"
+    :hideBaseMap="section.map[0].hideBaseMap"
+    :attributes="section.map[0].mapAttributes"
+    :dateRange="section.map[0].date_range"
     :scaleBar="true"
     :northArrow="true"
     baseMapLink="https://api.maptiler.com/maps/22b3d9af-6774-4072-8dcd-68392fec6910/style.json?key=ArAI1SXQTYA6P3mWFnDs"
     >
     <div class="body-1 pt-2">
-      <span class="font-weight-medium">{{section.map.text}}</span>
+      <span class="font-weight-medium">{{section.map[0].text}}</span>
     </div>
   </map-view>
-
 </v-flex>
-
-
 </v-layout>
+
+</v-container>
+<div class="pagenum">{{section.page+1}}</div>
+</div>
+<!--margin-top:-30px;margin-bottom:30px;padding-left:50px-->
+
+
 </template>
+
+<div class="page">
+  <v-container pa-2>
 
 <v-layout row wrap pb5 pa-4>
 
@@ -155,25 +219,27 @@
     <div style="display:inline-block;float:left;margin-top:6px;" class="mr-4">  Sources </div>
   </v-flex>
 
-    <template v-for="(section,index) in $store.state._col_indicatorSections">
+    <template v-if="sections[section._id]" v-for="(section,index) in $store.state._col_indicatorSections">
 
-      <v-flex xs12 class="subheading font-weight-medium pb-1">
+      <v-flex xs12 class="subheading font-weight-medium pt-3">
         {{section.text_en}}
       </v-flex>
-     <template v-if="sections[section._id]">
-      <template v-for="(item,index) in sections[section._id].figures">
-        <v-flex xs3 class="body-1">
+
+      <template v-if="findLayer(item.figure).source_org" v-for="(item,i) in sections[section._id].figure">
+        <v-flex xs4 class="body-1">
           {{item.text}}
         </v-flex>
-        <v-flex xs3 class="body-1">
-          {{ findLayer(item.figure).source_org }}
-        </v-flex>
-        <v-flex xs6 class="body-1">
-          <a :href="findLayer(item.figure).source_url"> {{findLayer(item.figure).source_ref }}</a>
+        <v-flex xs8 class="body-1">
+          <a v-if="findLayer(item.figure).source_url" :href="findLayer(item.figure).source_url">
+            {{ findLayer(item.figure).source_org +" - "+findLayer(item.figure).source_ref }}
+          </a>
+          <div v-else>
+            {{ findLayer(item.figure).source_org +" - "+findLayer(item.figure).source_ref }}
+          </div>
         </v-flex>
 
       </template>
-  </template>
+
     </template>
 
 
@@ -182,12 +248,8 @@
 
 </v-layout>
 </v-container>
-
 </div>
 
-</v-flex>
-</v-layout>
-</v-container>
 
 
 
@@ -203,7 +265,6 @@
 </div>
 
 
-</div>
 
 
 
@@ -231,6 +292,7 @@ export default {
   },
   data () {
     return {
+      pageNum:0,
       nav:true,
       selected : null,
       activeTab: null,
@@ -244,20 +306,23 @@ export default {
       const translation = translate(data, ['text','description'], this.$store.state.language)
       //console.log('translateion', translation)
       //console.log('indicatorsByArea',this.$store.getters.indicatorsByArea)
+
       const sections = translation.reduce((acc,x)=>{
         if (!x.active) return acc
+        const type = x.type.toLowerCase()
         acc[x.layer] = acc[x.layer] || {}
-        acc[x.layer].figures = acc[x.layer].figures || []
-        acc[x.layer].figureHighlights = acc[x.layer].figureHighlights || []
-        acc[x.layer].charts = acc[x.layer].charts || []
+        acc[x.layer][type] = acc[x.layer][type] || []
+        acc[x.layer][type].push(x)
         acc[x.layer].section = acc[x.layer].section || this.$store.state._col_indicatorSections.filter(i=>i._id === x.layer)[0]
-
-        if (x.type === 'Map') acc[x.layer].map = x
-        else if (x.type === 'Figure') acc[x.layer].figures.push(x)
-        else if (x.type === 'FigureHighlight') acc[x.layer].figureHighlights.push(x)
-        else if (x.type === 'Chart' || x.type === 'List') acc[x.layer].charts.push(x)
         return acc
       },{})
+
+      let pageCounter = 1
+      Object.keys(sections).forEach((key)=>{
+        sections[key].page = pageCounter
+        pageCounter ++
+        if (sections[key].map) pageCounter ++
+      })
       //console.log('sections',sections)
       return sections
       /// FOR TESTING
@@ -266,9 +331,10 @@ export default {
       housing: "5d00ef4883de38f9b2719f7d",
       conflict: "5cfedf142188d19a4ffe26a7",
       demographics : "5d00efa283de38f9b2719f7e",
-      mobility: "5d20b415258be4666124df6c"
+      mobility: "5d20b415258be4666124df6c",
+      plans :"5db82e24079f0e9c38b84669"
     }
-      const filterId = filters.mobility
+      const filterId = filters.plans
       const filtered = {}
       filtered[filterId] = sections[filterId]
       return filtered
@@ -293,8 +359,13 @@ export default {
       }
       return layer || {}
     },
+    updateTitle () {
+      const document = this.$refs.page.getRootNode()
+      document.title = 'EJ_Profile_2019_'+this.$store.getters.selectedArea.feature.properties.text_en;
+    }
   },
   mounted () {
+    this.$nextTick(()=>this.updateTitle())
     this.$store.commit('UPDATE',{key:'hideToolbar',value:true})
     this.$store.watch(
       (state, getters) => getters.selectedIndicatorSection,
@@ -306,17 +377,8 @@ export default {
       })
       this.$store.watch(
         (state) => state.neighbourhood,
-        (val) => {
-          const document = this.$refs.page.getRootNode()
-          document.title = 'EJ_Profile_2019_'+this.$store.getters.areaNames[this.$store.state.neighbourhood];
-        })
-        this.$nextTick(()=>{
-          const document = this.$refs.page.getRootNode()
-          document.title = 'EJ_Profile_2019_'+this.$store.getters.areaNames[this.$store.state.neighbourhood];
-          console.log('page',this.$refs.page.getRootNode())
-        })
-
-
+        (val) => this.updateTitle()
+      )
       }
 
     }
@@ -337,9 +399,12 @@ export default {
       -moz-box-sizing: border-box;
     }
     .page {
+      position:relative;
       width: 210mm;
       min-height: 297mm;
-      padding: 5mm;
+      max-height: 297mm;
+      overflow:hidden;
+      padding: 0;
       margin: 0mm auto;
       border: 1px #D3D3D3 solid;
       border-radius: 5px;
@@ -361,6 +426,21 @@ export default {
       size: A4;
       margin: 0;
     }
+
+    .section {
+    }
+    .map-page {
+    }
+    .pagenum {
+      position: absolute;
+      bottom: 40px;
+      left:40px;
+    }
+
+
+
+
+
     @media print {
       html, body {
         width: 210mm;
@@ -368,20 +448,16 @@ export default {
       }
       .page {
         margin: 0;
+        position:relative;
         border: initial;
         border-radius: initial;
         width: initial;
-        min-height: initial;
         box-shadow: initial;
         background: 'white';
         page-break-after: always;
       }
-      .section {
-        page-break-after: right;
-      }
-      .map-page {
-        page-break-after: left;
-      }
+
+
     }
 
     </style>

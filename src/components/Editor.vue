@@ -29,7 +29,7 @@
               :small-chips="i._multiple"
               :multiple="i._multiple"
               clearable
-              :item-text="Object.keys(i._options[0]).filter(x=>x.indexOf('text')>-1||x.indexOf('name')>-1)[0]"
+              :item-text="Object.keys(i._options[0]).filter(x=>x.indexOf('text')>-1||x.indexOf('name')>-1||x.indexOf('__d')>-1)[0]"
               item-value="value"
               :rules="[validateItem(edited[key],i)]"
               box
@@ -52,7 +52,22 @@
               validate-on-blur>
             </v-select>
 
-            <component v-else-if="i._options&&i._options.component" :is="i._options.component" :items="i._options.items?i._options.items($store,edited):null" :type="i._options.type" :value="edited[key]" @change="function(e){edited[key]=e}"/>
+            <component
+             v-else-if="i._options&&i._options.component"
+             v-show="!i._options.hide||!i._options.hide($store,edited)"
+             :is="i._options.component"
+             :items="i._options.items?i._options.items($store,edited):null"
+             :type="i._options.type"
+             :min="i._options.min?i._options.min($store,edited):null"
+             :max="i._options.max?i._options.max($store,edited):null"
+             :always-dirty="true"
+             thumb-label="always"
+             track-color="white"
+             always-dirty
+             :label="i._text"
+             thumb-color="white"
+             :value="edited[key]&&edited[key].length?edited[key]:i._options.defaultValue?i._options.defaultValue($store,edited):null"
+             @change="function(e){edited[key]=e}"/>
 
             <div v-else-if="i._options&&i._options==='dynamic'" style="display:flex;flex-direction:column;" >
             <p class="subheading"> {{ Object.keys(edited[key]).length ? 'Choices' : '' }} </p>
@@ -167,6 +182,7 @@ import Calculator from './Calculator.vue'
 import NestedMenu from './NestedMenu.vue'
 import Styler from './StylePicker.vue'
 import Transformations from './Transformations.vue'
+import ArrayInput from './ArrayInput.vue'
 
 
 const dbconfig = require('../db.config')
@@ -175,7 +191,7 @@ const arrayUtils = require('@/plugins/arrayUtils')
 
 export default {
   components: {
-    VueJsonPretty,Calculator,NestedMenu,Styler,Transformations
+    VueJsonPretty,Calculator,NestedMenu,Styler,Transformations,ArrayInput
   },
   props : ['collection','filter','nestedPath','editItem','attributes','linkedFeature','permanent','title'],
   data() {
@@ -291,6 +307,7 @@ export default {
           }
         })
 
+        // Update numeric values to start from 1 rather than 0
         if (Array.isArray(updateObj._options)&&updateObj._options[0]&&Object.keys(updateObj._options[0]).indexOf('value')>-1) {
           updateObj._options.forEach((x,i)=>{
             x.value = (i+1).toString()

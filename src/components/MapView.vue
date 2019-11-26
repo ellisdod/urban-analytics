@@ -342,9 +342,9 @@ v-if="layers[key].on && layers[key].features"
 
 <script>
 import { LMap, LTileLayer, LMarker, LPopup, LTooltip, LPolygon, LGeoJson} from 'vue2-leaflet'
-import Vue2LeafletVectorGridProtobuf from '@/../public/Vue2LeafletVectorGridProtobuf.vue'
+//import Vue2LeafletVectorGridProtobuf from './Vue2LeafletVectorGridProtobuf.vue'
 //var vectorTileStyling = require('../../public/mapStyle.js');
-import vectorTileStyling2 from '@/../public/mapStyle2.js'
+//import vectorTileStyling2 from '@/../public/mapStyle2.js'
 import API from '@/api.js'
 import chroma from 'chroma-js'
 import MapLegend from './MapLegend.vue'
@@ -354,7 +354,7 @@ import Timeline from './Timeline.vue'
 import LayerSelect from './LayerSelect.vue'
 
 
-//const Vue2LeafletVectorGridProtobuf = require('../../public/Vue2LeafletVectorGridProtobuf.vue');
+//const Vue2LeafletVectorGridProtobuf = require('../../Vue2LeafletVectorGridProtobuf.vue');
 //var vectorTileStyling = require('../../public/mapStyle.js');
 //const vectorTileStyling = require('../../public/mapStyle.js');
 import axios from 'axios'
@@ -365,14 +365,14 @@ const translate = require('@/plugins/translate')
 
 export default {
   name: 'MapView',
-  props: ['attributes','northArrow','scaleBar','featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapOff','baseMapLink','minimiseLegend','hideControls','highlightColor','dark'],
+  props: ['attributes','northArrow','scaleBar','dateRange','featureLayers','featuresCollection','zoomLevel','options','areas','height','allLayers','legendBottom','editable','hideLegend','baseMapOff','baseMapLink','minimiseLegend','hideControls','highlightColor','dark'],
   components: {
     LMap:LMap,
     LTileLayer:LTileLayer,
     LMarker:LMarker,
     LPopup:LPopup,
     LTooltip:LTooltip,
-    LProtobuf : Vue2LeafletVectorGridProtobuf,
+  //  LProtobuf : Vue2LeafletVectorGridProtobuf,
     LPolygon : LPolygon,
     LGeoJson : LGeoJson,
     MapLegend : MapLegend,
@@ -462,8 +462,8 @@ export default {
   computed: {
     mapZoom () {
       const base = this.zoomLevel || this.$store.state.map.zoom
-      const factor = this.$store.getters.selectedArea.feature.properties.zoom || 0
-      return base + factor
+      const factor = this.$store.getters.selectedArea ? this.$store.getters.selectedArea.feature.properties.zoom : 0
+      return parseFloat(base) + parseFloat(factor||0)
     },
     surveyorAuth () {
       return arrayUtils.getNested('state.activeUser.groups.Surveyor',this.$store)
@@ -486,8 +486,8 @@ export default {
       return Object.assign(
         {
           padding: this.legendBottom ? '0 0 40px 0' : '0',
-          height: this.legendBottom ? '350px' : 'auto',
-          maxHeight: this.legendBottom ? '350px':'none',
+          height: this.legendBottom ? '300px' : 'auto',
+          maxHeight: this.legendBottom ? '300px':'none',
           maxWidth: this.legendBottom ? '100%' : '300px',
           width: this.legendBottom ? '100%' : 'auto',
           overflowY:this.legendBottom ? 'visible':'auto',
@@ -519,14 +519,14 @@ export default {
       surveyKeyArray () {
         return Object.values(this.surveyKey);
       },
-      protobufOpts () {
+      /*protobufOpts () {
         const opacity = this.survey ? this.surveyOpacity : 1;
         return {
           vectorTileLayerStyles: vectorTileStyling2,
           maxNativeZoom: 18,
           opacity: opacity
         };
-      },
+      },*/
       tileOpts () {
         const opacity = this.survey ? this.surveyOpacity : 1;
         return {
@@ -568,7 +568,7 @@ export default {
           return categories[val] !== false
         }
         function inRange(f,att, min,max){
-          const v = f.feature.properties[att]
+          const v = f.feature.properties[att] ? parseFloat(f.feature.properties[att]) : null
           return v >= min && v <= max
         }
 
@@ -576,7 +576,7 @@ export default {
         const featureLayer = layer.featureLayer ? layer.featureLayer[0] : layerId
         const features = this.$store.state['_col_'+this.featuresCollection][featureLayer]
 
-        const filtered = Object.keys(layer.filters).reduce((acc,key)=>{
+        let filtered = Object.keys(layer.filters).reduce((acc,key)=>{
           const filter = layer.filters[key]
           if (filter.range) {
             acc = acc.filter(x=>inRange(x,filter.attribute, filter.range[0], filter.range[1]))
@@ -585,6 +585,12 @@ export default {
           }
           return acc
         },features)
+
+        if (this.dateRange&&this.dateRange.length>1) {
+          const min = parseInt(this.dateRange[0])
+          const max = parseInt(this.dateRange[1])
+          filtered = filtered.filter(x=>inRange(x,'year', min, max))
+        }
 
         layer.features = filtered.map(x=>x.feature)
         this.update()
@@ -651,7 +657,7 @@ export default {
 
           layer.bindPopup(html);
           if (feature.properties.number) {
-            layer.bindTooltip(feature.properties.number, {permanent: true, className: "detailed-plan-label", offset: [0, 0] });
+            //layer.bindTooltip(feature.properties.number, {permanent: true, className: "detailed-plan-label", offset: [0, 0] });
           }
           layer.on({
             contextmenu : function(e) {
@@ -728,13 +734,12 @@ export default {
           const attribute = layer.attributes[attributeKey]
           const id = feature.properties._id
           const surveyRecords = surveyLayer ? this.$store.getters.surveyRecordsByFeature[id] : null
-          const val = surveyLayer && surveyRecords ? surveyRecords[0].feature.properties[attributeKey] : feature.properties[attributeKey]
+          let val = surveyLayer && surveyRecords ? surveyRecords[0].feature.properties[attributeKey] : feature.properties[attributeKey]
           //if (surveyLayer&&!surveyRecords) console.log(id, val,surveyRecords)
 
           style.opacity = layer.strokeOpacity/100
           style.fillOpacity = layer.fillOpacity/100
 
-          let colorKey = 'fillColor'
 
           if (this.editable&&!surveyLayer) {
             const surveyColorIndex = this.$store.getters.surveyRecordsByFeature[id] ? 1 : 2
@@ -744,39 +749,29 @@ export default {
 
           if (feature.geometry.type.indexOf('LineString')>-1) {
             style.stroke = true
-            colorKey = 'color'
           }
 
+          //selected
           if (feature.properties._id === this.$store.state._col_features_selected) {
             style.color = 'red'
             style.weight = 3
           }
 
-          if (!attribute) {
-            const s = layer.defaultStyle
-            style.fillColor = s.fillColor
-            style.color =  s.borderColor
-            style.weight = s.borderWidth
-            style.stroke = s.borderWidth ? true : false
-            return style
-          }
-
-          if (!val) return style
-
           if (attribute.categories) {
-            const s = attribute.categories[val].style || {}
-            style.fillColor = s.fillColor
-            style.color =  s.borderColor
-            style.weight = s.borderWidth
-            style.stroke = s.borderWidth ? true : false
+            val = val === undefined || val === null ? '__d' : val
+            const s = attribute.categories[val] ? attribute.categories[val].style : {}
+            style.fillColor = s.fillColor || style.fillColor
+            style.color =  s.borderColor || style.color
+            style.weight = s.borderWidth || style.weight
+            //style.stroke = s.borderWidth ? true : false
           } else if (attribute.range) {
             style.color = style.fillColor = this.$store.state.colorScale( 1 - ((val - layer.colorRange[0])/layer.colorConstant)  ).hex()
           } else if (attribute.type === "Boolean") {
             style.fillColor = 'yellow'
             style.color = 'orange'
-          }else {
-            style.fillOpacity = 0
-            style.opacity = 0
+          } else {
+            //style.fillOpacity = 0
+            //style.opacity = 0
           }
 
           return style
@@ -879,7 +874,7 @@ export default {
           //Object.assign(this.layers[key],{on:e})
         },
         updateLayer (layerId,e,path) {
-          console.log('updating Layer')
+          console.log('updating Layer', e)
           const layer = this.layers[layerId]
           const base = path ? arrayUtils.getNested(path,layer) : layer;
           //console.log('updateLayer', path, base)
@@ -892,7 +887,7 @@ export default {
           }
           else base[e.key]=e.value
 
-          console.log('has range', layer.attributes[layer.attribute].range)
+          //console.log('has range', layer.attributes[layer.attribute].range)
 
           if (e.key === 'range') {
             this.setRanges(layer, e.value[0], e.value[1])
@@ -941,10 +936,11 @@ export default {
             if (!layer.on) return arr
             arr.push(new Promise((res,rej)=> {
               const returnObj = {}
+              const loadingLayer = this.$store.state.status[key] === 'loading'
               const filtered = layer.filtered
               const featureKey = layer.featureLayer ? layer.featureLayer[0] : key
               const featuresNo = featurecol[featureKey] ? featurecol[featureKey].length : 0;
-              if (!this.loading && (featuresNo === 0 || filtered ) ) {
+              if (!loadingLayer && (featuresNo === 0 || filtered ) ) {
                 this.loading = true
                 this.updateCollection(this.featuresCollection, featureKey)
                 .then((x,err)=>{
@@ -998,7 +994,6 @@ export default {
               filters: {'0': {} },
               colorRange:null,
               colorConstant:null,
-              defaultStyle : categoryStyle && categoryStyle.__default && categoryStyle.__default.__d ? categoryStyle.__default.__d.style : null
             },layer)
 
             const status = this.featureLayersArray.indexOf(layer._id) > -1 ? true : false
@@ -1010,11 +1005,21 @@ export default {
             //if (!layer.on) return
             //console.log('layerid',x._id,layer._id)
 
+            const defaultAttribute = {
+              __default : {
+                categories : {
+                  __d : {
+                    style : arrayUtils.getNested('__default.__d.style',categoryStyle) || {}
+                }
+              }
+            }
+          }
+
             layer.attributes = attributes.reduce((acc,att)=>{
               if (att.legend&&att.layer===layer._id) acc[att.name] = att
               if (acc[att.name] && categoryStyle) acc[att.name].categories = categoryStyle[att.name]
               return acc
-            },{})
+            },defaultAttribute)
             layer.attribute = this.attributes ? this.attributes[onIndex] : '__default'// || Object.keys(layer.attributes)[0]
             layer.filters['0'].attribute = layer.attribute// ???
 
@@ -1100,7 +1105,7 @@ toggleBaseMap () {
       style: this.baseMapLink || 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
     }).addTo(this.$refs.map.mapObject)
     this.baseMapLayer = layer
-  } else {
+  } else if (this.baseMapLayer&&this.$refs.map.mapObject) {
     this.$refs.map.mapObject.removeLayer(this.baseMapLayer )
   }
 },
@@ -1220,8 +1225,6 @@ editable: function(val) {
   this.loadSurveyRecords()
 }
 },
-
-
 mounted () {
   //console.log('layers on mount',this.layers)
   this.$nextTick(() => {

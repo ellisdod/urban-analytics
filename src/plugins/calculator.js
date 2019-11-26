@@ -1,21 +1,22 @@
-module.exports = (function() {
+module.exports = function() {
 
   var level = 0,
   left = true,
   result = false,
-  equation = {
-  left : [],
-  right : [],
-  symbol : [],
-  logic : [],
-  result : []
-},
+  equation,
   properties,
-  attributes;
+  attributes,
+  emptyEquation = {
+    left : [],
+    right : [],
+    symbol : [],
+    logic : [],
+    result : []
+  };
 
 
   var convertArray = function (arr) {
-    arr.reduce((acc,x)=>{
+    return arr.reduce((acc,x)=>{
       //console.log(acc,x)
       if (x==='IF' || x==='ELSE IF'){}
       else if (x==='(') {
@@ -45,7 +46,7 @@ module.exports = (function() {
       }
       return acc
 
-    },equation)
+    },emptyEquation)
   }
 
   var makeAttributeKeys = function(atts) {
@@ -56,59 +57,70 @@ module.exports = (function() {
   }
 
   var calculateValue = function(val) {
-    if (val.indexOf('$') !== 0) return val
+    if (typeof val !== 'string' || val.indexOf('$') !== 0) return val
     const att = attributes[val.slice(1,val.length)]
     if (!att) console.log('no attribute: ' + val)
     return att ? properties[att.name] : ''
   }
 
   var equateIt = function(left,right) {
-   return {
-     '=' : left === right,
-     '!=' : left !== right,
-     //'in' : left.indexOf(right) > 0,
-     //'not in' : left.indexOf(right) === -1
-   }
+    //console.log('equate', left, right)
+    return {
+      '=' : left === right,
+      '!=' : left !== right,
+      'in' : typeof left === 'string' &&
+             typeof right === 'string' &&
+             right.toLowerCase().indexOf(left.toLowerCase())>-1,
+      'not in' : typeof left === 'string' &&
+                 typeof right === 'string' &&
+                 right.toLowerCase().indexOf(left.toLowerCase())===-1,
+    }
   }
 
   var equateArray = function(arr) {
-   return {
-   'OR' : arr ? arr.includes(true) : null,
-   'AND' : arr ? !arr.includes(false) : null
-   }
+    return {
+      'OR' : arr ? arr.includes(true) : null,
+      'AND' : arr ? !arr.includes(false) : null
+    }
   }
 
   var getLastAtLevel = function(array,level) {
-      return level && Array.isArray(array) && Array.isArray(array.slice(-1)[0]) ?
-         getLastAtLevel(array.slice(-1)[0],level-1) : array
+    return level && Array.isArray(array) && Array.isArray(array.slice(-1)[0]) ?
+    getLastAtLevel(array.slice(-1)[0],level-1) : array
   }
 
   var process = function(arr,props,atts) {
     properties = props
     attributes = makeAttributeKeys(atts)
-    convertArray(arr)
-    for (var i=0;i<equation.result.length;i++) {
-      const t = isTrue(equation.left[i],equation.right[i],equation.symbol[i],equation.logic[i])
-      if (t) return equation.result[i]
+    equation = convertArray(arr)
+    if (equation.result.length) {
+      for (var i=0;i<equation.result.length;i++) {
+        const t = isTrue(equation.left[i],equation.right[i],equation.symbol[i],equation.logic[i])
+        if (t) return calculateValue(equation.result[i])
+      }
+    } else {
+      return isTrue(equation.left,equation.right,equation.symbol,equation.logic)
     }
+
   }
 
   var isTrue = function(left,right,symbol,logic) {
-
-       const truths = symbol.reduce((acc,x,i)=>{
-         if (Array.isArray(x)) acc.push(isTrue(left[i],right[i],symbol[i],logic[i]))
-         else acc.push(equateIt(calculateValue(left[i]),calculateValue(right[i]))[symbol[i]])
-         return acc
-       },[])
-       const levelLogic = logic.filter(x=>!Array.isArray(x))[0]
-       //console.log(truths,logic,left,right,levelLogic)
-       return truths.length > 1 ? equateArray(truths)[levelLogic] : truths[0]
+    //console.log('isTrue',left,right,symbol,logic)
+    const truths = symbol.reduce((acc,x,i)=>{
+      if (Array.isArray(x)) acc.push(isTrue(left[i],right[i],symbol[i],logic[i]))
+      else acc.push(equateIt(calculateValue(left[i]),calculateValue(right[i]))[symbol[i]])
+      return acc
+    },[])
+    const levelLogic = logic.filter(x=>!Array.isArray(x))[0]
+    //console.log(truths,logic,left,right,levelLogic)
+    return truths.length > 1 ? equateArray(truths)[levelLogic] : truths[0]
   }
 
   return {
     process : process,
+    equation : equation
   }
-})();
+};
 
 
 
@@ -120,30 +132,30 @@ function calculatorTests() {
   const filter = ['IF','(','(','$key1','=','hello','AND','$key2','=','hiya',')','OR','$key1','=','hi',')','Hiii!','ELSE IF','(','$key2','=','goodbye',')','hey!']
 
   const eq1 = {
-  left : [[['$key','$key2'],'$key1']],
-  right : [[['hello','goodbye'],'hi']],
-  symbol : [[['=','='],'=']],
-  logic : [[['AND'],'OR']],
-  result : []
+    left : [[['$key','$key2'],'$key1']],
+    right : [[['hello','goodbye'],'hi']],
+    symbol : [[['=','='],'=']],
+    logic : [[['AND'],'OR']],
+    result : []
   }
 
   testEq = {
-  left : [],
-  right : [],
-  symbol : [],
-  logic : [],
-  result : []
+    left : [],
+    right : [],
+    symbol : [],
+    logic : [],
+    result : []
   }
 
 
   function test () {
-     let level=0
-     getLastAtLevel(testEq.left,level).push([])
-     level ++
-     getLastAtLevel(testEq.left,level).push([])
-     level ++
-     getLastAtLevel(testEq.left,level).push(2)
-     console.log('testeq',testEq)
+    let level=0
+    getLastAtLevel(testEq.left,level).push([])
+    level ++
+    getLastAtLevel(testEq.left,level).push([])
+    level ++
+    getLastAtLevel(testEq.left,level).push(2)
+    console.log('testeq',testEq)
   }
 
   const testobj = {

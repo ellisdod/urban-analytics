@@ -18,12 +18,24 @@ color="rgba(0,0,0,0.06)">
 </v-toolbar>
 
 <v-card-text>
+  <v-template v-for="(t,paramIndex) in transformations[item.name].params">
+  <component
+  v-if="t.component"
+  :is="t.component"
+  :items="t.items?t.items($store,edited):null"
+  :type="t.type"
+  :value="items[index].params[paramIndex].value"
+  @change="function(e){items[index].params[paramIndex].value=e}">
+ </component>
+
   <v-text-field
-  v-for="(t,paramIndex) in transformations[item.name].params"
-  box class="mt-1" :label="t.name" v-model="items[index].params[paramIndex].value"></v-text-field>
-
-</v-card-text>
-
+   v-else
+  box class="mt-1"
+  :label="t.name"
+  v-model="items[index].params[paramIndex].value">
+</v-text-field>
+  </v-template>
+  </v-card-text>
 
 </v-card>
 
@@ -44,10 +56,11 @@ import NestedMenu from './NestedMenu.vue'
 //TODO use this https://github.com/websanova/vue-upload
 const dbConfig = require('@/db.config')
 const transConfig = require('@/transformations.config')
+import Calculator from './Calculator.vue'
 
 export default {
   props : ['value','filter'],
-  components : {NestedMenu},
+  components : {NestedMenu,Calculator},
   data () {
     return {
       items : [],

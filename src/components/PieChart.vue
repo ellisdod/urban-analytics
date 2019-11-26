@@ -1,7 +1,7 @@
 <!-- HTML Template -->
 
 <template>
-  <div>
+  <div v-if="indicator[keys[0]]!==null&&indicator[keys[0]]!==undefined">
   <div class="pl-2"><slot></slot></div>
   <div>
   <chart-doughnut
@@ -9,6 +9,9 @@
   :x-labels="false"
   :y-labels="false"
   :showLegend="false"
+  :outlabels="outlabels"
+  :padding="padding"
+  :style="{height:height}"
   ></chart-doughnut>
 </div>
 </div>
@@ -18,15 +21,20 @@
 import chartDoughnut from '../plugins/chartDoughnut.js'
 import colors from 'vuetify/es5/util/colors'
 //import ChartDataLabels from 'chartjs-plugin-datalabels'
-import OuterLabels from  'chartjs-plugin-piechart-outlabels'
+//import OuterLabels from  'chartjs-plugin-piechart-outlabels'
 
 export default {
-  props : ['name','figure','selected','year','compact'],
+  props : ['name','figure','selected','year','compact','outlabels','padding','height','dateRange'],
   components: {
     chartDoughnut
   },
   data () {
-    return {}
+    return {
+      defaultStyle : {
+        fillColor:'#999',
+        borderColor : '#555',
+      }
+    }
   },
   computed : {
     indicator () {
@@ -50,12 +58,27 @@ export default {
     keyNames () {
       return this.keys.map(x=>x.split('.').slice(-1)[0])
     },
+    dateRangeIndicator () {
+      if (!this.dateRange||!this.dateRange.length>1) return
+      const areaIndicators = this.$store.getters.allIndicatorsByArea[this.$store.state.neighbourhood]
+      areaIndicators.filter(x=>x.year>=this.dateRange[0] && x.year<=this.dateRange[1])
+      return areaIndicators.reduce((acc,x)=>{
+        this.keys.forEach(key=>{
+          acc[key] = acc[key] || 0
+          acc[key] = acc[key] + x[key]
+        })
+        return acc
+      },{})
+    },
     style () {
-      return this.$store.getters.styles[this.layer][this.attribute]
+      return this.$store.getters.styles[this.layer][this.attribute] || this.defaultStyle
     },
     colors () {
       return this.keyNames.map(x=>{
-        return this.style[x] ? this.style[x].style.fillColor : '#999'
+        x = x === 'unknown' ? '__d' : x
+        if (!this.style[x]) return '#999'
+        const fill = this.style[x].style.fillColor
+        return  fill.slice(7,9)==='00' ? this.style[x].style.borderColor : fill
       })
     },
     labels () {
@@ -79,7 +102,7 @@ export default {
           borderWidth:1,
           backgroundColor:this.colors,
           borderColor: colors.grey.lighten3,
-          data: this.keys.map(x=>this.indicator[x])
+          data: this.keys.map(x=>this.dateRangeIndicator ? this.dateRangeIndicator[x] : this.indicator[x])
         }]
       }
     },
