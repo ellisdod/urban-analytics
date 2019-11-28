@@ -44,7 +44,18 @@
             v-bind:class="[ind===0 ? 'ejmap-border-right text-xs-right font-weight-medium primary--text':'',h.type === Boolean || h.value === 'style' ? 'text-xs-center':'' ]">
 
             <template v-if="h.type === Array">
+
+              <v-chip v-if="h.value==='figure'"
+              v-for="o in getNested(h.value, props.item)"
+              :class="'func-'+o"
+              outline
+              small>
+
+                {{ layerIds[o.split('.')[0]] ?  layerIds[o.split('.')[0]].name + '.'+o.split('.').slice(1,o.split('.').length-1  ).join('.'): o  }}
+              </v-chip>
+
               <v-chip
+              v-else
               v-for="o in getNested(h.value, props.item)"
               :class="'func-'+o"
               outline
@@ -310,6 +321,12 @@ export default {
     //console.log('featureHeaders',x)
     return x
   },
+  layerIds () {
+    return this.$store.state._col_layers.reduce((acc,x)=>{
+      acc[x._id] = x
+      return acc
+    },{})
+  }
 
 
 },

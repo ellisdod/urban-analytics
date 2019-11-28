@@ -63,9 +63,11 @@ export default {
       const areaIndicators = this.$store.getters.allIndicatorsByArea[this.$store.state.neighbourhood]
       areaIndicators.filter(x=>x.year>=this.dateRange[0] && x.year<=this.dateRange[1])
       return areaIndicators.reduce((acc,x)=>{
-        this.keys.forEach(key=>{
+        Object.keys(x).forEach(key=>{
+          if (key.indexOf(this.figure[0])===-1) return
           acc[key] = acc[key] || 0
           acc[key] = acc[key] + x[key]
+
         })
         return acc
       },{})

@@ -469,9 +469,9 @@ getters : {
     const ind = getters.allIndicatorsByYear;
     if (!ind) return null;
     const indYears = Object.keys(ind).reduce((acc,year)=>{
-      const y = parseInt(year)
-      ind[year].forEach(area=>{
+      ind[year].forEach((area,areaIndex)=>{
         Object.keys(area).forEach(key=>{
+          if (ind[year][areaIndex][key] === null) return
           const layer = key.split('.')[0]
           const attribute = key.split('.').slice(0,2).join('.')
           acc[attribute] = acc[attribute] || {}
