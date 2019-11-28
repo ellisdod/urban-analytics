@@ -39,21 +39,14 @@
         :label="val.name === '__d' ? layer.text_en : val['_text_'+$store.state.language] || val.name">
       </v-switch>
         <div v-else style="width:100%;display:inline-block;float:left;">
-         <div v-bind:style="{
-             display:'inline-block',
-             height:'8px',
-             width: isLine ? '16px' : '8px',
-             borderRadius: isLine ? 0 : '50%',
-             background: val.style&&!isLine ? val.style.fillColor : 'none',
-             border:'solid',
-             borderTop : isLine ? 'none' : 'inherit',
-             borderLeft : isLine ? 'none' : 'inherit',
-             borderRight : isLine ? 'none' : 'inherit',
-             borderWidth:(val.style.borderWidth||0)+'px',
-             borderColor:val.style ? val.style.borderColor : '#e3e3e3',
-             marginRight:'5px',
+         <div v-if="val.style"
+         v-bind:class="[{'legend-icon-point':isPoint,'legend-icon-line':isLine},'legend-icon']"
+         v-bind:style="{
+             background: val.style.fillColor,
+             borderWidth: val.style.borderWidth+'px',
+             borderColor: val.style.borderColor,
              }"></div>
-         <span class="caption">{{ val.name === '__d' ? layer.text_en : (val['_text_'+$store.state.language] || val.name ) }}</span>
+         <span class="caption">{{  val['_text_'+$store.state.language] ||  (val.name === '__d' ? layer.text_en : val.name)  }}</span>
         </div>
     </div>
 
@@ -77,6 +70,9 @@ export default {
   computed : {
     attribute () {
       return this.attributes[this.attributeName]
+    },
+    isPoint () {
+       return this.layer.data_type === 'Point'
     },
     isLine () {
       return this.layer.data_type.indexOf('Line') > -1
@@ -232,6 +228,27 @@ export default {
 
 .leaflet-bar a:hover {
     background-color: #0000001c !important;
+}
+
+.legend-icon {
+  display:inline-block;
+  height:12px;
+  width: 24px;
+  margin-right:5px;
+  margin-bottom:-3px;
+  border:solid;
+}
+
+.legend-icon-point {
+  width: 12px;
+  margin-right:11px;
+  margin-left:6px;
+  border-radius: 50%;
+}
+.legend-icon-line {
+  border-top: none;
+  border-left: none;
+  border-right: none;
 }
 
 

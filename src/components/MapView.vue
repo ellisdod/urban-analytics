@@ -202,7 +202,7 @@
             :key="index"
             :layer="layer"
             :attributes="layer.attributes"
-            :attributeName="layer.filters[i].attribute"
+            :attributeName="layer.attribute"
             :small="minimiseLegend"
             :hideControls="hideControls"
             @filterChange="function(e){updateLayer(layer._id, e, `filters.${i}`);updateLayer(layer._id, e)}"
@@ -854,12 +854,13 @@ export default {
         },
         update () {
           //console.log('updating map...')
-          this.$nextTick(()=>this.$forceUpdate())
-          const map = this.$children[0] ? this.$children[0].mapObject : null
-          if (map) {
-            //console.log('updating map...',map)
+          this.$nextTick(()=>{
+this.$forceUpdate()
+            const map = this.$children[0] ? this.$children[0].mapObject : this.$refs.map.mapObject
+
             setTimeout(()=>map.invalidateSize(),500)
-          }
+          })
+
         },
         layerOn (key,e) {
           console.log('turning on layer: ' + key, e)
@@ -970,6 +971,12 @@ export default {
             this.update()
           })
         },
+        setLayerAttributes () {
+          if (!this.featureLayers) return null
+          this.featureLayersArray.forEach((layerId,index)=>{
+            this.layers[layerId].attribute = this.attributes&&this.attributes[index] ? this.attributes[index] : '__default'
+          })
+        },
         setLayers () {
           const styles = this.$store.getters.styles
           const schema = dbconfig[this.featuresCollection||'features']
@@ -982,7 +989,7 @@ export default {
           }
 
           console.log('running set layers. total layers: ' + layers.length )
-          let onIndex = -1
+          //let onIndex = -1
           layers.forEach((layer,index)=>{
             const categoryStyle = styles[layer._id]
 
@@ -994,6 +1001,7 @@ export default {
               filters: {'0': {} },
               colorRange:null,
               colorConstant:null,
+              attribute:'__default'
             },layer)
 
             const status = this.featureLayersArray.indexOf(layer._id) > -1 ? true : false
@@ -1001,7 +1009,7 @@ export default {
             if (status) this.layerPanelsSelected.push(layer._id)
             layer.on = this.layerPanels[index]
             layer.showLegend = this.allLayers || this.layerPanels[index]
-            if (this.layerPanels[index]) onIndex ++
+            //if (this.layerPanels[index]) onIndex ++
             //if (!layer.on) return
             //console.log('layerid',x._id,layer._id)
 
@@ -1020,7 +1028,7 @@ export default {
               if (acc[att.name] && categoryStyle) acc[att.name].categories = categoryStyle[att.name]
               return acc
             },defaultAttribute)
-            layer.attribute = this.attributes ? this.attributes[onIndex] : '__default'// || Object.keys(layer.attributes)[0]
+            // || Object.keys(layer.attributes)[0]
             layer.filters['0'].attribute = layer.attribute// ???
 
             this.$set(this.layers, layer._id, layer)
@@ -1036,6 +1044,7 @@ export default {
       //this.$store.commit('UPDATE',{key:'legendStyles', value:hiddenKeys })
 
     })
+    this.setLayerAttributes()
 
     /*Object.keys(this.layers).forEach(key=>{
     if (this.layers[key].on) this.$set(this.layers[key],'attribute',Object.keys(this.layers[key].attributes)[0])
@@ -1068,7 +1077,7 @@ addNorthArrow () {
   var north = L.control({position: "topright"});
   north.onAdd = function(map) {
     var div = L.DomUtil.create("div", "legend");
-    div.innerHTML = '<img style="opacity: 0.5;width:30px;margin:20px;" src="/static/img/north_arrow.svg">';
+    div.innerHTML = '<img style="opacity: 0.5;width:30px;margin:20px;" src="/static/img/icons/north_arrow.svg">';
     return div;
   }
   north.addTo(this.$refs.map.mapObject);
@@ -1099,15 +1108,18 @@ exportLayersAsCSV () {
   })
 },
 toggleBaseMap () {
-  if (!this.baseMapOff&&this.baseMaps[0].selected) {
-    const layer = L.mapboxGL({
-      accessToken: 'not-needed',
-      style: this.baseMapLink || 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
-    }).addTo(this.$refs.map.mapObject)
-    this.baseMapLayer = layer
-  } else if (this.baseMapLayer&&this.$refs.map.mapObject) {
-    this.$refs.map.mapObject.removeLayer(this.baseMapLayer )
-  }
+  if (!this.$refs.map) return null
+  this.$nextTick(()=>{
+    if (!this.baseMapOff&&this.baseMaps[0].selected) {
+      const layer = L.mapboxGL({
+        accessToken: 'not-needed',
+        style: this.baseMapLink || 'https://api.maptiler.com/maps/cf2300ae-87ee-48ba-8e4f-cfd93d0d461e/style.json?key=ArAI1SXQTYA6P3mWFnDs'
+      }).addTo(this.$refs.map.mapObject)
+      this.baseMapLayer = layer
+    } else if (this.baseMapLayer&&this.$refs.map.mapObject) {
+      this.$refs.map.mapObject.removeLayer(this.baseMapLayer )
+    }
+  })
 },
 exportToCsv (layer) {
   var processRow = function (row) {
@@ -1188,6 +1200,9 @@ created () {
   this.setLayers()
 },
 watch: {
+  attributes : function(val) {
+    this.setLayerAttributes()
+  },
   featureLayers: function(newVal,oldVal) {
     if (newVal === oldVal) return null
     console.log('layeron: ' + newVal +' layerOff:' + oldVal)
@@ -1276,7 +1291,7 @@ mounted () {
 
 this.$store.watch( (state) => state.neighbourhood, this.checkForUpdate )
 //this.$store.watch( (state) => state._col_layers_selected, this.checkForUpdate )
-//this.$store.watch( (state) => state._col_indicatorSections_selected, this.checkForUpdate )
+this.$store.watch( (state) => state._col_indicatorSections_selected, this.checkForUpdate )
 
 //create survey plugin
 //this.getSurveyNames();

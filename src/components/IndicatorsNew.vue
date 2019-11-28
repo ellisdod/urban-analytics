@@ -100,19 +100,25 @@ v-for="(item,i) in items"
     <div class="subheading mt-5 pt-4 pb-2 ejmap-border-top">
       <span class="mr-3">Map</span><span class="font-weight-light">{{map.text}}</span>
     </div>
-    <map-view
-    contextmenu=""
-    style="position:relative;"
-    featuresCollection="features"
-    zoomLevel="12"
-    height="400px"
-    :featureLayers="map.figure"
-    :attribute="map.attribute"
-    v-bind:areas="true"
-    class="ejmap-border"
-    :legendBottom="true"
-    >
-  </map-view>
+  <map-view
+  contextmenu=""
+  style="position:relative;"
+  featuresCollection="features"
+  :zoomLevel="map.zoom||15"
+  height="400px"
+  :featureLayers="map.figure"
+  v-bind:areas="true"
+  :minimiseLegend="true"
+  :legendBottom="true"
+  :hideControls="true"
+  :hideBaseMap="map.hideBaseMap"
+  :attributes="map.mapAttributes"
+  :dateRange="map.date_range"
+  :scaleBar="true"
+  :northArrow="true"
+  baseMapLink="https://api.maptiler.com/maps/22b3d9af-6774-4072-8dcd-68392fec6910/style.json?key=ArAI1SXQTYA6P3mWFnDs"
+  >
+</map-view>
 </div>
 
 </v-container>

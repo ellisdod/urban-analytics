@@ -90,6 +90,25 @@
 .leaflet-bar a:hover {
     background-color: #0000001c !important;
 }
+.legend-icon {
+  display:inline-block;
+  height:12px;
+  width: 24px;
+  margin-right:5px;
+  margin-bottom:-3px;
+  border:solid;
+}
+.legend-icon-point {
+  width: 12px;
+  margin-right:11px;
+  margin-left:6px;
+  border-radius: 50%;
+}
+.legend-icon-line {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
 
 
 

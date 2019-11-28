@@ -334,7 +334,7 @@ export default {
       mobility: "5d20b415258be4666124df6c",
       plans :"5db82e24079f0e9c38b84669"
     }
-      const filterId = filters.plans
+      const filterId = filters.mobility
       const filtered = {}
       filtered[filterId] = sections[filterId]
       return filtered
