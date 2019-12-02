@@ -36,7 +36,7 @@ export default {
   methods : {
 
     update (properties) {
-
+      this.$emit('change', properties._id)
       this.$store.commit('UPDATE',{
         key:'neighbourhood',
         value: properties.areaCode
@@ -52,6 +52,7 @@ export default {
     makeListObject(area) {
       if (!area) return null
       const p = area.feature.properties;
+      p._id = area._id
       return {
         'name':p['text_'+this.$store.state.language] || p.text_en,
         'value':p

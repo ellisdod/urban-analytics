@@ -81,13 +81,6 @@ module.exports = {
       excludeChunks: [ 'server' ]
     }),
     new webpack.HotModuleReplacementPlugin(),
-    new webpack.NoEmitOnErrorsPlugin(),
-    new webpack.DefinePlugin({
-      'process.env': {
-        OKTA_CLIENT_ID : '"***REMOVED***"',
-        MONGO_PASS : '"***REMOVED***"',
-        BASE_URL : '"http://localhost:3000"'
-      }
-    })
+    new webpack.NoEmitOnErrorsPlugin()
   ]
 }
