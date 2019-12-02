@@ -4,6 +4,7 @@ const webpack = require('webpack')
 const merge = require('webpack-merge')
 const baseConfig = require('./webpack.config.base')
 const Dotenv = require('dotenv-webpack');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 
 
 const HOST = 'localhost'
@@ -60,5 +61,6 @@ module.exports = merge(baseConfig, {
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new Dotenv()
+    new CleanWebpackPlugin(),
   ]
 })
