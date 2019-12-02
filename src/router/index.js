@@ -8,7 +8,7 @@ import ManageData from './../components/ManageDataMaster.vue'
 import Auth from '@okta/okta-vue'
 import Help from './../components/Help.vue'
 
-console.log('process.env',process.env.NODE_ENV,process.env.OKTA_CLIENT_ID,process.env.VUE_APP_OKTA_CLIENT_ID)
+console.log('process.env',process.env.NODE_ENV,process.env.OKTA_CLIENT_ID,process.env.VUE_APP_OKTA_CLIENT_ID,process.env.VUE_APP_OKTA_URI_)
 
 const origin = window.location.origin === 'http://localhost:8080' ? 'http://localhost:8081' :  window.location.origin
 console.log('routing from',{redirect_uri: window.location.origin + '/implicit/callback'});
