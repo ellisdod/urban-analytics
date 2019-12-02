@@ -26,7 +26,7 @@
     "@turf/circle": "6.0.1",
     "@turf/length": "6.0.2",
     "@turf/tag": "5.1.5",
-    "axios": "0.18.0",
+    "axios": "0.18.1",
     "axios-debug-log": "0.4.0",
     "body-parser": "1.18.3",
     "chart.js": "2.8.0",
