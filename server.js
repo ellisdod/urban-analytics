@@ -12,7 +12,7 @@ const planMonitor = require('./planMonitor')
 const request = require('request')
 
 var history = require('connect-history-api-fallback');
-
+require('dotenv').config()
 
 const oktaJwtVerifier = new OktaJwtVerifier({
     clientId: process.env.VUE_APP_OKTA_CLIENT_ID,

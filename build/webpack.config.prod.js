@@ -22,14 +22,14 @@ module.exports = merge(baseConfig, {
       {
         test: /\.css?$/,
         use: [
-          MiniCssExtractPlugin.loader, 
+          MiniCssExtractPlugin.loader,
           'css-loader'
         ]
       }, {
         test: /\.styl(us)?$/,
         use: [
-          MiniCssExtractPlugin.loader, 
-          'css-loader', 
+          MiniCssExtractPlugin.loader,
+          'css-loader',
           'stylus-loader'
         ]
       }
@@ -38,6 +38,6 @@ module.exports = merge(baseConfig, {
   plugins: [
     new MiniCssExtractPlugin({
       filename: 'main.css'
-    })
+    }),
   ]
 })
