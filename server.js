@@ -14,7 +14,9 @@ const request = require('request')
 var history = require('connect-history-api-fallback');
 
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
+  require('dotenv').config()
+} else {
+  console.log('not loading dotenv')
 }
 
 const oktaJwtVerifier = new OktaJwtVerifier({
