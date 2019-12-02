@@ -11,7 +11,9 @@
       <v-flex xs8 offset-xs4 style="margin-top:-110px;">
         <area-select
         class="display-1 font-weight-medium"
-        :value="$route.params.areaId">
+        :value="$route.params.areaId"
+        @change="addHashToLocation"
+        >
         </area-select>
         <div class="title">East Jerusalem</div>
       </v-flex>
@@ -346,6 +348,13 @@ export default {
 
   },
   methods: {
+    addHashToLocation(params) {
+  history.replaceState(
+    {},
+    null,
+    this.$route.path.replace(/reports\/?\w+/, '/'+ encodeURIComponent(params))
+  )
+},
     updateSelected(index){
       this.selected = index
       console.log('updated select',this.selected )
@@ -378,7 +387,7 @@ export default {
         this.selected = 0
         if (!newValue||!Array.isArray(newValue.geodata)||newValue.geodata.length===0) return null
       })
-      this.$store.watch(
+    this.$store.watch(
         (state) => state.neighbourhood,
         (val) => this.updateTitle()
       )
