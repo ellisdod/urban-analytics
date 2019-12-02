@@ -21,7 +21,7 @@
 
 <script>
 export default {
-  props : ['icon','childStyle'],
+  props : ['icon','childStyle','value'],
   data () {
     return {
       selected : '',
@@ -69,7 +69,9 @@ export default {
     }
   },
   created () {
-    this.setArea(this.$store.getters.selectedArea)
+    const selected = this.value ? this.$store.state._col_areas.filter(x=>x._id===this.value)[0]
+                   : this.$store.getters.selectedArea
+    this.setArea(selected)
   },
   mounted () {
     const self = this
