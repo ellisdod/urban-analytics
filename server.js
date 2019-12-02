@@ -13,11 +13,6 @@ const request = require('request')
 
 var history = require('connect-history-api-fallback');
 
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config()
-} else {
-  console.log('not loading dotenv')
-}
 
 const oktaJwtVerifier = new OktaJwtVerifier({
     clientId: process.env.VUE_APP_OKTA_CLIENT_ID,
