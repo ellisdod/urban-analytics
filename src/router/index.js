@@ -52,6 +52,10 @@ let router = new Router({
       component: Indicators
     },
     {
+      path: '/reports/:areaId',
+      component: IndicatorsReport
+    },
+    {
       path: '/reports',
       component: IndicatorsReport
     },

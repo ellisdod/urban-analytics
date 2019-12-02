@@ -9,7 +9,10 @@
   <v-container fluid pa-4>
     <v-layout row wrap >
       <v-flex xs8 offset-xs4 style="margin-top:-110px;">
-        <area-select class="display-1 font-weight-medium"></area-select>
+        <area-select
+        class="display-1 font-weight-medium"
+        :value="$route.params.areaId">
+        </area-select>
         <div class="title">East Jerusalem</div>
       </v-flex>
       <v-flex xs12 pt-4> </v-flex>
