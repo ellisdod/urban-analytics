@@ -3,6 +3,7 @@ var nodeExternals = require('webpack-node-externals');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const { VueLoaderPlugin } = require('vue-loader')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const path = require('path')
 
 const utils = require('./utils')
@@ -88,6 +89,7 @@ module.exports = {
      template: path.join(__dirname, '..', 'index.html'),
       inject: true
     }),
+    new CleanWebpackPlugin(),
     new VueLoaderPlugin(),
     new CopyWebpackPlugin([{
       from: utils.resolve('static/img'),
