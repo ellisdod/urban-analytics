@@ -56,7 +56,8 @@ export default {
       }
     },
     keyNames () {
-      return this.keys.map(x=>x.split('.').slice(-1)[0])
+      const keys = this.keys.map(x=>x.split('.').slice(-1)[0])
+      return keys.filter(x=>x!=='unknown')
     },
     dateRangeIndicator () {
       if (!this.dateRange||!this.dateRange.length>1) return
@@ -104,7 +105,11 @@ export default {
           borderWidth:1,
           backgroundColor:this.colors,
           borderColor: colors.grey.lighten3,
-          data: this.keys.map(x=>this.dateRangeIndicator ? this.dateRangeIndicator[x] : this.indicator[x])
+          data: this.keys.reduce((acc,x)=>{
+            if (x.split('.').slice(-1)[0]==='unknown') return acc
+            acc.push(this.dateRangeIndicator ? this.dateRangeIndicator[x] : this.indicator[x])
+            return acc
+          },[])
         }]
       }
     },

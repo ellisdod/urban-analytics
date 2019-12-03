@@ -34,7 +34,6 @@
     :zoom="zoom || $store.state.navigator.zoom"
     :center="center || $store.state.navigator.center"
     :options="mapOptions"
-    :zoomControl="false"
     id="navigation-map"
     @click="log()"
     >
@@ -119,7 +118,8 @@ export default {
       mapOptions: {
         zoomSnap: 0.5,
         zoomControl: this.$props.showControls ? true : false,
-        attributionControl:false
+        attributionControl:false,
+        scrollWheelZoom :false,
       },
       areasGeoJsonOptions:{
         onEachFeature: (feature, layer) => {

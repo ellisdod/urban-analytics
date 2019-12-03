@@ -104,7 +104,7 @@
           >
         </v-select>
 
-        <div v-else-if="i._categorised" style="display:flex;">
+        <!-- <div v-else-if="i._categorised" style="display:flex;">
           <v-combobox
           small-chips
           multiple
@@ -112,7 +112,21 @@
           v-model="edited[key]"
           ></v-combobox>
           <nested-menu :items="i._options($store,edited)" title="add" @change="function(e){edited[key].push(e)}"></nested-menu>
-        </div>
+        </div>-->
+
+        <array-input
+         v-else-if="i._categorised"
+         :items="i._options($store,edited)"
+         :type="i._options.type"
+         itemsLabel="add"
+         :value="edited[key]&&edited[key].length?edited[key]:i._options.defaultValue?i._options.defaultValue($store,edited):null"
+         @change="function(e){edited[key]=e}">
+         <template v-slot:title>
+         <v-flex xs12 class="subheading">
+         {{i._text}}
+         </v-flex>
+       </template>
+        </array-input>
 
     <v-switch v-else-if="i.type===Boolean||i.type==='Boolean'" v-model="edited[key]" :label="i._text" color="primary"></v-switch>
     <v-text-field v-else-if="i._text" v-model="edited[key]" :label="i._text" :type="i.type==='Number'?'number':'text'" :rules="[validateItem(edited[key],i)]" box validate-on-blur></v-text-field>

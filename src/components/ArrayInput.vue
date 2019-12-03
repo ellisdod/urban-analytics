@@ -2,11 +2,9 @@
 
 <template>
   <v-layout wrap>
-      <template v-slot:title></template>
+      <slot name="title"></slot>
 
       <div style="flex:1">
-
-
       <div class="pa-2" style="background-color:rgba(0,0,0,0.06);min-height:150px;min-width:30px;display:flex;flex-wrap:wrap;align-self:flex-start;"
       @click="sel(-1)">
         <template v-for="(i,index) in formula">
@@ -27,9 +25,9 @@
       </template>
 
       </div>
-      <div style="height:50px;">
+      <div style="height:80px;">
         <v-text-field v-if="selected!==null" box class="mt-1"  v-model="formula[selected].text" @change="update"></v-text-field>
-        <v-text-field v-else box class="mt-1" v-model="temp" @change="push"></v-text-field>
+        <v-text-field v-else box class="mt-1" v-model="temp" placeholder="add item" @change="push"></v-text-field>
       </div>
       </div>
 
@@ -48,7 +46,7 @@
 
           <nested-menu
           :items="items"
-          title="attributes"
+          :title="itemsLabel || 'attributes'"
           @change="function(e){selected!==null ? update(e) : push(e)}">
           </nested-menu>
 
@@ -63,7 +61,7 @@ import NestedMenu from './NestedMenu.vue'
 const dbConfig = require('@/db.config')
 
 export default {
-  props : ['value','filter','items','buttons'],
+  props : ['value','filter','items','buttons','itemsLabel'],
   components : {NestedMenu},
   data () {
     return {

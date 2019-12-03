@@ -1,11 +1,11 @@
 <!-- HTML Template -->
 <template>
   <array-input :buttons="controls" v-bind="$props" v-on="$listeners">
-    <slot name="title">
+     <template v-slot:title>
     <v-flex xs12 class="subheading">
     Calculation
     </v-flex>
-  </slot>
+  </template>
   </array-input>
 
 </template>

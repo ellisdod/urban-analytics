@@ -40,7 +40,9 @@ export default {
       const areas = Object.keys(this.$store.getters.allIndicatorsByAreaYear)
       const totals = areas.reduce((acc,area)=>{
         this.figure.forEach((x,index)=> {
-           acc[index]=acc[index] + this.$store.getters.allIndicatorsByAreaYear[area][latestYear][x]
+           let val = this.$store.getters.allIndicatorsByAreaYear[area][latestYear][x] || 0
+           val = parseFloat(val)
+           acc[index]=acc[index] + val
         })
         return acc
       },this.figure.map(x=>0))
