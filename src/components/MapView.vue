@@ -52,9 +52,22 @@
   :options-style="getAreaStyle()"
   />
 
-  <v-btn v-if="!hideControls" style="position:absolute;bottom:5px;right:5px;z-index:1000;" icon @click="exportLayersAsCSV">
-    <v-icon color="grey">get_app</v-icon>
-  </v-btn>
+  <!-- DOWNLOAD MENU -->
+  <v-menu v-if="!hideControls" offset-y>
+      <template v-slot:activator="{ on }">
+        <v-btn v-if="!hideControls" v-on="on" style="position:absolute;bottom:5px;right:5px;z-index:1000;" icon>
+          <v-icon color="grey">get_app</v-icon>
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-tile @click="downloadLiveLayers('csv')">
+          <v-list-tile-title>CSV meta data</v-list-tile-title>
+        </v-list-tile>
+        <v-list-tile @click="downloadLiveLayers('json')">
+          <v-list-tile-title>GeoJSON</v-list-tile-title>
+        </v-list-tile>
+      </v-list>
+    </v-menu>
 
   <div v-if="!hideControls" class="map-menu">
     <v-menu
@@ -1098,11 +1111,12 @@ resetClickTimer () {
   this.clickInterval = false
   this.clickTimer = 0
 },
-exportLayersAsCSV () {
+downloadLiveLayers (type) {
   Object.keys(this.layers).forEach(key=>{
     if (this.layers[key].on) {
       console.log('exporting layer ' + key)
-      this.exportToCsv(this.layers[key])
+      if (type ==='csv') this.downloadMeta(this.layers[key])
+      else this.downloadSpatial(this.layers[key])
     }
   })
 },
@@ -1119,6 +1133,37 @@ toggleBaseMap () {
       this.$refs.map.mapObject.removeLayer(this.baseMapLayer )
     }
   })
+},
+generateFileName(layer) {
+  return layer.name.toLowerCase().replace(/[\s\.]/g,'_')
+},
+downloadMeta(layer) {
+  this.download(this.exportToCsv(layer), this.generateFileName(layer) + '.csv')
+},
+downloadSpatial(layer) {
+  const features = {
+    type: 'FeatureCollection',
+    features: this.layers[layer._id].features
+  }
+  this.download(JSON.stringify(features), this.generateFileName(layer) + '.json')
+},
+download(data,filename) {
+  var blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+  if (navigator.msSaveBlob) { // IE 10+
+    navigator.msSaveBlob(blob, filename);
+  } else {
+    var link = document.createElement("a");
+    if (link.download !== undefined) { // feature detection
+      // Browsers that support HTML5 download attribute
+      var url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
 },
 exportToCsv (layer) {
   var processRow = function (row) {
@@ -1167,31 +1212,12 @@ exportToCsv (layer) {
   })
 
   rows = [headerRow, ...rows]
-  console.log(rows)
-
-  const filename = layer.name.toLowerCase().replace(/[\s\.]/g,'_') + '.csv'
 
   var csvFile = '';
   for (var i = 0; i < rows.length; i++) {
     csvFile += processRow(rows[i]);
   }
 
-  var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-  if (navigator.msSaveBlob) { // IE 10+
-    navigator.msSaveBlob(blob, filename);
-  } else {
-    var link = document.createElement("a");
-    if (link.download !== undefined) { // feature detection
-      // Browsers that support HTML5 download attribute
-      var url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", filename);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }
 }
 
 },
