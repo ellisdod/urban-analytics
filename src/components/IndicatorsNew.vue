@@ -344,12 +344,12 @@ export default {
   }
 
   .indicator-hover {
-    margin-left:3px;
+    border-left:4px solid rgba(0,0,0,0);
+    border-color: rgba(0,0,0,0);
   }
 
   .indicator-hover:hover {
     border-left: 4px solid var(--v-primary-base) !important;
-    margin-left:0px;
   }
 
   .indicator-hover:hover, .indicator-hover:hover>div {

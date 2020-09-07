@@ -18,7 +18,8 @@ const execute = async function (method, resource, data, headers) {
   data = data || {};
   console.log('execute function')
   // inject the accessToken for each request
-  let accessToken = await Vue.prototype.$auth.getAccessToken()
+
+  let accessToken = localStorage.getItem('token')
   return client({
     method,
     url: resource,

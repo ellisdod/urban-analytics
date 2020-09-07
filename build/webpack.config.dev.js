@@ -60,7 +60,7 @@ module.exports = merge(baseConfig, {
 
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
-    new Dotenv()
+    new Dotenv(),
     new CleanWebpackPlugin(),
   ]
 })
